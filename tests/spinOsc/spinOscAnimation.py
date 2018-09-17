@@ -10,7 +10,7 @@ F = -k*r + alpha * curl(z,r)
 
 The k term represents a harmonic potential
 the alpha term represents a rotational, non-conservative force for the potential
-xi is Gaussian white noise with strength sqrt(2*gamma*D), D is the diffusion constant
+xi is Gaussian white noise with strength sqrt(2*gamma^2*D), D is the diffusion constant
 which is given by the Einstein-relation D = kB*T/gamma
 '''
 
@@ -20,14 +20,14 @@ import matplotlib.pyplot as plt
 # import matplotlib as mpl
 import matplotlib.animation as animation
 
-gamma = 1.7e-8  # drag on particle in kg / s
+gamma = 2e-8 # drag on particle in kg / s
 kT = 4e-9  # energy in kg * um^2 / s^2
 # kT = 4e-21  # energy in Joules at room temp
 D = kT / gamma
 dt = 1e-3  # time step
 
-k = 0  # spring constant of harmonic potential
-alpha = 0  # strength of rotational force
+k = 2*gamma  # spring constant of harmonic potential
+alpha = 1*gamma  # strength of rotational force
 zhat = np.array([0, 0, 1])
 nframes = int(2e3)
 
@@ -39,19 +39,19 @@ def update(p, r):
     q = (p + 1)
     springForce = - k * r[p]
     rotationalForce = alpha * np.cross(zhat, np.append(r[p], 0))[:2]
-    noise = np.sqrt(2 * gamma * D / dt) * np.random.randn(2)
+    noise = np.sqrt(2 * gamma**2 * D / dt) * np.random.randn(2)
 
-    r[q] = r[p] + (springForce + rotationalForce + noise) * dt
+    r[q] = r[p] + (springForce + rotationalForce + noise) * dt / gamma
     return r
 
 
 # Initialize random data. Row is time point, columns are x and y
-xmax = 1e-3
-ymax = 1e-3
+xmax = 1
+ymax = 1
 r = (np.random.rand(nframes, 2) - 0.5) * [xmax, ymax]
 
 fig, ax = plt.subplots()
-ax.set_title(r'$\alpha$ = {a}, $k$ = {k}'.format(a=alpha, k=k))
+ax.set_title(r'$\tau_\alpha$ = {a}, $\tau_k$ = {k}'.format(a=gamma / alpha, k=gamma / k))
 ax.set_xlim(-xmax, xmax)
 ax.set_ylim(-ymax, ymax)
 ax.set_aspect('equal')
