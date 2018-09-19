@@ -39,8 +39,6 @@ class spinOscLangevin():
         self.dt = dt  # time step in seconds
         self.tfinal = tfinal  # final time in seconds
         self.nsteps = int(self.tfinal / self.dt)  # total number of steps
-        self.alpha = alpha  # strength of rotational force in uN
-        self.k = k  # strength of harmonic potential in kg / s^2
         self.gamma = gamma  # drag on particle in kg / s
         self.kT = kT  # in kg * um^2 / s^2
 
@@ -49,7 +47,8 @@ class spinOscLangevin():
 
         # data
         self.t = np.linspace(0, self.tfinal, self.nsteps + 1)
-        self.pos = r0 * np.ones((self.nsteps + 1, 2))
+        self.pos = np.zeros((2, self.nsteps + 1))
+        self.pos[:, 0] = r0
 
     def reset(self):
         self.__init__(self.dt, self.tfinal, self.alpha,
@@ -77,9 +76,9 @@ class spinOscLangevin():
 
     def runSimulation(self, k, alpha):
         for index, time in enumerate(self.t[1:]):
-            pos_old = self.pos[index]
+            pos_old = self.pos[:, index]
             pos_new = pos_old + (self.springForce(pos_old, k) + self.rotationalForce(pos_old, alpha) + self.noise()) * self.dt / self.gamma
-            self.pos[index + 1] = pos_new
+            self.pos[:, index + 1] = pos_new
 
 
 # def run(dt=1e-3, tfinal=1, alpha=1, k=1, kT=4e-9, gamma=2e-8, r0=np.random.rand(2)):
