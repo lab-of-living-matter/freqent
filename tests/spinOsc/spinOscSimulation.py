@@ -51,9 +51,8 @@ class spinOscLangevin():
         self.pos[:, 0] = r0
 
     def reset(self):
-        self.__init__(self.dt, self.tfinal, self.alpha,
-                      self.k, self.kT, self.gamma,
-                      self.r0)
+        self.__init__(self.dt, self.tfinal, self.kT, self.gamma,
+                      np.zeros(2))
 
     def springForce(self, r, k):
         '''

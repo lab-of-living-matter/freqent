@@ -3,7 +3,7 @@ import scipy.signal as signal
 import warnings
 
 
-def corrMatrix(data, sample_rate=1, return_fft=False):
+def corrMatrix(data, sample_rate=1, mode='full', method='auto', return_fft=False):
     '''
     Takes time series data of multiple variables and returns a correlation matrix
     for every lag time
@@ -11,12 +11,16 @@ def corrMatrix(data, sample_rate=1, return_fft=False):
     Parameters
     ----------
     data : 2D array
-        data is an NxM array that gives length M time series data of N variables.
+        Data is an NxM array that gives length M time series data of N variables.
         e.g. data[0] returns time series for first variable.
     sample_rate : scalar
-        sample rate of data in seconds. Default = 1
+        Sample rate of data in seconds. Default = 1
+    mode : str {'valid', 'same', 'full'}, optional
+        Refer to the 'scipy.signal.convolve' docstring. Default is 'full'.
+    method : str {'auto', 'direct', 'fft'}, optional
+        Refer to the 'scipy.signal.convolve' docstring. Default is 'auto'.
     return_fft : bool (optional)
-        boolean asking whether to return the temporal fourier transform of the
+        Boolean asking whether to return the temporal fourier transform of the
         correlation matrix
 
     Returns
@@ -31,13 +35,14 @@ def corrMatrix(data, sample_rate=1, return_fft=False):
                       'Make sure data has variables as rows.')
 
     nvars, npts = data.shape
-    c = np.zeros((nvars, nvars, npts))
+    c = np.zeros((nvars, nvars, npts * 2 - 1))
 
     # get all pairs of indices
     idx_pairs = np.array(np.meshgrid(np.arange(nvars), np.arange(nvars))).T.reshape(-1, 2)
 
     for idx in idx_pairs:
-        c[idx[0], idx[1], :] = _correlate_mean(data[idx[0]], data[idx[1]], return_fft)
+        c[idx[0], idx[1], :] = _correlate_mean(data[idx[0]], data[idx[1]],
+                                               mode, method, return_fft)
 
     return c
 
