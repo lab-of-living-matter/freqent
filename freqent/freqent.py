@@ -3,7 +3,41 @@ import scipy.signal as signal
 import warnings
 
 
-def corrMatrix(data, sample_rate=1, mode='full', method='auto', return_fft=False):
+def entropy(c_fft, sample_spacing=1):
+    '''
+    Calculate the entropy using the frequency space measure:
+
+    dS/dt = (sum_n ((C^-1)^T_ij (f_n) - C^-1_ij(f_n)) C_ij(f_n)) / 2T
+
+    where T is the total time of the signal, C_ij(w_n) is the (i,j)th component
+    of the correlation matrix evaluated at the frequency f_n, where f_n = n/T,
+    and n is in [-N/2, N/2], where N is the total number of points in the original
+    signal
+
+    Parameters
+    ----------
+    c_fft : 3D array
+        an NxNx(2M-1) matrix that gives an NxN correlation matrix as a function of
+        2M-1 frequencies
+
+    Returns
+    -------
+    s : float
+        entropy production rate given correlation functions
+    '''
+
+    s = 0
+    T = sample_spacing * (c_fft.shape[2] - 1) / 2
+    for c in np.rollaxis(c_fft, axis=-1):
+        cinv = np.linalg.inv(c)
+        s += ((cinv.T - cinv) * c).sum()
+
+    s /= 2 * T
+
+    return s
+
+
+def corr_matrix(data, sample_spacing=1, mode='full', method='auto', return_fft=False):
     '''
     Takes time series data of multiple variables and returns a correlation matrix
     for every lag time
@@ -13,8 +47,8 @@ def corrMatrix(data, sample_rate=1, mode='full', method='auto', return_fft=False
     data : 2D array
         Data is an NxM array that gives length M time series data of N variables.
         e.g. data[0] returns time series for first variable.
-    sample_rate : scalar
-        Sample rate of data in seconds. Default = 1
+    sample_spacing : float
+        Sample spacing (inverse of sample rate) of data in seconds. Default = 1
     mode : str {'valid', 'same', 'full'}, optional
         Refer to the 'scipy.signal.convolve' docstring. Default is 'full'.
     method : str {'auto', 'direct', 'fft'}, optional
@@ -26,7 +60,12 @@ def corrMatrix(data, sample_rate=1, mode='full', method='auto', return_fft=False
     Returns
     -------
     c : 3D array
-        an NxNx(2M-1) matrix that gives the NxN correlation matrix for
+        an NxNx(2M-1) matrix that gives the NxN correlation matrix for the variables
+        contained in the rows of data. Returns fft(c) is return_fft=True
+    tau : array
+        2M-1 length array of lag times for correlations. Returns frequencies if
+        return_fft=True
+
     '''
 
     data = np.asarray(data)
@@ -35,7 +74,7 @@ def corrMatrix(data, sample_rate=1, mode='full', method='auto', return_fft=False
                       'Make sure data has variables as rows.')
 
     nvars, npts = data.shape
-    c = np.zeros((nvars, nvars, npts * 2 - 1))
+    c = np.zeros((nvars, nvars, npts * 2 - 1), dtype=complex)
 
     # get all pairs of indices
     idx_pairs = np.array(np.meshgrid(np.arange(nvars), np.arange(nvars))).T.reshape(-1, 2)
@@ -44,7 +83,14 @@ def corrMatrix(data, sample_rate=1, mode='full', method='auto', return_fft=False
         c[idx[0], idx[1], :] = _correlate_mean(data[idx[0]], data[idx[1]],
                                                mode, method, return_fft)
 
-    return c
+    if not return_fft:
+        c = c.real
+        maxTau = sample_spacing * (npts - 1)
+        tau = np.linspace(-maxTau, maxTau, 2 * npts - 1)
+        return c, tau
+    else:
+        freqs = np.fft.fftshift(np.fft.fftfreq(2 * npts - 1, d=sample_spacing))
+        return c, freqs
 
 
 def _correlate_mean(x1, x2, mode='full', method='auto', return_fft=False):
@@ -55,8 +101,12 @@ def _correlate_mean(x1, x2, mode='full', method='auto', return_fft=False):
 
     Parameters
     ----------
-    x, y : 1D array
+    x1, x2 : 1D array
         data to find cross-correlation between
+    mode : str {'valid', 'same', 'full'}, optional
+        Refer to the 'scipy.signal.convolve' docstring. Default is 'full'.
+    method : str {'auto', 'direct', 'fft'}, optional
+        Refer to the 'scipy.signal.convolve' docstring. Default is 'auto'.
     return_fft : bool (optional)
         boolean asking whether to return the temporal fourier transform of the
         correlation matrix
@@ -64,7 +114,7 @@ def _correlate_mean(x1, x2, mode='full', method='auto', return_fft=False):
     Returns
     -------
     xcorr : 1D array
-        cross correlation between
+        cross correlation between x1 and x2. Returns fft(xcorr) if return_fft=True
     '''
 
     N = max(len(x1), len(x2))
