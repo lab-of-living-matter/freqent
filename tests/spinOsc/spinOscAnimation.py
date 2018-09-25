@@ -20,14 +20,14 @@ import matplotlib.pyplot as plt
 # import matplotlib as mpl
 import matplotlib.animation as animation
 
-gamma = 2e-8 # drag on particle in kg / s
+gamma = 2e-8  # drag on particle in kg / s
 kT = 4e-9  # energy in kg * um^2 / s^2
 # kT = 4e-21  # energy in Joules at room temp
 D = kT / gamma
 dt = 1e-3  # time step
 
-k = 2*gamma  # spring constant of harmonic potential
-alpha = 1*gamma  # strength of rotational force
+k = 2 * gamma  # spring constant of harmonic potential
+alpha = 1 * gamma  # strength of rotational force
 zhat = np.array([0, 0, 1])
 nframes = int(2e3)
 
@@ -85,7 +85,7 @@ def animate(i, r, line):
     return line,
 
 
-anim = animation.FuncAnimation(fig, animate, frames=nframes-1, blit=True, fargs=(r, line), interval=5)
+anim = animation.FuncAnimation(fig, animate, frames=nframes - 1, blit=True, fargs=(r, line), interval=5)
 
 plt.show()
 

@@ -34,11 +34,10 @@ class spinOscLangevin():
 
     '''
 
-    def __init__(self, dt, tfinal=10, kT=4e-9, gamma=2e-8, r0=np.zeros(2)):
+    def __init__(self, dt, nsteps=1e6, kT=4e-9, gamma=2e-8, r0=np.zeros(2)):
 
         self.dt = dt  # time step in seconds
-        self.tfinal = tfinal  # final time in seconds
-        self.nsteps = int(self.tfinal / self.dt)  # total number of steps
+        self.nsteps = int(nsteps)  # total number of steps
         self.gamma = gamma  # drag on particle in kg / s
         self.kT = kT  # in kg * um^2 / s^2
 
@@ -46,12 +45,12 @@ class spinOscLangevin():
         self.D = self.kT / self.gamma
 
         # data
-        self.t = np.linspace(0, self.tfinal, self.nsteps + 1)
+        self.t = np.linspace(0, self.nsteps * self.dt, self.nsteps + 1)
         self.pos = np.zeros((2, self.nsteps + 1))
         self.pos[:, 0] = r0
 
     def reset(self):
-        self.__init__(self.dt, self.tfinal, self.kT, self.gamma,
+        self.__init__(self.dt, self.nsteps, self.kT, self.gamma,
                       np.zeros(2))
 
     def springForce(self, r, k):
