@@ -18,8 +18,8 @@ def entropy(c_fft, sample_spacing=1):
     Parameters
     ----------
     c_fft : 3D array
-        an NxNx(2M-1) matrix that gives an NxN correlation matrix as a function of
-        2M-1 frequencies
+        an MxNxN matrix that gives an NxN correlation matrix as a function of
+        M frequencies
 
     Returns
     -------
@@ -27,12 +27,12 @@ def entropy(c_fft, sample_spacing=1):
         entropy production rate given correlation functions
     '''
 
-    T = sample_spacing * (c_fft.shape[2] - 1) / 2
+    T = sample_spacing * (c_fft.shape[0] - 1)
 
     # get inverse of each NxN submatrix of c_fft. See the stackexchange:
     # https://stackoverflow.com/questions/41850712/compute-inverse-of-2d-arrays-along-the-third-axis-in-a-3d-array-without-loops
-    c_fft_inv = np.linalg.inv(c_fft.T).T
-    s = np.sum((np.transpose(c_fft_inv, (1, 0, 2)) - c_fft_inv) * c_fft)
+    c_fft_inv = np.linalg.inv(c_fft)
+    s = np.sum((np.transpose(c_fft_inv, (0, 2, 1)) - c_fft_inv) * c_fft)
 
     s /= 2 * T
 
@@ -48,7 +48,7 @@ def corr_matrix(data, sample_spacing=1, mode='full', method='auto', return_fft=F
     ----------
     data : 2D array
         Data is an NxM array that gives length M time series data of N variables.
-        e.g. data[0] returns time series for first variable.
+        e.g. data[n] returns time series for nth variable.
     sample_spacing : float
         Sample spacing (inverse of sample rate) of data in seconds. Default = 1
     mode : str {'valid', 'same', 'full'}, optional
@@ -62,7 +62,7 @@ def corr_matrix(data, sample_spacing=1, mode='full', method='auto', return_fft=F
     Returns
     -------
     c : 3D array
-        an NxNx(2M-1) matrix that gives the NxN correlation matrix for the variables
+        an (2M-1)xNxN matrix that gives the NxN correlation matrix for the variables
         contained in the rows of data. Returns fft(c) is return_fft=True
     tau : array
         2M-1 length array of lag times for correlations. Returns frequencies if
@@ -76,13 +76,13 @@ def corr_matrix(data, sample_spacing=1, mode='full', method='auto', return_fft=F
                       'Make sure data has variables as rows.')
 
     nvars, npts = data.shape
-    c = np.zeros((nvars, nvars, npts * 2 - 1), dtype=complex)
+    c = np.zeros((npts * 2 - 1, nvars, nvars), dtype=complex)
 
     # get all pairs of indices
     idx_pairs = np.array(np.meshgrid(np.arange(nvars), np.arange(nvars))).T.reshape(-1, 2)
 
     for idx in idx_pairs:
-        c[idx[0], idx[1], :] = _correlate_mean(data[idx[0]], data[idx[1]],
+        c[:, idx[0], idx[1]] = _correlate_mean(data[idx[0]], data[idx[1]], sample_spacing,
                                                mode, method, return_fft)
 
     if not return_fft:
@@ -95,7 +95,7 @@ def corr_matrix(data, sample_spacing=1, mode='full', method='auto', return_fft=F
         return c, freqs
 
 
-def _correlate_mean(x1, x2, mode='full', method='auto', return_fft=False):
+def _correlate_mean(x1, x2, sample_spacing=1, mode='full', method='auto', return_fft=False):
     '''
     Calculate cross-correlation between two time series using fourier transform
     Wrapper around scipy.signal.correlate function that takes a mean rather than
@@ -117,6 +117,10 @@ def _correlate_mean(x1, x2, mode='full', method='auto', return_fft=False):
     -------
     xcorr : 1D array
         cross correlation between x1 and x2. Returns fft(xcorr) if return_fft=True
+
+    See also
+    --------
+    scipy.signal.correlate
     '''
 
     N = max(len(x1), len(x2))
@@ -125,6 +129,7 @@ def _correlate_mean(x1, x2, mode='full', method='auto', return_fft=False):
     xcorr = signal.correlate(x1, x2, mode, method) / n
 
     if return_fft:
-        return np.fft.fftshift(np.fft.fft(xcorr))
+
+        return np.fft.fftshift(np.fft.fft(np.fft.ifftshift(xcorr))) * sample_spacing
     else:
         return xcorr
