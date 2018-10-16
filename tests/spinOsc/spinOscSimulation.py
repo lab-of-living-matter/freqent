@@ -34,7 +34,7 @@ class spinOscLangevin():
 
     '''
 
-    def __init__(self, dt, nsteps=1e6, kT=4e-9, gamma=2e-8, r0=np.zeros(2)):
+    def __init__(self, dt, nsteps=1e6, kT=4e-9, gamma=2e-8, r0=np.random.rand(2) - 0.5):
 
         self.dt = dt  # time step in seconds
         self.nsteps = int(nsteps)  # total number of steps
@@ -51,7 +51,7 @@ class spinOscLangevin():
 
     def reset(self):
         self.__init__(self.dt, self.nsteps, self.kT, self.gamma,
-                      np.zeros(2))
+                      np.random.rand(2) - 0.5)
 
     def springForce(self, r, k):
         '''
