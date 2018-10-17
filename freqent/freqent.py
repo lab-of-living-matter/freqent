@@ -1,8 +1,6 @@
 import numpy as np
 import scipy.signal as signal
 import warnings
-from joblib import Parallel, delayed
-
 
 def entropy(c_fft, sample_spacing=1):
     '''
