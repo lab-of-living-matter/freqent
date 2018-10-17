@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.signal as signal
 import warnings
+from itertools import product
 
 def entropy(c_fft, sample_spacing=1):
     '''
@@ -77,7 +78,7 @@ def corr_matrix(data, sample_spacing=1, mode='full', method='auto', return_fft=F
     c = np.zeros((npts * 2 - 1, nvars, nvars), dtype=complex)
 
     # get all pairs of indices
-    idx_pairs = np.array(np.meshgrid(np.arange(nvars), np.arange(nvars))).T.reshape(-1, 2)
+    idx_pairs = np.array(list(product(np.arange(nvars), repeat=2)))
 
     for idx in idx_pairs:
         c[:, idx[0], idx[1]] = _correlate_mean(data[idx[0]], data[idx[1]], sample_spacing,
