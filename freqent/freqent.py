@@ -3,6 +3,7 @@ import scipy.signal as signal
 import warnings
 from itertools import product
 
+
 def entropy(c_fft, sample_spacing=1):
     '''
     Calculate the entropy using the frequency space measure:

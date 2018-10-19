@@ -73,6 +73,7 @@ class spinOscLangevin():
         return np.sqrt(2 * self.D * self.gamma**2 / self.dt) * np.random.randn(2)
 
     def runSimulation(self, k, alpha):
+        # self.reset()
         for index, time in enumerate(self.t[1:]):
             pos_old = self.pos[:, index]
             pos_new = pos_old + (self.springForce(pos_old, k) + self.rotationalForce(pos_old, alpha) + self.noise()) * self.dt / self.gamma

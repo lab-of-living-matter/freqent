@@ -17,6 +17,8 @@ import matplotlib as mpl
 import os
 import argparse
 import multiprocessing
+from datetime import datetime
+import csv
 mpl.rcParams['pdf.fonttype'] = 42
 
 
@@ -55,23 +57,32 @@ r = spinOscLangevin(dt=args.dt, nsteps=args.nsteps, kT=args.kT, gamma=args.gamma
 # equilibriationFrames = int(nsteps/2);
 k = args.k_multiple * r.gamma
 alpha = args.alpha_multiple * r.gamma
-c_all = np.zeros((int(2 * (args.nsteps) + 1), 2, 2, args.nsim))
 
-for ii in range(args.nsim):
-    txt = 'simulation {n} of {N}'.format(n=ii, N=args.nsim)
-    print(txt, end='\r')
+
+def get_corr_mat(seed):
+    '''
+    helper function to pass to multiprocessing pool
+    '''
+    np.random.seed(seed)
     r.reset()
     r.runSimulation(k=k, alpha=alpha)
-    c_all[..., ii], tau = fe.corr_matrix(r.pos,
-                                         sample_spacing=r.dt,
-                                         mode='full',
-                                         method='auto',
-                                         return_fft=False)
+    c, t = fe.corr_matrix(r.pos,
+                          sample_spacing=r.dt,
+                          mode='full',
+                          method='auto',
+                          return_fft=False)
+    return c
 
 
+seeds = np.arange(args.nsim)
+with multiprocessing.Pool(processes=int(args.nsim / 5)) as pool:
+    result = pool.map(get_corr_mat, seeds)
 
+c_all = np.asarray(result)
 
-fig, ax = plt.subplots(2, 2, sharex=True)
+# get lag time vector
+maxTau = args.dt * args.nsteps
+tau = np.linspace(-maxTau, maxTau, 2 * args.nsteps + 1)
 
 c_thry = np.zeros((int(2 * (args.nsteps) + 1), 2, 2))
 
@@ -80,41 +91,48 @@ c1 = (r.D / (k / r.gamma)**2) * (k / r.gamma) * tau * np.exp(-(k / r.gamma) * np
 c2 = ((r.D / (2 * (k / r.gamma)**3)) *
       ((k / r.gamma) * np.abs(tau) + 1) * np.exp(-(k / r.gamma) * np.abs(tau)))
 
-
 c_thry[:, 0, 0] = c0 + (alpha / r.gamma)**2 * c2
 c_thry[:, 1, 1] = c_thry[:, 0, 0]
 c_thry[:, 0, 1] = - (alpha / r.gamma) * c1
 c_thry[:, 1, 0] = -c_thry[:, 0, 1]
 
+# Start plotting
+fig, ax = plt.subplots(2, 2, sharex=True)
 for ii in range(args.nsim):
-    ax[0, 0].plot(tau, c_all[:, 0, 0, ii], 'k-', alpha=0.2)
-    ax[0, 1].plot(tau, c_all[:, 0, 1, ii], 'k-', alpha=0.2)
-    ax[1, 0].plot(tau, c_all[:, 1, 0, ii], 'k-', alpha=0.2)
-    ax[1, 1].plot(tau, c_all[:, 1, 1, ii], 'k-', alpha=0.2)
+    ax[0, 0].plot(tau, c_all[ii, :, 0, 0], 'k-', alpha=0.2)
+    ax[0, 1].plot(tau, c_all[ii, :, 0, 1], 'k-', alpha=0.2)
+    ax[1, 0].plot(tau, c_all[ii, :, 1, 0], 'k-', alpha=0.2)
+    ax[1, 1].plot(tau, c_all[ii, :, 1, 1], 'k-', alpha=0.2)
 
-ax[0, 0].plot(tau, np.mean(c_all[:, 0, 0, :], axis=-1), 'r-', linewidth=3)
-ax[0, 1].plot(tau, np.mean(c_all[:, 0, 1, :], axis=-1), 'r-', linewidth=3)
-ax[1, 0].plot(tau, np.mean(c_all[:, 1, 0, :], axis=-1), 'r-', linewidth=3)
-ax[1, 1].plot(tau, np.mean(c_all[:, 1, 1, :], axis=-1), 'r-', linewidth=3,
+ax[0, 0].plot(tau, np.mean(c_all[:, :, 0, 0], axis=0), 'r-', linewidth=3)
+ax[0, 1].plot(tau, np.mean(c_all[:, :, 0, 1], axis=0), 'r-', linewidth=3)
+ax[1, 0].plot(tau, np.mean(c_all[:, :, 1, 0], axis=0), 'r-', linewidth=3)
+ax[1, 1].plot(tau, np.mean(c_all[:, :, 1, 1], axis=0), 'r-', linewidth=3,
               label='ensemble mean')
 
 ax[0, 0].plot(tau, c_thry[:, 0, 0], 'c-')
 ax[0, 1].plot(tau, c_thry[:, 0, 1], 'c-')
 ax[1, 0].plot(tau, c_thry[:, 1, 0], 'c-')
-ax[1, 1].plot(tau, c_thry[:, 1, 1], 'c-', label='theory')
+ax[1, 1].plot(tau, c_thry[:, 1, 1], 'c-',
+              label='theory')
 
 ax[0, 0].set(ylabel=r'$C_{xx}$')
 ax[0, 1].set(ylabel=r'$C_{xy}$')
 ax[1, 0].set(xlabel=r'lag time, $\tau$ [s]', ylabel=r'$C_{yx}$')
 ax[1, 1].set(xlabel=r'lag time, $\tau$ [s]', ylabel=r'$C_{yy}$')
 
-# ax[0, 0].set_aspect(np.diff(ax[0, 0].set_xlim()) / np.diff(ax[0, 0].set_ylim()))
-# ax[0, 1].set_aspect(np.diff(ax[0, 1].set_xlim()) / np.diff(ax[0, 1].set_ylim()))
-# ax[1, 0].set_aspect(np.diff(ax[1, 0].set_xlim()) / np.diff(ax[1, 0].set_ylim()))
-# ax[1, 1].set_aspect(np.diff(ax[1, 1].set_xlim()) / np.diff(ax[1, 1].set_ylim()))
-
 plt.tight_layout()
 plt.legend()
-plt.show()
+
 if args.save:
+    argDict = vars(args)
+    argDict['datetime'] = datetime.now()
+
+    with open(os.path.join(args.savepath, args.filename + '_params.csv'), 'w') as csv_file:
+        w = csv.DictWriter(csv_file, argDict.keys())
+        w.writeheader()
+        w.writerow(argDict)
+
     fig.savefig(os.path.join(args.savepath, args.filename + '.pdf'), format='pdf')
+
+plt.show()
