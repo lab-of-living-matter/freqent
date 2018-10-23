@@ -1,6 +1,4 @@
 '''
-Harmonic trap test
-
 Now we calculate the correlation function for a Brownian particle with dynamics given by
 
 gamma dr/dt = -kr + alpha(cross(z, r)) + xi
