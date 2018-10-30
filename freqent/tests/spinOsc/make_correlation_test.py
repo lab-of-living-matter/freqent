@@ -47,6 +47,8 @@ parser.add_argument('-k', '--k_multiple', type=float, default=2,
                     help='Spring constant of harmonic potential in units of gamma')
 parser.add_argument('-a', '--alpha_multiple', type=float, default=2,
                     help='Rotational force strength in units of gamma')
+parser.add_argument('--seed_type', type=str, default='time',
+                    help='a string to decide what seed to use when generating trajectories. use ''time'' to use current microsecond or ''ints'' to use the integers 1,2,...,nsim as seeds.')
 
 args = parser.parse_args()
 # create object
@@ -74,8 +76,14 @@ def get_corr_mat(seed):
     return c
 
 
-seeds = np.arange(args.nsim)
-with multiprocessing.Pool(processes=int(args.nsim / 5)) as pool:
+if str(args.seed_type) == 'time':
+    seeds = np.arange(args.nsim) + datetime.now().microsecond
+elif str(args.seed_type) == 'ints':
+    seeds = np.arange(args.nsim)
+else:
+    ValueError('Expected seed_type = {''time'', ''ints''}, received {0}.'.format(int(args.seed)))
+
+with multiprocessing.Pool(processes=5) as pool:
     result = pool.map(get_corr_mat, seeds)
 
 c_all = np.asarray(result)
@@ -86,15 +94,15 @@ tau = np.linspace(-maxTau, maxTau, 2 * args.nsteps + 1)
 
 c_thry = np.zeros((int(2 * (args.nsteps) + 1), 2, 2))
 
-c0 = (r.D / (k / r.gamma)) * np.exp(-(k / r.gamma) * np.abs(tau))
-c1 = (r.D / (k / r.gamma)**2) * (k / r.gamma) * tau * np.exp(-(k / r.gamma) * np.abs(tau))
-c2 = ((r.D / (2 * (k / r.gamma)**3)) *
-      ((k / r.gamma) * np.abs(tau) + 1) * np.exp(-(k / r.gamma) * np.abs(tau)))
+# c0 = (r.D / (k / r.gamma)) * np.exp(-(k / r.gamma) * np.abs(tau))
+# c1 = (r.D / (k / r.gamma)**2) * (k / r.gamma) * tau * np.exp(-(k / r.gamma) * np.abs(tau))
+# c2 = ((r.D / (2 * (k / r.gamma)**3)) *
+#       ((k / r.gamma) * np.abs(tau) + 1) * np.exp(-(k / r.gamma) * np.abs(tau)))
 
-c_thry[:, 0, 0] = c0 + (alpha / r.gamma)**2 * c2
-c_thry[:, 1, 1] = c_thry[:, 0, 0]
-c_thry[:, 0, 1] = - (alpha / r.gamma) * c1
-c_thry[:, 1, 0] = -c_thry[:, 0, 1]
+c_thry[:, 0, 0] = (r.D / (k / r.gamma)) * np.exp(-(k / r.gamma) * np.abs(tau)) * np.cos((alpha / r.gamma) * tau)
+c_thry[:, 1, 1] = (r.D / (k / r.gamma)) * np.exp(-(k / r.gamma) * np.abs(tau)) * np.cos((alpha / r.gamma) * tau)
+c_thry[:, 0, 1] = (r.D / (k / r.gamma)) * np.exp(-(k / r.gamma) * np.abs(tau)) * -np.sin((alpha / r.gamma) * tau)
+c_thry[:, 1, 0] = (r.D / (k / r.gamma)) * np.exp(-(k / r.gamma) * np.abs(tau)) * np.sin((alpha / r.gamma) * tau)
 
 # Start plotting
 fig, ax = plt.subplots(2, 2, sharex=True)
@@ -127,6 +135,7 @@ plt.legend()
 if args.save:
     argDict = vars(args)
     argDict['datetime'] = datetime.now()
+    argDict['seeds'] = seeds
 
     with open(os.path.join(args.savepath, args.filename + '_params.csv'), 'w') as csv_file:
         w = csv.DictWriter(csv_file, argDict.keys())

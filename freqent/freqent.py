@@ -20,6 +20,8 @@ def entropy(c_fft, sample_spacing=1):
     c_fft : 3D array
         an MxNxN matrix that gives an NxN correlation matrix as a function of
         M frequencies
+    sample_spacing : float
+        Sample spacing (inverse of sample rate) of data in seconds. Default = 1
 
     Returns
     -------
