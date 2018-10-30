@@ -46,7 +46,9 @@ parser.add_argument('-k', '--k_multiple', type=float, default=2,
 parser.add_argument('-a', '--alpha_multiple', type=float, default=2,
                     help='Rotational force strength in units of gamma')
 parser.add_argument('--seed_type', type=str, default='time',
-                    help='a string to decide what seed to use when generating trajectories. use ''time'' to use current microsecond or ''ints'' to use the integers 1,2,...,nsim as seeds.')
+                    help=('a string to decide what seed to use when generating '
+                          'trajectories. use "time" to use current microsecond or '
+                          '"ints" to use the integers 1,2,...,nsim as seeds.'))
 
 args = parser.parse_args()
 # create object
