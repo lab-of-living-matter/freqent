@@ -70,8 +70,10 @@ for tind, dt in enumerate(dtArray):
 
 fig, ax = plt.subplots(1, 2, figsize=[8, 4])
 
+ax[0].loglog(dtArray, dtArray**-1, 'r--')
 ax[0].loglog(np.repeat(dtArray, args.nsim), sArray.real, 'ko', alpha=0.75)
 ax[0].set(xlabel=r'$\Delta t\ [s]$', ylabel=r'$dS/dt\ [k_B \ s^{-1}]$')
+ax[0].grid(1)
 # ax[0].set_aspect(np.diff(ax[0].set_xlim())[0] / np.diff(ax[0].set_ylim())[0])
 
 ax[1].semilogx(np.repeat(dtArray, args.nsim), np.repeat(dtArray, args.nsim) * sArray.real, 'ko', alpha=0.75)

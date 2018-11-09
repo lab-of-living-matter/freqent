@@ -59,30 +59,49 @@ else:
     ValueError('Expected seed = "time" or number, received {0}.'.format(str(args.seed)))
 
 # create object
+r = spinOscLangevin(dt=args.dt, nsteps=args.nsteps, kT=args.kT, gamma=args.gamma, r0=np.random.randn(2))
+
+
+def get_corr_mat(seed):
+    '''
+    helper function to pass to multiprocessing pool
+    '''
+    # np.random.seed(seed)
+    r.reset()
+    r.runSimulation(k=k, alpha=alpha)
+    c, t = fe.corr_matrix(r.pos,
+                          sample_spacing=r.dt,
+                          mode='full',
+                          method='auto',
+                          return_fft=False)
+    return c
+
+
+# create object
 for nind, n in enumerate(nsimArray):
-    txt = 'nsim = {nsim}, simulation set {n}/{N}'.format(nsim=n, n=nind + 1, N=args.nsim)
+    txt = 'nsim = {nsim}, simulation set {n}/{N}'.format(nsim=n, n=nind + 1, N=len(nsimArray))
     print(txt)
-    c = np.zeros((n, args.nsteps * 2 + 1, 2, 2))
-    for ii in range(n):
-        r = spinOscLangevin(dt=args.dt, nsteps=args.nsteps, kT=args.kT, gamma=args.gamma, r0=np.random.randn(2))
-        r.runSimulation(k=k, alpha=alpha)
-        c[ii, ...], tau = fe.corr_matrix(r.pos, sample_spacing=args.dt, return_fft=False)
+
+    # run simulations in parallel
+    if n < 5:
+        n_processes = int(n)
+    else:
+        n_processes = 5
+
+    with multiprocessing.Pool(processes=n_processes) as pool:
+        result = pool.map(get_corr_mat, np.arange(n))
+
+    c = np.asarray(result)
+
     c_mean = c.mean(axis=0)
     c_fft = np.fft.fftshift(np.fft.fft(np.fft.ifftshift(c_mean, axes=0), axis=0), axes=0) * args.dt
     sArray[nind] = fe.entropy(c_fft, sample_spacing=args.dt)
 
 
-# fig, ax = plt.subplots(1, 2, figsize=[8, 4])
+fig, ax = plt.subplots()
+ax.plot(nsimArray, sArray.real * args.dt, 'o')
 
-# ax[0].loglog(np.repeat(dtArray, args.nsim), sArray.real, 'ko', alpha=0.75)
-# ax[0].set(xlabel=r'$\Delta t\ [s]$', ylabel=r'$dS/dt\ [k_B \ s^{-1}]$')
-# # ax[0].set_aspect(np.diff(ax[0].set_xlim())[0] / np.diff(ax[0].set_ylim())[0])
-
-# ax[1].semilogx(np.repeat(dtArray, args.nsim), np.repeat(dtArray, args.nsim) * sArray.real, 'ko', alpha=0.75)
-# ax[1].set(xlabel=r'$\Delta t\ [s]$', ylabel=r'$\Delta t \times dS/dt$')
-# # ax[1].set_aspect(np.diff(ax[1].set_xlim())[0] / np.diff(ax[1].set_ylim())[0])
-
-# plt.tight_layout()
+plt.tight_layout()
 
 if args.save:
     argDict = vars(args)
