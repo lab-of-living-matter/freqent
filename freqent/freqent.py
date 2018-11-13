@@ -134,3 +134,5 @@ def _correlate_mean(x1, x2, sample_spacing=1, mode='full', method='auto', return
         return np.fft.fftshift(np.fft.fft(np.fft.ifftshift(xcorr))) * sample_spacing
     else:
         return xcorr
+
+

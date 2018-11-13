@@ -76,6 +76,21 @@ def get_corr_mat(seed):
     return c
 
 
+def get_corr_mat_fft(seed):
+    '''
+    helper function to pass to multiprocessing pool
+    '''
+    np.random.seed(seed)
+    r.reset()
+    r.runSimulation(k=k, alpha=alpha)
+    c_fft, omega = fe.corr_matrix(r.pos,
+                                  sample_spacing=r.dt,
+                                  mode='full',
+                                  method='auto',
+                                  return_fft=True)
+    return c_fft
+
+
 if str(args.seed_type) == 'time':
     seeds = np.arange(args.nsim) + datetime.now().microsecond
 elif str(args.seed_type) == 'ints':
@@ -84,15 +99,20 @@ else:
     ValueError('Expected seed_type = {''time'', ''ints''}, received {0}.'.format(int(args.seed)))
 
 with multiprocessing.Pool(processes=5) as pool:
-    result = pool.map(get_corr_mat, seeds)
+    result_real = pool.map(get_corr_mat, seeds)
+    result_freq = pool.map(get_corr_mat_fft, seeds)
 
-c_all = np.asarray(result)
+c_all = np.asarray(result_real)
+c_all_fft = np.asarray(result_freq)
 
 # get lag time vector
 maxTau = args.dt * args.nsteps
 tau = np.linspace(-maxTau, maxTau, 2 * args.nsteps + 1)
-
 c_thry = np.zeros((int(2 * (args.nsteps) + 1), 2, 2))
+
+# get frequency vector
+omega = 2 * np.pi * np.fft.fftshift(np.fft.fftfreq(len(tau), d=args.dt))
+c_thry_fft = np.zeros(c_thry.shape, dtype=complex)
 
 # c0 = (r.D / (k / r.gamma)) * np.exp(-(k / r.gamma) * np.abs(tau))
 # c1 = (r.D / (k / r.gamma)**2) * (k / r.gamma) * tau * np.exp(-(k / r.gamma) * np.abs(tau))
@@ -103,6 +123,13 @@ c_thry[:, 0, 0] = (r.D / (k / r.gamma)) * np.exp(-(k / r.gamma) * np.abs(tau)) *
 c_thry[:, 1, 1] = (r.D / (k / r.gamma)) * np.exp(-(k / r.gamma) * np.abs(tau)) * np.cos((alpha / r.gamma) * tau)
 c_thry[:, 0, 1] = (r.D / (k / r.gamma)) * np.exp(-(k / r.gamma) * np.abs(tau)) * -np.sin((alpha / r.gamma) * tau)
 c_thry[:, 1, 0] = (r.D / (k / r.gamma)) * np.exp(-(k / r.gamma) * np.abs(tau)) * np.sin((alpha / r.gamma) * tau)
+
+c_thry_fft_prefactor = 2 * r.D / (((2 + 1j * omega)**2 + 2**2) * (((2 - 1j * omega)**2 + 2**2)))
+c_thry_fft[:, 0, 0] = c_thry_fft_prefactor * (2**2 + 2**2 + omega**2)
+c_thry_fft[:, 1, 1] = c_thry_fft_prefactor * (2**2 + 2**2 + omega**2)
+c_thry_fft[:, 0, 1] = c_thry_fft_prefactor * 2j * 2 * omega
+c_thry_fft[:, 1, 0] = -c_thry_fft_prefactor * 2j * 2 * omega
+
 
 # Start plotting
 fig, ax = plt.subplots(2, 2, sharex=True)
@@ -128,6 +155,33 @@ ax[0, 0].set(ylabel=r'$C_{xx}$')
 ax[0, 1].set(ylabel=r'$C_{xy}$')
 ax[1, 0].set(xlabel=r'lag time, $\tau$ [s]', ylabel=r'$C_{yx}$')
 ax[1, 1].set(xlabel=r'lag time, $\tau$ [s]', ylabel=r'$C_{yy}$')
+
+plt.tight_layout()
+plt.legend()
+
+fig_fft, ax_fft = plt.subplots(2, 2, sharex=True)
+for ii in range(args.nsim):
+    ax_fft[0, 0].plot(omega, c_all_fft[ii, :, 0, 0].real, 'k-', alpha=0.2)
+    ax_fft[0, 1].plot(omega, c_all_fft[ii, :, 0, 1].imag, 'k-', alpha=0.2)
+    ax_fft[1, 0].plot(omega, c_all_fft[ii, :, 1, 0].imag, 'k-', alpha=0.2)
+    ax_fft[1, 1].plot(omega, c_all_fft[ii, :, 1, 1].real, 'k-', alpha=0.2)
+
+ax_fft[0, 0].plot(omega, np.mean(c_all_fft[:, :, 0, 0], axis=0).real, 'r-', linewidth=3)
+ax_fft[0, 1].plot(omega, np.mean(c_all_fft[:, :, 0, 1], axis=0).imag, 'r-', linewidth=3)
+ax_fft[1, 0].plot(omega, np.mean(c_all_fft[:, :, 1, 0], axis=0).imag, 'r-', linewidth=3)
+ax_fft[1, 1].plot(omega, np.mean(c_all_fft[:, :, 1, 1], axis=0).real, 'r-', linewidth=3,
+                  label='ensemble mean')
+
+ax_fft[0, 0].plot(omega, c_thry_fft[:, 0, 0].real, 'c-')
+ax_fft[0, 1].plot(omega, c_thry_fft[:, 0, 1].imag, 'c-')
+ax_fft[1, 0].plot(omega, c_thry_fft[:, 1, 0].imag, 'c-')
+ax_fft[1, 1].plot(omega, c_thry_fft[:, 1, 1].real, 'c-',
+                  label='theory')
+
+ax_fft[0, 0].set(xlim=[-15, 15], ylabel=r'$\Re \left[ \mathcal{F}\lbrace C_{xx} \rbrace \right]$')
+ax_fft[0, 1].set(xlim=[-15, 15], ylabel=r'$\Im \left[ \mathcal{F}\lbrace C_{xy} \rbrace \right]$')
+ax_fft[1, 0].set(xlim=[-15, 15], xlabel=r'frequency, $\omega$ [rad/s]', ylabel=r'$\Im \left[ \mathcal{F}\lbrace C_{yx} \rbrace \right]$')
+ax_fft[1, 1].set(xlim=[-15, 15], xlabel=r'frequency, $\omega$ [rad/s]', ylabel=r'$\Re \left[ \mathcal{F}\lbrace C_{yy} \rbrace \right]$')
 
 plt.tight_layout()
 plt.legend()
