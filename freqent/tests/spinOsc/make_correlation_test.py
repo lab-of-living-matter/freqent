@@ -197,5 +197,6 @@ if args.save:
         w.writerow(argDict)
 
     fig.savefig(os.path.join(args.savepath, args.filename + '.pdf'), format='pdf')
+    fig_fft.savefig(os.path.join(args.savepath, args.filename + '_fft.pdf'), format='pdf')
 
 plt.show()
