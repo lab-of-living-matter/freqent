@@ -34,7 +34,7 @@ def entropy(c_fft, sample_spacing=1):
     # get inverse of each NxN submatrix of c_fft. See the stackexchange:
     # https://stackoverflow.com/questions/41850712/compute-inverse-of-2d-arrays-along-the-third-axis-in-a-3d-array-without-loops
     c_fft_inv = np.linalg.inv(c_fft)
-    s = np.sum((np.transpose(c_fft_inv, (0, 2, 1)) - c_fft_inv) * c_fft)
+    s = np.sum((c_fft_inv - np.transpose(c_fft_inv, (0, 2, 1))) * c_fft)
 
     s /= 2 * T
 

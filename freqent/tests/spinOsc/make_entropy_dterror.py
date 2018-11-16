@@ -65,7 +65,9 @@ for tind, dt in enumerate(dtArray):
         print(txt)
         r = spinOscLangevin(dt=dt, nsteps=args.nsteps, kT=args.kT, gamma=args.gamma, r0=np.random.randn(2))
         r.runSimulation(k=k, alpha=alpha)
-        c_fft, omega = fe.corr_matrix(r.pos, sample_spacing=dt, return_fft=True)
+        c_fft, omega = fe.corr_matrix(r.pos,
+                                      sample_spacing=dt,
+                                      return_fft=True)
         sArray[tind * args.nsim + nind] = fe.entropy(c_fft, sample_spacing=dt)
 
 fig, ax = plt.subplots(1, 2, figsize=[8, 4])

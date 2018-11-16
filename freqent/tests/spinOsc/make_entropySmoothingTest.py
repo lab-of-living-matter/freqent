@@ -1,12 +1,3 @@
-'''
-Now we calculate the correlation function for a Brownian particle with dynamics given by
-
-gamma dr/dt = -kr + alpha(cross(z, r)) + xi
-
-correlation function defined as
-< r_mu(t) r_nu(t + tau) >
-'''
-
 import numpy as np
 import matplotlib.pyplot as plt
 from spinOscSimulation import spinOscLangevin
@@ -17,8 +8,9 @@ import argparse
 import multiprocessing
 from datetime import datetime
 import csv
+from astropy.convolution import Gaussian1DKernel, convolve
 mpl.rcParams['pdf.fonttype'] = 42
-
+plt.close('all')
 
 parser = argparse.ArgumentParser(description=('Perform simulations of Brownian particles'
                                               ' in a harmonic potential plus a rotating'
@@ -49,6 +41,7 @@ parser.add_argument('--seed_type', type=str, default='time',
                     help=('a string to decide what seed to use when generating '
                           'trajectories. use "time" to use current microsecond or '
                           '"ints" to use the integers 1,2,...,nsim as seeds.'))
+parser.add_argument('--scale_array', '-scale', type=float, nargs=3, default=[1, 10, 10])
 
 args = parser.parse_args()
 # create object
@@ -59,6 +52,10 @@ r = spinOscLangevin(dt=args.dt, nsteps=args.nsteps, kT=args.kT, gamma=args.gamma
 # equilibriationFrames = int(nsteps/2);
 k = args.k_multiple * r.gamma
 alpha = args.alpha_multiple * r.gamma
+
+# get the different scales of the Gaussian used to smooth the data
+scales = np.linspace(args.scale_array[0], args.scale_array[1], int(args.scale_array[2]))
+colors = plt.cm.winter(np.linspace(0, 1, len(scales)))
 
 
 def get_corr_mat(seed):
@@ -99,30 +96,20 @@ else:
     ValueError('Expected seed_type = {''time'', ''ints''}, received {0}.'.format(int(args.seed)))
 
 with multiprocessing.Pool(processes=5) as pool:
-    result_real = pool.map(get_corr_mat, seeds)
+    # result_real = pool.map(get_corr_mat, seeds)
     result_freq = pool.map(get_corr_mat_fft, seeds)
 
-c_all = np.asarray(result_real)
-c_all_fft = np.asarray(result_freq)
+# c_all = np.mean(np.asarray(result_real), axis=0)
+c_all_fft = np.mean(np.asarray(result_freq), axis=0)
 
-# get lag time vector
-maxTau = args.dt * args.nsteps
-tau = np.linspace(-maxTau, maxTau, 2 * args.nsteps + 1)
-c_thry = np.zeros((int(2 * (args.nsteps) + 1), 2, 2))
+c_all_fft_smoothed = np.zeros(c_all_fft.shape, dtype=complex)
+sArray = np.zeros(len(scales) + 1, dtype=complex)
+sArray[0] = fe.entropy(c_all_fft, sample_spacing=args.dt)
 
-# get frequency vector
-omega = 2 * np.pi * np.fft.fftshift(np.fft.fftfreq(len(tau), d=args.dt))
-c_thry_fft = np.zeros(c_thry.shape, dtype=complex)
-
-# c0 = (r.D / (k / r.gamma)) * np.exp(-(k / r.gamma) * np.abs(tau))
-# c1 = (r.D / (k / r.gamma)**2) * (k / r.gamma) * tau * np.exp(-(k / r.gamma) * np.abs(tau))
-# c2 = ((r.D / (2 * (k / r.gamma)**3)) *
-#       ((k / r.gamma) * np.abs(tau) + 1) * np.exp(-(k / r.gamma) * np.abs(tau)))
-
-c_thry[:, 0, 0] = (r.D / (k / r.gamma)) * np.exp(-(k / r.gamma) * np.abs(tau)) * np.cos((alpha / r.gamma) * tau)
-c_thry[:, 1, 1] = (r.D / (k / r.gamma)) * np.exp(-(k / r.gamma) * np.abs(tau)) * np.cos((alpha / r.gamma) * tau)
-c_thry[:, 0, 1] = (r.D / (k / r.gamma)) * np.exp(-(k / r.gamma) * np.abs(tau)) * -np.sin((alpha / r.gamma) * tau)
-c_thry[:, 1, 0] = (r.D / (k / r.gamma)) * np.exp(-(k / r.gamma) * np.abs(tau)) * np.sin((alpha / r.gamma) * tau)
+# maxTau = args.dt * args.nsteps
+# tau = np.linspace(-maxTau, maxTau, 2 * args.nsteps + 1)
+omega = 2 * np.pi * np.fft.fftshift(np.fft.fftfreq(2 * args.nsteps + 1, d=args.dt))
+c_thry_fft = np.zeros(c_all_fft.shape, dtype=complex)
 
 c_thry_fft_prefactor = 2 * r.D / (((args.k_multiple + 1j * omega)**2 + args.alpha_multiple**2) *
                                   ((args.k_multiple - 1j * omega)**2 + args.alpha_multiple**2))
@@ -131,61 +118,52 @@ c_thry_fft[:, 1, 1] = c_thry_fft_prefactor * (args.alpha_multiple**2 + args.k_mu
 c_thry_fft[:, 0, 1] = c_thry_fft_prefactor * 2j * args.alpha_multiple * omega
 c_thry_fft[:, 1, 0] = -c_thry_fft_prefactor * 2j * args.alpha_multiple * omega
 
-
-# Start plotting
 fig, ax = plt.subplots(2, 2, sharex=True)
-for ii in range(args.nsim):
-    ax[0, 0].plot(tau, c_all[ii, :, 0, 0], 'k-', alpha=0.2)
-    ax[0, 1].plot(tau, c_all[ii, :, 0, 1], 'k-', alpha=0.2)
-    ax[1, 0].plot(tau, c_all[ii, :, 1, 0], 'k-', alpha=0.2)
-    ax[1, 1].plot(tau, c_all[ii, :, 1, 1], 'k-', alpha=0.2)
+ax[0, 0].plot(omega, c_all_fft[:, 0, 0].real, 'k', alpha=0.7)
+ax[0, 1].plot(omega, c_all_fft[:, 0, 1].imag, 'k', alpha=0.7)
+ax[1, 0].plot(omega, c_all_fft[:, 1, 0].imag, 'k', alpha=0.7)
+ax[1, 1].plot(omega, c_all_fft[:, 1, 1].real, 'k', alpha=0.7)
 
-ax[0, 0].plot(tau, np.mean(c_all[:, :, 0, 0], axis=0), 'r-', linewidth=3)
-ax[0, 1].plot(tau, np.mean(c_all[:, :, 0, 1], axis=0), 'r-', linewidth=3)
-ax[1, 0].plot(tau, np.mean(c_all[:, :, 1, 0], axis=0), 'r-', linewidth=3)
-ax[1, 1].plot(tau, np.mean(c_all[:, :, 1, 1], axis=0), 'r-', linewidth=3,
-              label='ensemble mean')
+for ind, scale in enumerate(scales):
+    gauss = Gaussian1DKernel(scale)
+    c_all_fft_smoothed[:, 0, 0].real = convolve(c_all_fft[:, 0, 0].real, gauss)
+    c_all_fft_smoothed[:, 0, 1].imag = convolve(c_all_fft[:, 0, 1].imag, gauss)
+    c_all_fft_smoothed[:, 1, 0].imag = convolve(c_all_fft[:, 1, 0].imag, gauss)
+    c_all_fft_smoothed[:, 1, 1].real = convolve(c_all_fft[:, 1, 1].real, gauss)
+    ax[0, 0].plot(omega, c_all_fft_smoothed[:, 0, 0].real, color=colors[ind, :])
+    ax[0, 1].plot(omega, c_all_fft_smoothed[:, 0, 1].imag, color=colors[ind, :])
+    ax[1, 0].plot(omega, c_all_fft_smoothed[:, 1, 0].imag, color=colors[ind, :])
+    ax[1, 1].plot(omega, c_all_fft_smoothed[:, 1, 1].real, color=colors[ind, :])
+    sArray[ind + 1] = fe.entropy(c_all_fft_smoothed, sample_spacing=args.dt)
 
-ax[0, 0].plot(tau, c_thry[:, 0, 0], 'c-')
-ax[0, 1].plot(tau, c_thry[:, 0, 1], 'c-')
-ax[1, 0].plot(tau, c_thry[:, 1, 0], 'c-')
-ax[1, 1].plot(tau, c_thry[:, 1, 1], 'c-',
-              label='theory')
+ax[0, 0].plot(omega, c_thry_fft[:, 0, 0].real, 'r')
+ax[0, 1].plot(omega, c_thry_fft[:, 0, 1].imag, 'r')
+ax[1, 0].plot(omega, c_thry_fft[:, 1, 0].imag, 'r')
+ax[1, 1].plot(omega, c_thry_fft[:, 1, 1].real, 'r')
 
-ax[0, 0].set(ylabel=r'$C_{xx}$')
-ax[0, 1].set(ylabel=r'$C_{xy}$')
-ax[1, 0].set(xlabel=r'lag time, $\tau$ [s]', ylabel=r'$C_{yx}$')
-ax[1, 1].set(xlabel=r'lag time, $\tau$ [s]', ylabel=r'$C_{yy}$')
-
-plt.tight_layout()
-plt.legend()
-
-fig_fft, ax_fft = plt.subplots(2, 2, sharex=True)
-for ii in range(args.nsim):
-    ax_fft[0, 0].plot(omega, c_all_fft[ii, :, 0, 0].real, 'k-', alpha=0.2)
-    ax_fft[0, 1].plot(omega, c_all_fft[ii, :, 0, 1].imag, 'k-', alpha=0.2)
-    ax_fft[1, 0].plot(omega, c_all_fft[ii, :, 1, 0].imag, 'k-', alpha=0.2)
-    ax_fft[1, 1].plot(omega, c_all_fft[ii, :, 1, 1].real, 'k-', alpha=0.2)
-
-ax_fft[0, 0].plot(omega, np.mean(c_all_fft[:, :, 0, 0], axis=0).real, 'r-', linewidth=3)
-ax_fft[0, 1].plot(omega, np.mean(c_all_fft[:, :, 0, 1], axis=0).imag, 'r-', linewidth=3)
-ax_fft[1, 0].plot(omega, np.mean(c_all_fft[:, :, 1, 0], axis=0).imag, 'r-', linewidth=3)
-ax_fft[1, 1].plot(omega, np.mean(c_all_fft[:, :, 1, 1], axis=0).real, 'r-', linewidth=3,
-                  label='ensemble mean')
-
-ax_fft[0, 0].plot(omega, c_thry_fft[:, 0, 0].real, 'c-')
-ax_fft[0, 1].plot(omega, c_thry_fft[:, 0, 1].imag, 'c-')
-ax_fft[1, 0].plot(omega, c_thry_fft[:, 1, 0].imag, 'c-')
-ax_fft[1, 1].plot(omega, c_thry_fft[:, 1, 1].real, 'c-',
-                  label='theory')
-
-ax_fft[0, 0].set(xlim=[-15, 15], ylabel=r'$\Re \left[ \mathcal{F}\lbrace C_{xx} \rbrace \right]$')
-ax_fft[0, 1].set(xlim=[-15, 15], ylabel=r'$\Im \left[ \mathcal{F}\lbrace C_{xy} \rbrace \right]$')
-ax_fft[1, 0].set(xlim=[-15, 15], xlabel=r'frequency, $\omega$ [rad/s]', ylabel=r'$\Im \left[ \mathcal{F}\lbrace C_{yx} \rbrace \right]$')
-ax_fft[1, 1].set(xlim=[-15, 15], xlabel=r'frequency, $\omega$ [rad/s]', ylabel=r'$\Re \left[ \mathcal{F}\lbrace C_{yy} \rbrace \right]$')
+ax[0, 0].set(xlim=[-15, 15], ylabel=r'$\Re \left[ \mathcal{F}\lbrace C_{xx} \rbrace \right]$')
+ax[0, 1].set(xlim=[-15, 15], ylabel=r'$\Im \left[ \mathcal{F}\lbrace C_{xy} \rbrace \right]$')
+ax[1, 0].set(xlim=[-15, 15], xlabel=r'frequency, $\omega$ [rad/s]', ylabel=r'$\Im \left[ \mathcal{F}\lbrace C_{yx} \rbrace \right]$')
+ax[1, 1].set(xlim=[-15, 15], xlabel=r'frequency, $\omega$ [rad/s]', ylabel=r'$\Re \left[ \mathcal{F}\lbrace C_{yy} \rbrace \right]$')
 
 plt.tight_layout()
-plt.legend()
+# plt.legend()
+
+# plot difference between entropy measured and true entropy
+dw = 2 * np.pi / (args.dt * len(omega))  # the step size between frequencies
+sThry = 2 * args.alpha_multiple**2 / args.k_multiple
+
+fig_ent, ax_ent = plt.subplots(1, 2, figsize=[8, 4])
+ax_ent[0].plot(np.concatenate((np.zeros(1), scales)) * dw, sArray.real, 'ko')
+ax_ent[0].plot([0, scales.max() * dw], [sThry, sThry],
+               '--k', label='$S^{{thry}} = {0}$'.format(sThry))
+ax_ent[0].set(xlabel=r'$\sigma_{kernel}$',
+              ylabel=r'$d{S}/dt$')
+
+ax_ent[1].semilogy(np.concatenate((np.zeros(1), scales)) * dw, abs(sThry - sArray.real) / sThry, 'ko')
+ax_ent[1].set(xlabel=r'$\sigma_{kernel}$',
+              ylabel=r'$\vert \dot{S}_{thry} - \dot{S} \vert / \dot{S}_{thry}$')
+plt.tight_layout()
 
 if args.save:
     argDict = vars(args)
@@ -197,7 +175,7 @@ if args.save:
         w.writeheader()
         w.writerow(argDict)
 
-    fig.savefig(os.path.join(args.savepath, args.filename + '.pdf'), format='pdf')
-    fig_fft.savefig(os.path.join(args.savepath, args.filename + '_fft.pdf'), format='pdf')
+    fig.savefig(os.path.join(args.savepath, args.filename + '_corrFuncs.pdf'), format='pdf')
+    fig_ent.savefig(os.path.join(args.savepath, args.filename + '_entropy.pdf'), format='pdf')
 
 plt.show()

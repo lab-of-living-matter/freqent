@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import freqent.freqent as fe
-import scipy as sp
+# import scipy as sp
 
 gamma = 2e-8
 alpha = 10
@@ -32,7 +32,6 @@ distArray = np.zeros(len(scaleArray) * nRepeats)
 # simulate noise as gaussian distributed noise. Take into account that
 # diagonal elements are symmetric and off-diagonal elements are antisymmetric
 # Noise is also biggest around zero, gets smaller at ends. multiply by Gaussian
-gauss = sp.stats.norm(loc=0, scale=5)
 for ind, scale in enumerate(scaleArray):
     for ii in range(nRepeats):
         noise_sym_xx = np.random.normal(loc=0, scale=scale, size=int((c_thry_fft.shape[0] + 1) / 2))

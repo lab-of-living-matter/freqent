@@ -74,12 +74,12 @@ for ind, k in enumerate(kArray):
     sArray_kVary_fftDirect[ind] = fe.entropy(c_thry_fft, sample_spacing=dt)
     sArray_kVary_fftNumeric[ind] = fe.entropy(c_thry_fftNumeric, sample_spacing=dt)
 
-fig, ax = plt.subplots(1, 2, figsize=[8,4])
+fig, ax = plt.subplots(1, 2, figsize=[8, 4])
 # first plot theoretical results
 kArray_fineSpacing = np.linspace(kArray.min(), kArray.max(), 100)
 ax[0].plot(kArray_fineSpacing, 2 * alpha_fixed**2 / kArray_fineSpacing, 'k', label='theory')
-ax[0].plot(kArray, -sArray_kVary_fftDirect.real, 'ro', alpha=0.5, label='fft direct')
-ax[0].plot(kArray, -sArray_kVary_fftNumeric.real, 'bd', alpha=0.5, label='fft numeric')
+ax[0].plot(kArray, sArray_kVary_fftDirect.real, 'ro', alpha=0.5, label='fft direct')
+ax[0].plot(kArray, sArray_kVary_fftNumeric.real, 'bd', alpha=0.5, label='fft numeric')
 
 ax[0].set_xlabel(r'$k / \gamma$')
 ax[0].set_ylabel(r'$\langle dS/dt \rangle$')
@@ -88,8 +88,8 @@ ax[0].set_title(r'$\alpha / \gamma=${a:0.2f}'.format(a=alpha_fixed))
 
 alphaArray_fineSpacing = np.linspace(alphaArray.min(), alphaArray.max(), 100)
 ax[1].plot(alphaArray_fineSpacing, 2 * alphaArray_fineSpacing**2 / k_fixed, 'k', label=r'$2 \alpha^2 / k$')
-ax[1].plot(alphaArray, -sArray_alphaVary_fftDirect.real, 'ro', alpha=0.5, label='theoretical F.T.')
-ax[1].plot(alphaArray, -sArray_alphaVary_fftNumeric.real, 'bd', alpha=0.5, label='numerical F.T.')
+ax[1].plot(alphaArray, sArray_alphaVary_fftDirect.real, 'ro', alpha=0.5, label='theoretical F.T.')
+ax[1].plot(alphaArray, sArray_alphaVary_fftNumeric.real, 'bd', alpha=0.5, label='numerical F.T.')
 
 ax[1].set_xlabel(r'$\alpha / \gamma$')
 ax[1].set_ylabel(r'$\langle dS/dt \rangle$')
@@ -125,5 +125,5 @@ ax[1].legend()
 
 plt.tight_layout()
 
-plt.savefig(os.path.join(savepath, 'algorithmTest_theoreticalCorrelationsInput.pdf'), format='pdf')
+# plt.savefig(os.path.join(savepath, 'algorithmTest_theoreticalCorrelationsInput.pdf'), format='pdf')
 plt.show()
