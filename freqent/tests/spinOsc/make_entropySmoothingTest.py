@@ -40,7 +40,9 @@ parser.add_argument('-a', '--alpha_multiple', type=float, default=2,
 parser.add_argument('--seed_type', type=str, default='time',
                     help=('a string to decide what seed to use when generating '
                           'trajectories. use "time" to use current microsecond or '
-                          '"ints" to use the integers 1,2,...,nsim as seeds.'))
+                          '"input" to directly input the seed'))
+parser.add_argument('--seed_input', '-seed', type=float, default=None,
+                    help='if seed_type=input, what the seed explicitly is')
 parser.add_argument('--scale_array', '-scale', type=float, nargs=3, default=[1, 10, 10])
 
 args = parser.parse_args()
@@ -90,12 +92,17 @@ def get_corr_mat_fft(seed):
 
 if str(args.seed_type) == 'time':
     seeds = np.arange(args.nsim) + datetime.now().microsecond
-elif str(args.seed_type) == 'ints':
-    seeds = np.arange(args.nsim)
+elif str(args.seed_type) == 'input':
+    seeds = np.arange(args.seed_input, args.seed_input + args.nsim)
 else:
     ValueError('Expected seed_type = {''time'', ''ints''}, received {0}.'.format(int(args.seed)))
 
-with multiprocessing.Pool(processes=5) as pool:
+if args.nsim < 5:
+    nProcesses = args.nsim
+elif args.nsim >= 5:
+    nProcesses = 5
+
+with multiprocessing.Pool(processes=nProcesses) as pool:
     # result_real = pool.map(get_corr_mat, seeds)
     result_freq = pool.map(get_corr_mat_fft, seeds)
 
@@ -160,9 +167,9 @@ ax_ent[0].plot([0, scales.max() * dw], [sThry, sThry],
 ax_ent[0].set(xlabel=r'$\sigma_{kernel}$',
               ylabel=r'$d{S}/dt$')
 
-ax_ent[1].semilogy(np.concatenate((np.zeros(1), scales)) * dw, abs(sThry - sArray.real) / sThry, 'ko')
+ax_ent[1].loglog(np.concatenate((np.zeros(1), scales)) * dw, abs(sThry - sArray.real), 'ko')
 ax_ent[1].set(xlabel=r'$\sigma_{kernel}$',
-              ylabel=r'$\vert \dot{S}_{thry} - \dot{S} \vert / \dot{S}_{thry}$')
+              ylabel=r'$\vert \dot{S}_{thry} - \dot{S} \vert$')
 plt.tight_layout()
 
 if args.save:
