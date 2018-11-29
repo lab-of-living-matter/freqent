@@ -10,7 +10,7 @@ from datetime import datetime
 import csv
 from astropy.convolution import Gaussian1DKernel, convolve
 mpl.rcParams['pdf.fonttype'] = 42
-plt.close('all')
+# plt.close('all')
 
 parser = argparse.ArgumentParser(description=('Perform simulations of Brownian particles'
                                               ' in a harmonic potential plus a rotating'
@@ -41,6 +41,9 @@ parser.add_argument('--seed_type', type=str, default='time',
                     help=('a string to decide what seed to use when generating '
                           'trajectories. use "time" to use current microsecond or '
                           '"input" to directly input the seed'))
+parser.add_argument('--norm', '-norm', type=str, default='unbiased',
+                    help=('Normalization of correlation function to use. Options are '
+                          '"biased", "unbiased", and "none"'))
 parser.add_argument('--seed_input', '-seed', type=float, default=None,
                     help='if seed_type=input, what the seed explicitly is')
 parser.add_argument('--scale_array', '-scale', type=float, nargs=3, default=[1, 10, 10])
@@ -71,6 +74,7 @@ def get_corr_mat(seed):
                           sample_spacing=r.dt,
                           mode='full',
                           method='auto',
+                          norm=args.norm,
                           return_fft=False)
     return c
 
@@ -86,6 +90,7 @@ def get_corr_mat_fft(seed):
                                   sample_spacing=r.dt,
                                   mode='full',
                                   method='auto',
+                                  norm=args.norm,
                                   return_fft=True)
     return c_fft
 

@@ -41,7 +41,7 @@ def entropy(c_fft, sample_spacing=1):
     return s
 
 
-def corr_matrix(data, sample_spacing=1, mode='full', method='auto', return_fft=False):
+def corr_matrix(data, sample_spacing=1, mode='full', method='auto', norm='unbiased', return_fft=False):
     '''
     Takes time series data of multiple variables and returns a correlation matrix
     for every lag time
@@ -54,9 +54,14 @@ def corr_matrix(data, sample_spacing=1, mode='full', method='auto', return_fft=F
     sample_spacing : float
         Sample spacing (inverse of sample rate) of data in seconds. Default = 1
     mode : str {'valid', 'same', 'full'}, optional
-        Refer to the 'scipy.signal.convolve' docstring. Default is 'full'.
+        Refer to the 'scipy.signal.correlate' docstring. Default is 'full'.
     method : str {'auto', 'direct', 'fft'}, optional
-        Refer to the 'scipy.signal.convolve' docstring. Default is 'auto'.
+        Refer to the 'scipy.signal.correlate' docstring. Default is 'auto'.
+    norm : str {'unbiased', 'biased', 'none'}, optional
+        Determine which normalization to use on correlation function. If 'unbiased',
+        divide by number of points in sum for each lag time. If 'biased', divide by
+        number of elements in time series. If 'none', don't normalize correlation.
+        Default is 'unbiased'
     return_fft : bool (optional)
         Boolean asking whether to return the temporal fourier transform of the
         correlation matrix
@@ -85,7 +90,7 @@ def corr_matrix(data, sample_spacing=1, mode='full', method='auto', return_fft=F
 
     for idx in idx_pairs:
         c[:, idx[0], idx[1]] = _correlate_mean(data[idx[0]], data[idx[1]], sample_spacing,
-                                               mode, method, return_fft)
+                                               mode, method, norm, return_fft)
 
     if not return_fft:
         c = c.real
@@ -97,20 +102,25 @@ def corr_matrix(data, sample_spacing=1, mode='full', method='auto', return_fft=F
         return c, freqs
 
 
-def _correlate_mean(x1, x2, sample_spacing=1, mode='full', method='auto', return_fft=False):
+def _correlate_mean(x1, x2, sample_spacing=1, mode='full', method='auto', norm='unbiased', return_fft=False):
     '''
-    Calculate cross-correlation between two time series using fourier transform
-    Wrapper around scipy.signal.correlate function that takes a mean rather than
-    just summing up the signal
+    Calculate cross-correlation between two time series. Just a wrapper
+    around scipy.signal.correlate function that takes a mean rather than
+    just a sum. Helper function for corr_matrix.
 
     Parameters
     ----------
     x1, x2 : 1D array
         data to find cross-correlation between
     mode : str {'valid', 'same', 'full'}, optional
-        Refer to the 'scipy.signal.convolve' docstring. Default is 'full'.
+        Refer to the 'scipy.signal.correlate' docstring. Default is 'full'.
     method : str {'auto', 'direct', 'fft'}, optional
-        Refer to the 'scipy.signal.convolve' docstring. Default is 'auto'.
+        Refer to the 'scipy.signal.correlate' docstring. Default is 'auto'.
+    norm : str {'unbiased', 'biased', 'none'}, optional
+        Determine which normalization to use on correlation function. If 'unbiased',
+        divide by number of points in sum for each lag time. If 'biased', divide by
+        number of elements in time series. If 'none', don't normalize correlation.
+        Default is 'unbiased'
     return_fft : bool (optional)
         boolean asking whether to return the temporal fourier transform of the
         correlation matrix
@@ -126,9 +136,16 @@ def _correlate_mean(x1, x2, sample_spacing=1, mode='full', method='auto', return
     '''
 
     N = max(len(x1), len(x2))
-    n = N * np.ones(N) - np.arange(N)
-    n = np.concatenate((np.flipud(n)[:-1], n))
-    xcorr = signal.correlate(x1, x2, mode, method) / n
+    xcorr = signal.correlate(x1 - x1.mean(), x2 - x2.mean(), mode, method)
+
+    if norm in {'biased', 'Biased'}:
+        xcorr /= N
+    elif norm in {'unbiased', 'Unbiased'}:
+        n = N * np.ones(N) - np.arange(N)
+        n = np.concatenate((np.flipud(n)[:-1], n))
+        xcorr /= n
+    elif norm not in {'biased', 'Biased', 'unbiased', 'Unbiased', 'none', 'None'}:
+        raise ValueError('norm = {"biased", "unbiased", or "none"}. Given as {0}'.format(norm))
 
     if return_fft:
         return np.fft.fftshift(np.fft.fft(np.fft.ifftshift(xcorr))) * sample_spacing

@@ -45,6 +45,9 @@ parser.add_argument('-k', '--k_multiple', type=float, default=2,
                     help='Spring constant of harmonic potential in units of gamma')
 parser.add_argument('-a', '--alpha_multiple', type=float, default=2,
                     help='Rotational force strength in units of gamma')
+parser.add_argument('--norm', '-norm', type=str, default='unbiased',
+                    help=('Normalization of correlation function to use. Options are '
+                          '"biased", "unbiased", and "none"'))
 parser.add_argument('--seed_type', type=str, default='time',
                     help=('a string to decide what seed to use when generating '
                           'trajectories. use "time" to use current microsecond or '
@@ -72,6 +75,7 @@ def get_corr_mat(seed):
                           sample_spacing=r.dt,
                           mode='full',
                           method='auto',
+                          norm=args.norm,
                           return_fft=False)
     return c
 
@@ -87,6 +91,7 @@ def get_corr_mat_fft(seed):
                                   sample_spacing=r.dt,
                                   mode='full',
                                   method='auto',
+                                  norm=args.norm,
                                   return_fft=True)
     return c_fft
 
