@@ -126,10 +126,10 @@ c_thry_fft[:, 0, 1] = c_thry_fft_prefactor * 2j * args.alpha_multiple * omega
 c_thry_fft[:, 1, 0] = -c_thry_fft_prefactor * 2j * args.alpha_multiple * omega
 
 fig, ax = plt.subplots(2, 2, sharex=True)
-ax[0, 0].plot(omega, c_all_fft[:, 0, 0].real, 'k', alpha=0.7)
-ax[0, 1].plot(omega, c_all_fft[:, 0, 1].imag, 'k', alpha=0.7)
-ax[1, 0].plot(omega, c_all_fft[:, 1, 0].imag, 'k', alpha=0.7)
-ax[1, 1].plot(omega, c_all_fft[:, 1, 1].real, 'k', alpha=0.7)
+ax[0, 0].plot(omega, c_all_fft[:, 0, 0].real, 'k', alpha=0.5)
+ax[0, 1].plot(omega, c_all_fft[:, 0, 1].imag, 'k', alpha=0.5)
+ax[1, 0].plot(omega, c_all_fft[:, 1, 0].imag, 'k', alpha=0.5)
+ax[1, 1].plot(omega, c_all_fft[:, 1, 1].real, 'k', alpha=0.5)
 
 for ind, scale in enumerate(scales):
     gauss = Gaussian1DKernel(scale)
