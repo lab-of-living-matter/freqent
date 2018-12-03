@@ -45,7 +45,7 @@ parser.add_argument('-k', '--k_multiple', type=float, default=2,
                     help='Spring constant of harmonic potential in units of gamma')
 parser.add_argument('-a', '--alpha_multiple', type=float, default=2,
                     help='Rotational force strength in units of gamma')
-parser.add_argument('--norm', '-norm', type=str, default='unbiased',
+parser.add_argument('--norm', '-norm', type=str, default='biased',
                     help=('Normalization of correlation function to use. Options are '
                           '"biased", "unbiased", and "none"'))
 parser.add_argument('--seed_type', type=str, default='time',

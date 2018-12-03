@@ -41,7 +41,7 @@ def entropy(c_fft, sample_spacing=1):
     return s
 
 
-def corr_matrix(data, sample_spacing=1, mode='full', method='auto', norm='unbiased', return_fft=False):
+def corr_matrix(data, sample_spacing=1, mode='full', method='auto', norm='biased', return_fft=False):
     '''
     Takes time series data of multiple variables and returns a correlation matrix
     for every lag time
@@ -61,7 +61,7 @@ def corr_matrix(data, sample_spacing=1, mode='full', method='auto', norm='unbias
         Determine which normalization to use on correlation function. If 'unbiased',
         divide by number of points in sum for each lag time. If 'biased', divide by
         number of elements in time series. If 'none', don't normalize correlation.
-        Default is 'unbiased'
+        Default is 'biased'
     return_fft : bool (optional)
         Boolean asking whether to return the temporal fourier transform of the
         correlation matrix
@@ -102,7 +102,7 @@ def corr_matrix(data, sample_spacing=1, mode='full', method='auto', norm='unbias
         return c, freqs
 
 
-def _correlate_mean(x1, x2, sample_spacing=1, mode='full', method='auto', norm='unbiased', return_fft=False):
+def _correlate_mean(x1, x2, sample_spacing=1, mode='full', method='auto', norm='biased', return_fft=False):
     '''
     Calculate cross-correlation between two time series. Just a wrapper
     around scipy.signal.correlate function that takes a mean rather than
@@ -120,7 +120,7 @@ def _correlate_mean(x1, x2, sample_spacing=1, mode='full', method='auto', norm='
         Determine which normalization to use on correlation function. If 'unbiased',
         divide by number of points in sum for each lag time. If 'biased', divide by
         number of elements in time series. If 'none', don't normalize correlation.
-        Default is 'unbiased'
+        Default is 'biased'
     return_fft : bool (optional)
         boolean asking whether to return the temporal fourier transform of the
         correlation matrix
@@ -144,7 +144,7 @@ def _correlate_mean(x1, x2, sample_spacing=1, mode='full', method='auto', norm='
         n = N * np.ones(N) - np.arange(N)
         n = np.concatenate((np.flipud(n)[:-1], n))
         xcorr /= n
-    elif norm not in {'biased', 'Biased', 'unbiased', 'Unbiased', 'none', 'None'}:
+    elif norm not in {'biased', 'Biased', 'unbiased', 'Unbiased', 'none', 'None', None}:
         raise ValueError('norm = {"biased", "unbiased", or "none"}. Given as {0}'.format(norm))
 
     if return_fft:

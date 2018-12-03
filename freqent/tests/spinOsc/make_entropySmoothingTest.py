@@ -9,8 +9,10 @@ import multiprocessing
 from datetime import datetime
 import csv
 from astropy.convolution import Gaussian1DKernel, convolve
+# import scipy.signal as signal
+
 mpl.rcParams['pdf.fonttype'] = 42
-# plt.close('all')
+plt.close('all')
 
 parser = argparse.ArgumentParser(description=('Perform simulations of Brownian particles'
                                               ' in a harmonic potential plus a rotating'
@@ -47,6 +49,7 @@ parser.add_argument('--norm', '-norm', type=str, default='unbiased',
 parser.add_argument('--seed_input', '-seed', type=float, default=None,
                     help='if seed_type=input, what the seed explicitly is')
 parser.add_argument('--scale_array', '-scale', type=float, nargs=3, default=[1, 10, 10])
+# parser.add_argument('--window', '-window', type=str, default=)
 
 args = parser.parse_args()
 # create object
