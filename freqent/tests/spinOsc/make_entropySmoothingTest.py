@@ -49,7 +49,8 @@ parser.add_argument('--norm', '-norm', type=str, default='unbiased',
 parser.add_argument('--seed_input', '-seed', type=float, default=None,
                     help='if seed_type=input, what the seed explicitly is')
 parser.add_argument('--scale_array', '-scale', type=float, nargs=3, default=[1, 10, 10])
-# parser.add_argument('--window', '-window', type=str, default=)
+parser.add_argument('--window', '-window', type=str, default='boxcar',
+                    help='Window function to multiple data by')
 
 args = parser.parse_args()
 # create object

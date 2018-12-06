@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.signal as signal
+import scipy.fftpack as fftpack
 import warnings
 from itertools import product
 
@@ -41,7 +42,8 @@ def entropy(c_fft, sample_spacing=1):
     return s
 
 
-def corr_matrix(data, sample_spacing=1, mode='full', method='auto', norm='biased', return_fft=False):
+def corr_matrix(data, sample_spacing=1, mode='full', method='auto',
+                norm='biased', window='boxcar', return_fft=False):
     '''
     Takes time series data of multiple variables and returns a correlation matrix
     for every lag time
@@ -89,8 +91,10 @@ def corr_matrix(data, sample_spacing=1, mode='full', method='auto', norm='biased
     idx_pairs = list(product(np.arange(nvars), repeat=2))
 
     for idx in idx_pairs:
-        c[:, idx[0], idx[1]] = _correlate_mean(data[idx[0]], data[idx[1]], sample_spacing,
-                                               mode, method, norm, return_fft)
+        # c[:, idx[0], idx[1]] = _correlate_mean(data[idx[0]], data[idx[1]], sample_spacing,
+        #                                        mode, method, norm, return_fft)
+        c[:, idx[0], idx[1]] = _direct_csd(data[idx[0]], data[idx[1]], sample_spacing,
+                                           window, return_fft)
 
     if not return_fft:
         c = c.real
@@ -98,11 +102,159 @@ def corr_matrix(data, sample_spacing=1, mode='full', method='auto', norm='biased
         tau = np.linspace(-maxTau, maxTau, 2 * npts - 1)
         return c, tau
     else:
-        freqs = np.fft.fftshift(np.fft.fftfreq(2 * npts - 1, d=sample_spacing))
+        freqs = np.fft.fftshift(np.fft.fftfreq(npts, d=sample_spacing))
         return c, freqs
 
 
-def _correlate_mean(x1, x2, sample_spacing=1, mode='full', method='auto', norm='biased', return_fft=False):
+def _direct_csd(x, y, sample_spacing=1.0, window='boxcar', nperseg=None,
+                noverlap=None, nfft=None, detrend='constant', padded=False,
+                return_fft=False):
+    '''
+    Estimate the direct cross power spectral density using Welch's method.
+    Basically just copying scipy.signal.csd with some default differences.
+
+    Parameters
+    ---------
+    x : array_like
+        Array or sequence containing the data to be analyzed.
+    y : array_like
+        Array or sequence containing the data to be analyzed. If this is
+        the same object in memory as `x` (i.e. ``_spectral_helper(x,
+        x, ...)``), the extra computations are spared.
+    sample_spacing : float, optional
+        Sampling interval of the time series. Defaults to 1.0.
+    window : str or tuple or array_like, optional
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `scipy.signal.get_window` to generate the window values,
+        which are DFT-even by default. See `get_window` for a list of windows
+        and required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg. Defaults
+        to a Boxcar window.
+    nperseg : int, optional
+        Length of each segment. Defaults to None, which takes nperseg=len(x)
+        but if window is str or
+        tuple, is set to 256, and if window is array_like, is set to the
+        length of the window.
+    noverlap : int, optional
+        Number of points to overlap between segments. If `None`,
+        ``noverlap = nperseg // 2``. Defaults to `None`.
+    nfft : int, optional
+        Length of the FFT used, if a zero padded FFT is desired. If
+        `None`, the FFT length is `nperseg`. Defaults to `None`.
+    detrend : str or function or `False`, optional
+        Specifies how to detrend each segment. If `detrend` is a
+        string, it is passed as the `type` argument to the `detrend`
+        function. If it is a function, it takes a segment and returns a
+        detrended segment. If `detrend` is `False`, no detrending is
+        done. Defaults to 'constant'.
+    padded : bool, optional
+        Specifies whether the input signal is zero-padded at the end to
+        make the signal fit exactly into an integer number of window
+        segments, so that all of the signal is included in the output.
+        Defaults to `False`. Padding occurs after boundary extension, if
+        `boundary` is not `None`, and `padded` is `True`.
+
+    '''
+
+    # make sure we have np.arrays and subtract mean
+    x = np.asarray(x)
+    y = np.asarray(y)
+    same_data = y is x
+
+    # Check if x and y are the same length, zero-pad if necessary
+    if not same_data:
+        if x.shape[0] != y.shape[0]:
+            if x.shape[0] < y.shape[0]:
+                pad_shape = list(x.shape)
+                pad_shape[0] = y.shape[0] - x.shape[0]
+                x = np.concatenate((x, np.zeros(pad_shape)), -1)
+            else:
+                pad_shape = list(y.shape)
+                pad_shape[0] = x.shape[0] - y.shape[0]
+                y = np.concatenate((y, np.zeros(pad_shape)), -1)
+
+    # nperseg checks
+    if nperseg is not None:  # if specified by user
+        nperseg = int(nperseg)
+        if nperseg < 1:
+            raise ValueError('nperseg must be a positive integer')
+    else:
+        nperseg = len(x)
+
+    # nfft checks
+    if nfft is None:
+        nfft = nperseg
+    elif nfft < nperseg:
+        raise ValueError('nfft must be greater than or equal to nperseg.')
+    else:
+        nfft = int(nfft)
+
+    # noverlap checks
+    if noverlap is None:
+        noverlap = nperseg // 2
+    else:
+        noverlap = int(noverlap)
+    if noverlap >= nperseg:
+        raise ValueError('noverlap must be less than nperseg.')
+    nstep = nperseg - noverlap
+
+    # Handle detrending and window functions
+    if not detrend:
+        def detrend_func(d):
+            return d
+    elif not hasattr(detrend, '__call__'):
+        def detrend_func(d):
+            return signal.signaltools.detrend(d, type=detrend, axis=-1)
+    else:
+        detrend_func = detrend
+
+    win = signal.get_window(window, Nx=nperseg)
+    scale = sample_spacing / (win * win).sum()
+
+    if padded:
+        # Pad to integer number of windowed segments
+        # I.e make x.shape[-1] = nperseg + (nseg-1)*nstep, with integer nseg
+        nadd = (-(x.shape[-1] - nperseg) % nstep) % nperseg
+        zeros_shape = list(x.shape[:-1]) + [nadd]
+        x = np.concatenate((x, np.zeros(zeros_shape)), axis=-1)
+        if not same_data:
+            zeros_shape = list(y.shape[:-1]) + [nadd]
+            y = np.concatenate((y, np.zeros(zeros_shape)), axis=-1)
+
+    # break up array into segments, window each segment
+    # step = nperseg - noverlap
+    # shape = x.shape[:-1] + ((x.shape[-1] - noverlap) // step, nperseg)
+    # strides = x.strides[:-1] + (step * x.strides[-1], x.strides[-1])
+    # x_reshaped = np.lib.stride_tricks.as_strided(x, shape=shape, strides=strides)
+
+    # # detrend each segment
+    # x_reshaped = detrend_func(x_reshaped)
+
+    # x_reshaped = win * x_reshaped
+    # x_fft = np.fft.fft(x_reshaped, n=nfft)
+    x_fft = signal.spectral._fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, 'twosided')
+
+    if not same_data:
+        # y_reshaped = np.lib.stride_tricks.as_strided(y, shape=shape, strides=strides)
+        # y_reshaped = detrend_func(y_reshaped)
+        # y_reshaped = win * y_reshaped
+        # y_fft = np.fft.fft(y_reshaped, n=nfft)
+        y_fft = signal.spectral._fft_helper(y, win, detrend_func, nperseg, noverlap, nfft, 'twosided')
+        csd = x_fft * np.conjugate(y_fft)
+    else:
+        csd = x_fft * np.conjugate(x_fft)
+
+    csd *= scale
+    csd = np.mean(csd, axis=0)
+    if not return_fft:
+        # return the cross-covariance sequence
+        ccvs = np.fft.fftshift(np.fft.ifft(csd))
+        return ccvs
+    else:
+        return np.fft.fftshift(csd)
+
+
+def _correlate_mean(x, y, sample_spacing=1.0, mode='full', method='auto', norm='biased', return_fft=False):
     '''
     Calculate cross-correlation between two time series. Just a wrapper
     around scipy.signal.correlate function that takes a mean rather than
@@ -110,7 +262,7 @@ def _correlate_mean(x1, x2, sample_spacing=1, mode='full', method='auto', norm='
 
     Parameters
     ----------
-    x1, x2 : 1D array
+    x, y : 1D array
         data to find cross-correlation between
     mode : str {'valid', 'same', 'full'}, optional
         Refer to the 'scipy.signal.correlate' docstring. Default is 'full'.
@@ -128,15 +280,15 @@ def _correlate_mean(x1, x2, sample_spacing=1, mode='full', method='auto', norm='
     Returns
     -------
     xcorr : 1D array
-        cross correlation between x1 and x2. Returns fft(xcorr) if return_fft=True
+        cross correlation between x and y. Returns fft(xcorr) if return_fft=True
 
     See also
     --------
     scipy.signal.correlate
     '''
 
-    N = max(len(x1), len(x2))
-    xcorr = signal.correlate(x1 - x1.mean(), x2 - x2.mean(), mode, method)
+    N = max(len(x), len(y))
+    xcorr = signal.correlate(x - x.mean(), y - y.mean(), mode, method)
 
     if norm in {'biased', 'Biased'}:
         xcorr /= N
