@@ -222,24 +222,22 @@ def _direct_csd(x, y, sample_spacing=1.0, window='boxcar', nperseg=None,
             y = np.concatenate((y, np.zeros(zeros_shape)), axis=-1)
 
     # break up array into segments, window each segment
-    # step = nperseg - noverlap
-    # shape = x.shape[:-1] + ((x.shape[-1] - noverlap) // step, nperseg)
-    # strides = x.strides[:-1] + (step * x.strides[-1], x.strides[-1])
-    # x_reshaped = np.lib.stride_tricks.as_strided(x, shape=shape, strides=strides)
+    step = nperseg - noverlap
+    shape = x.shape[:-1] + ((x.shape[-1] - noverlap) // step, nperseg)
+    strides = x.strides[:-1] + (step * x.strides[-1], x.strides[-1])
+    x_reshaped = np.lib.stride_tricks.as_strided(x, shape=shape, strides=strides)
 
-    # # detrend each segment
-    # x_reshaped = detrend_func(x_reshaped)
+    # detrend each segment
+    x_reshaped = detrend_func(x_reshaped)
 
-    # x_reshaped = win * x_reshaped
-    # x_fft = np.fft.fft(x_reshaped, n=nfft)
-    x_fft = signal.spectral._fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, 'twosided')
+    x_reshaped = win * x_reshaped
+    x_fft = np.fft.fft(x_reshaped, n=nfft)
 
     if not same_data:
-        # y_reshaped = np.lib.stride_tricks.as_strided(y, shape=shape, strides=strides)
-        # y_reshaped = detrend_func(y_reshaped)
-        # y_reshaped = win * y_reshaped
-        # y_fft = np.fft.fft(y_reshaped, n=nfft)
-        y_fft = signal.spectral._fft_helper(y, win, detrend_func, nperseg, noverlap, nfft, 'twosided')
+        y_reshaped = np.lib.stride_tricks.as_strided(y, shape=shape, strides=strides)
+        y_reshaped = detrend_func(y_reshaped)
+        y_reshaped = win * y_reshaped
+        y_fft = np.fft.fft(y_reshaped, n=nfft)
         csd = x_fft * np.conjugate(y_fft)
     else:
         csd = x_fft * np.conjugate(x_fft)
