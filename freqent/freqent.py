@@ -1,11 +1,10 @@
 import numpy as np
 import scipy.signal as signal
-import scipy.fftpack as fftpack
 import warnings
 from itertools import product
 
 
-def entropy(c_fft, sample_spacing=1):
+def entropy(c_fft, T=1.0):
     '''
     Calculate the entropy using the frequency space measure:
 
@@ -30,7 +29,7 @@ def entropy(c_fft, sample_spacing=1):
         entropy production rate given correlation functions
     '''
 
-    T = sample_spacing * (c_fft.shape[0] - 1)
+    # T = sample_spacing * (c_fft.shape[0] - 1)
 
     # get inverse of each NxN submatrix of c_fft. See the stackexchange:
     # https://stackoverflow.com/questions/41850712/compute-inverse-of-2d-arrays-along-the-third-axis-in-a-3d-array-without-loops
@@ -42,8 +41,11 @@ def entropy(c_fft, sample_spacing=1):
     return s
 
 
-def corr_matrix(data, sample_spacing=1, mode='full', method='auto',
-                norm='biased', window='boxcar', return_fft=False):
+# def corr_matrix(data, sample_spacing=1, mode='full', method='auto',
+#                 norm='biased', window='boxcar', return_fft=False):
+def corr_matrix(data, sample_spacing=1, window='boxcar', nperseg=None,
+                noverlap=None, nfft=None, detrend='constant', padded=False,
+                return_fft=True):
     '''
     Takes time series data of multiple variables and returns a correlation matrix
     for every lag time
@@ -80,12 +82,38 @@ def corr_matrix(data, sample_spacing=1, mode='full', method='auto',
     '''
 
     data = np.asarray(data)
-    if data.shape[0] > data.shape[1]:
+    nvars, npts = data.shape
+
+    if nvars > npts:
         warnings.warn('Number of rows (variables) > number of columns (time points). '
                       'Make sure data has variables as rows.')
 
-    nvars, npts = data.shape
-    c = np.zeros((npts * 2 - 1, nvars, nvars), dtype=complex)
+    # nperseg checks
+    if nperseg is not None:  # if specified by user
+        nperseg = int(nperseg)
+        if nperseg < 1:
+            raise ValueError('nperseg must be a positive integer')
+    else:
+        nperseg = npts
+
+    # nfft checks
+    if nfft is None:
+        nfft = nperseg
+    elif nfft < nperseg:
+        raise ValueError('nfft must be greater than or equal to nperseg.')
+    else:
+        nfft = int(nfft)
+
+    # noverlap checks
+    if noverlap is None:
+        noverlap = nperseg // 2
+    else:
+        noverlap = int(noverlap)
+    if noverlap >= nperseg:
+        raise ValueError('noverlap must be less than nperseg.')
+
+    # preallocate correlation matrix
+    c = np.zeros((nfft, nvars, nvars), dtype=complex)
 
     # get all pairs of indices
     idx_pairs = list(product(np.arange(nvars), repeat=2))
@@ -94,7 +122,8 @@ def corr_matrix(data, sample_spacing=1, mode='full', method='auto',
         # c[:, idx[0], idx[1]] = _correlate_mean(data[idx[0]], data[idx[1]], sample_spacing,
         #                                        mode, method, norm, return_fft)
         c[:, idx[0], idx[1]] = _direct_csd(data[idx[0]], data[idx[1]], sample_spacing,
-                                           window, return_fft)
+                                           window, nperseg, noverlap, nfft, detrend,
+                                           padded, return_fft)
 
     if not return_fft:
         c = c.real
@@ -102,13 +131,13 @@ def corr_matrix(data, sample_spacing=1, mode='full', method='auto',
         tau = np.linspace(-maxTau, maxTau, 2 * npts - 1)
         return c, tau
     else:
-        freqs = np.fft.fftshift(np.fft.fftfreq(npts, d=sample_spacing))
+        freqs = 2 * np.pi * np.fft.fftshift(np.fft.fftfreq(nfft, d=sample_spacing))
         return c, freqs
 
 
 def _direct_csd(x, y, sample_spacing=1.0, window='boxcar', nperseg=None,
                 noverlap=None, nfft=None, detrend='constant', padded=False,
-                return_fft=False):
+                return_fft=True):
     '''
     Estimate the direct cross power spectral density using Welch's method.
     Basically just copying scipy.signal.csd with some default differences.
@@ -153,7 +182,6 @@ def _direct_csd(x, y, sample_spacing=1.0, window='boxcar', nperseg=None,
         segments, so that all of the signal is included in the output.
         Defaults to `False`. Padding occurs after boundary extension, if
         `boundary` is not `None`, and `padded` is `True`.
-
     '''
 
     # make sure we have np.arrays and subtract mean
@@ -173,29 +201,6 @@ def _direct_csd(x, y, sample_spacing=1.0, window='boxcar', nperseg=None,
                 pad_shape[0] = x.shape[0] - y.shape[0]
                 y = np.concatenate((y, np.zeros(pad_shape)), -1)
 
-    # nperseg checks
-    if nperseg is not None:  # if specified by user
-        nperseg = int(nperseg)
-        if nperseg < 1:
-            raise ValueError('nperseg must be a positive integer')
-    else:
-        nperseg = len(x)
-
-    # nfft checks
-    if nfft is None:
-        nfft = nperseg
-    elif nfft < nperseg:
-        raise ValueError('nfft must be greater than or equal to nperseg.')
-    else:
-        nfft = int(nfft)
-
-    # noverlap checks
-    if noverlap is None:
-        noverlap = nperseg // 2
-    else:
-        noverlap = int(noverlap)
-    if noverlap >= nperseg:
-        raise ValueError('noverlap must be less than nperseg.')
     nstep = nperseg - noverlap
 
     # Handle detrending and window functions
