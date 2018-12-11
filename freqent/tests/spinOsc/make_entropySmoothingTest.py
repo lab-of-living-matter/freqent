@@ -12,7 +12,7 @@ from astropy.convolution import Gaussian1DKernel, convolve
 # import scipy.signal as signal
 
 mpl.rcParams['pdf.fonttype'] = 42
-plt.close('all')
+# plt.close('all')
 
 parser = argparse.ArgumentParser(description=('Perform simulations of Brownian particles'
                                               ' in a harmonic potential plus a rotating'
@@ -43,9 +43,12 @@ parser.add_argument('--seed_type', type=str, default='time',
                     help=('a string to decide what seed to use when generating '
                           'trajectories. use "time" to use current microsecond or '
                           '"input" to directly input the seed'))
-parser.add_argument('--norm', '-norm', type=str, default='unbiased',
-                    help=('Normalization of correlation function to use. Options are '
-                          '"biased", "unbiased", and "none"'))
+parser.add_argument('--detrend', default=False,
+                    help=('Whether or how ot detrend the data. If False, no detrending.'
+                          ' If "constant", remove mean from each Welch segment. If'
+                          ' "linear", perform least-squares fit and subtract line.'))
+parser.add_argument('--padded', default=False,
+                    help='Pad the data with zeros to be integer number of Welch segments')
 parser.add_argument('--seed_input', '-seed', type=float, default=None,
                     help='if seed_type=input, what the seed explicitly is')
 parser.add_argument('--scale_array', '-scale', type=float, nargs=3, default=[1, 10, 10])
@@ -67,22 +70,6 @@ scales = np.linspace(args.scale_array[0], args.scale_array[1], int(args.scale_ar
 colors = plt.cm.winter(np.linspace(0, 1, len(scales)))
 
 
-def get_corr_mat(seed):
-    '''
-    helper function to pass to multiprocessing pool
-    '''
-    np.random.seed(seed)
-    r.reset()
-    r.runSimulation(k=k, alpha=alpha)
-    c, t = fe.corr_matrix(r.pos,
-                          sample_spacing=r.dt,
-                          mode='full',
-                          method='auto',
-                          norm=args.norm,
-                          return_fft=False)
-    return c
-
-
 def get_corr_mat_fft(seed):
     '''
     helper function to pass to multiprocessing pool
@@ -92,9 +79,12 @@ def get_corr_mat_fft(seed):
     r.runSimulation(k=k, alpha=alpha)
     c_fft, omega = fe.corr_matrix(r.pos,
                                   sample_spacing=r.dt,
-                                  mode='full',
-                                  method='auto',
-                                  norm=args.norm,
+                                  window=args.window,
+                                  nperseg=None,
+                                  noverlap=None,
+                                  nfft=None,
+                                  detrend=args.detrend,
+                                  padded=args.padded,
                                   return_fft=True)
     return c_fft
 
@@ -120,11 +110,11 @@ c_all_fft = np.mean(np.asarray(result_freq), axis=0)
 
 c_all_fft_smoothed = np.zeros(c_all_fft.shape, dtype=complex)
 sArray = np.zeros(len(scales) + 1, dtype=complex)
-sArray[0] = fe.entropy(c_all_fft, sample_spacing=args.dt)
+sArray[0] = fe.entropy(c_all_fft, T=r.t.max())
 
 # maxTau = args.dt * args.nsteps
 # tau = np.linspace(-maxTau, maxTau, 2 * args.nsteps + 1)
-omega = 2 * np.pi * np.fft.fftshift(np.fft.fftfreq(2 * args.nsteps + 1, d=args.dt))
+omega = 2 * np.pi * np.fft.fftshift(np.fft.fftfreq(len(r.t), d=args.dt))
 c_thry_fft = np.zeros(c_all_fft.shape, dtype=complex)
 
 c_thry_fft_prefactor = 2 * r.D / (((args.k_multiple + 1j * omega)**2 + args.alpha_multiple**2) *
@@ -150,7 +140,7 @@ for ind, scale in enumerate(scales):
     ax[0, 1].plot(omega, c_all_fft_smoothed[:, 0, 1].imag, color=colors[ind, :])
     ax[1, 0].plot(omega, c_all_fft_smoothed[:, 1, 0].imag, color=colors[ind, :])
     ax[1, 1].plot(omega, c_all_fft_smoothed[:, 1, 1].real, color=colors[ind, :])
-    sArray[ind + 1] = fe.entropy(c_all_fft_smoothed, sample_spacing=args.dt)
+    sArray[ind + 1] = fe.entropy(c_all_fft_smoothed, T=r.t.max())
 
 ax[0, 0].plot(omega, c_thry_fft[:, 0, 0].real, 'r')
 ax[0, 1].plot(omega, c_thry_fft[:, 0, 1].imag, 'r')
