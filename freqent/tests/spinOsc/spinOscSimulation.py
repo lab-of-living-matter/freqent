@@ -1,15 +1,25 @@
 '''
-Simulation of a Brownian particle in a 2D force-field, described by the Langevin
+Simulation of a Brownian particle in an N-D force-field, described by the Langevin
 Equation:
 
 dr/dt = F + xi
 
 with
+       ---                   ---
+       | -k   -a   0   ...   0 |
+       |  a   -k   0   ...   0 |
+       |  0    0  -k   ...   0 |
+F(r) = |  .           .        |
+       |  .             .      |
+       |  .               .    |
+       |  0      ...        -k |
+       ---                   ---
 
-F = -k*r + alpha * curl(z,r)
+The k terms represents a harmonic potential.
 
-The k term represents a harmonic potential
-the alpha term represents a rotational, non-conservative force for the potential
+The alpha terms represents a rotational, non-conservative force that acts on the first
+two dimensions only.
+
 xi is Gaussian white noise with strength sqrt(2*gamma^2*D), D is the diffusion constant
 which is given by the Einstein-relation D = kB*T/gamma
 '''
@@ -84,8 +94,3 @@ class spinOscLangevin():
             pos_old = self.pos[:, index]
             pos_new = pos_old + (self.deterministicForce(pos_old, k, alpha) + self.noise()) * self.dt / self.gamma
             self.pos[:, index + 1] = pos_new
-
-
-# def run(dt=1e-3, tfinal=1, alpha=1, k=1, kT=4e-9, gamma=2e-8, r0=np.random.rand(2)):
-#     t = 0
-#     while t<tfinal
