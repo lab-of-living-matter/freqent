@@ -1,15 +1,25 @@
 '''
-Simulation of a Brownian particle in a 2D force-field, described by the Langevin
+Simulation of a Brownian particle in an N-D force-field, described by the Langevin
 Equation:
 
 dr/dt = F + xi
 
 with
+       ---                   ---
+       | -k   -a   0   ...   0 |
+       |  a   -k   0   ...   0 |
+       |  0    0  -k   ...   0 |
+F(r) = |  .           .        |
+       |  .             .      |
+       |  .               .    |
+       |  0      ...        -k |
+       ---                   ---
 
-F = -k*r + alpha * curl(z,r)
+The k terms represents a harmonic potential.
 
-The k term represents a harmonic potential
-the alpha term represents a rotational, non-conservative force for the potential
+The alpha terms represents a rotational, non-conservative force that acts on the first
+two dimensions only.
+
 xi is Gaussian white noise with strength sqrt(2*gamma^2*D), D is the diffusion constant
 which is given by the Einstein-relation D = kB*T/gamma
 '''
@@ -19,67 +29,68 @@ import numpy as np
 
 class spinOscLangevin():
     '''
-    class for solving the 2D overdamped langevin equation
+    class for solving the N-D overdamped Langevin equation. Models a harmonic
+    potential plus a rotational force in the first two dimensions
 
     gamma * dr = F * dt + xi * dt
 
     gamma is a drag coefficient
-    F(r) = -k * (x,y) + alpha * (-y, x)
-        k is spring constant
-        alpha is strength of rotational force
+           ---                   ---
+           | -k   -a   0   ...   0 |
+           |  a   -k   0   ...   0 |
+           |  0    0  -k   ...   0 |
+    F(r) = |  .           .        |
+           |  .             .      |
+           |  .               .    |
+           |  0      ...        -k |
+           ---                   ---
+        k is spring constant, along diagonals
+        alpha is strength of rotational force, only in first two dimensions
     xi is zero mean Gaussian white noise
         <xi> = 0
         <xi_i (t) xi_j (t')> = 2*D*gamma^2 * delta_ij * delta(t - t')
             D is diffusion constant, D = kB*T/gamma
-
     '''
 
-    def __init__(self, dt, nsteps=1e6, kT=4e-9, gamma=2e-8, r0=np.random.rand(2) - 0.5):
+    def __init__(self, dt, r0, nsteps=1e6, kT=4e-9, gamma=2e-8):
 
         self.dt = dt  # time step in seconds
         self.nsteps = int(nsteps)  # total number of steps
         self.gamma = gamma  # drag on particle in kg / s
         self.kT = kT  # in kg * um^2 / s^2
+        self.r0 = r0
+        self.ndim = len(r0)  # number of dimensions in simulation
+        if self.ndim < 2:
+            raise ValueError('Need at least 2 dimensions, currently have '
+                             '{0}'.format(self.ndim))
 
         # derived quantities
         self.D = self.kT / self.gamma
 
         # data
         self.t = np.linspace(0, self.nsteps * self.dt, self.nsteps + 1)
-        self.pos = np.zeros((2, self.nsteps + 1))
+        self.pos = np.zeros((self.ndim, self.nsteps + 1))
         self.pos[:, 0] = r0
 
     def reset(self):
-        self.__init__(self.dt, self.nsteps, self.kT, self.gamma,
-                      np.random.rand(2) - 0.5)
+        self.__init__(self.dt, self.r0, self.nsteps, self.kT, self.gamma)
 
-    def springForce(self, r, k):
-        '''
-        harmonic force
-        '''
-        return -k * r
+    def deterministicForce(self, r, k, alpha):
+        spring = np.diag(-k * np.ones(self.ndim))  # spring force along diagonal
+        rotate = np.zeros((self.ndim, self.ndim))  # construct rotational force matrix
+        rotate[(1, 0), (0, 1)] = (alpha, -alpha)  # fill in appropriate elements
 
-    def rotationalForce(self, r, alpha):
-        '''
-        rotational force
-        '''
-        zhat = np.array([0, 0, 1])
-        return alpha * np.cross(zhat, np.append(r, 0))[:2]
+        return np.matmul(spring + rotate, r)
 
     def noise(self):
         '''
         Gaussian white noise
         '''
-        return np.sqrt(2 * self.D * self.gamma**2 / self.dt) * np.random.randn(2)
+        return np.sqrt(2 * self.D * self.gamma**2 / self.dt) * np.random.randn(self.ndim)
 
     def runSimulation(self, k, alpha):
         # self.reset()
         for index, time in enumerate(self.t[1:]):
             pos_old = self.pos[:, index]
-            pos_new = pos_old + (self.springForce(pos_old, k) + self.rotationalForce(pos_old, alpha) + self.noise()) * self.dt / self.gamma
+            pos_new = pos_old + (self.deterministicForce(pos_old, k, alpha) + self.noise()) * self.dt / self.gamma
             self.pos[:, index + 1] = pos_new
-
-
-# def run(dt=1e-3, tfinal=1, alpha=1, k=1, kT=4e-9, gamma=2e-8, r0=np.random.rand(2)):
-#     t = 0
-#     while t<tfinal

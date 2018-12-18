@@ -55,20 +55,37 @@ def corr_matrix(data, sample_spacing=1, window='boxcar', nperseg=None,
     data : 2D array
         Data is an NxM array that gives length M time series data of N variables.
         e.g. data[n] returns time series for nth variable.
-    sample_spacing : float
-        Sample spacing (inverse of sample rate) of data in seconds. Default = 1
-    mode : str {'valid', 'same', 'full'}, optional
-        Refer to the 'scipy.signal.correlate' docstring. Default is 'full'.
-    method : str {'auto', 'direct', 'fft'}, optional
-        Refer to the 'scipy.signal.correlate' docstring. Default is 'auto'.
-    norm : str {'unbiased', 'biased', 'none'}, optional
-        Determine which normalization to use on correlation function. If 'unbiased',
-        divide by number of points in sum for each lag time. If 'biased', divide by
-        number of elements in time series. If 'none', don't normalize correlation.
-        Default is 'biased'
-    return_fft : bool (optional)
-        Boolean asking whether to return the temporal fourier transform of the
-        correlation matrix
+    sample_spacing : float, optional
+        Sampling interval of the time series. Defaults to 1.0.
+    window : str or tuple or array_like, optional
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `scipy.signal.get_window` to generate the window values,
+        which are DFT-even by default. See `get_window` for a list of windows
+        and required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg. Defaults
+        to a Boxcar window.
+    nperseg : int, optional
+        Length of each segment. Defaults to None, which takes nperseg=len(x)
+        but if window is str or tuple, is set to 256, and if window is
+        array_like, is set to the length of the window.
+    noverlap : int, optional
+        Number of points to overlap between segments. If `None`,
+        ``noverlap = nperseg // 2``. Defaults to `None`.
+    nfft : int, optional
+        Length of the FFT used, if a zero padded FFT is desired. If
+        `None`, the FFT length is `nperseg`. Defaults to `None`.
+    detrend : str or function or `False`, optional
+        Specifies how to detrend each segment. If `detrend` is a
+        string, it is passed as the `type` argument to the `detrend`
+        function. If it is a function, it takes a segment and returns a
+        detrended segment. If `detrend` is `False`, no detrending is
+        done. Defaults to 'constant'.
+    padded : bool, optional
+        Specifies whether the input signal is zero-padded at the end to
+        make the signal fit exactly into an integer number of window
+        segments, so that all of the signal is included in the output.
+        Defaults to `False`. Padding occurs after boundary extension, if
+        `boundary` is not `None`, and `padded` is `True`.
 
     Returns
     -------
@@ -161,9 +178,8 @@ def _direct_csd(x, y, sample_spacing=1.0, window='boxcar', nperseg=None,
         to a Boxcar window.
     nperseg : int, optional
         Length of each segment. Defaults to None, which takes nperseg=len(x)
-        but if window is str or
-        tuple, is set to 256, and if window is array_like, is set to the
-        length of the window.
+        but if window is str or tuple, is set to 256, and if window is
+        array_like, is set to the length of the window.
     noverlap : int, optional
         Number of points to overlap between segments. If `None`,
         ``noverlap = nperseg // 2``. Defaults to `None`.
