@@ -37,8 +37,8 @@ parser.add_argument('--nsteps', type=int, default=int(1e4),
                     help='number of simulation steps')
 parser.add_argument('--kT', type=float, default=4e-9,
                     help='thermal energy in kg um^2 / s^2')
-parser.add_argument('--r0', type=float, nargs=2, default=np.random.rand(2) - 0.5,
-                    help='starting xy position in um')
+# parser.add_argument('--r0', type=float, nargs=3, default=np.random.rand(2) - 0.5,
+#                     help='starting xy position in um')
 parser.add_argument('--nsim', type=int, default=50,
                     help='number of simulations to run')
 parser.add_argument('-k', '--k_multiple', type=float, default=2,
@@ -52,11 +52,14 @@ parser.add_argument('--seed_type', type=str, default='time',
                     help=('a string to decide what seed to use when generating '
                           'trajectories. use "time" to use current microsecond or '
                           '"ints" to use the integers 1,2,...,nsim as seeds.'))
+parser.add_argument('--ndim', type=int, default=2,
+                    help='Number of dimensions of simulation')
 
 args = parser.parse_args()
+r0 = np.random.randn(args.ndim)
 # create object
 r = spinOscLangevin(dt=args.dt, nsteps=args.nsteps, kT=args.kT, gamma=args.gamma,
-                    r0=args.r0)
+                    r0=r0)
 
 # forcing parameters
 # equilibriationFrames = int(nsteps/2);
