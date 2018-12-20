@@ -90,7 +90,7 @@ def corr_matrix(data, sample_spacing=1, window='boxcar', nperseg=None,
     Returns
     -------
     c : 3D array
-        an (2M-1)xNxN matrix that gives the NxN correlation matrix for the variables
+        an MxNxN matrix that gives the NxN correlation matrix for the variables
         contained in the rows of data. Returns fft(c) is return_fft=True
     tau : array
         2M-1 length array of lag times for correlations. Returns frequencies if
@@ -145,7 +145,7 @@ def corr_matrix(data, sample_spacing=1, window='boxcar', nperseg=None,
     if not return_fft:
         c = c.real
         maxTau = sample_spacing * (npts - 1)
-        tau = np.linspace(-maxTau, maxTau, 2 * npts - 1)
+        tau = np.linspace(-maxTau, maxTau, npts)
         return c, tau
     else:
         freqs = 2 * np.pi * np.fft.fftshift(np.fft.fftfreq(nfft, d=sample_spacing))
@@ -267,7 +267,7 @@ def _direct_csd(x, y, sample_spacing=1.0, window='boxcar', nperseg=None,
     csd = np.mean(csd, axis=0)
     if not return_fft:
         # return the cross-covariance sequence
-        ccvs = np.fft.fftshift(np.fft.ifft(csd))
+        ccvs = np.fft.fftshift(np.fft.ifft(csd)) / sample_spacing
         return ccvs
     else:
         return np.fft.fftshift(csd)
