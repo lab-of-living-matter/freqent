@@ -13,15 +13,16 @@ def update(p, arr):
 
     # Count the average amount of each species in the 9 cells around each cell
     # by convolution with the 3x3 array m.
+    noiseStrength = 0.1
     q = (p + 1) % 2
     s = np.zeros((3, ny, nx))
     m = np.ones((3, 3)) / 9
     for k in range(3):
         s[k] = convolve2d(arr[p, k], m, mode='same', boundary='wrap')
     # Apply the reaction equations
-    arr[q, 0] = s[0] + s[0] * (alpha * s[1] - gamma * s[2]) + np.random.randn(ny, nx) * 0.02
-    arr[q, 1] = s[1] + s[1] * (beta * s[2] - alpha * s[0]) + np.random.randn(ny, nx) * 0.02
-    arr[q, 2] = s[2] + s[2] * (gamma * s[0] - beta * s[1]) + np.random.randn(ny, nx) * 0.02
+    arr[q, 0] = s[0] + s[0] * (alpha * s[1] - gamma * s[2]) + np.random.randn(ny, nx) * noiseStrength
+    arr[q, 1] = s[1] + s[1] * (beta * s[2] - alpha * s[0]) + np.random.randn(ny, nx) * noiseStrength
+    arr[q, 2] = s[2] + s[2] * (gamma * s[0] - beta * s[1]) + np.random.randn(ny, nx) * noiseStrength
     # Ensure the species concentrations are kept within [0,1].
     np.clip(arr[q], 0, 1, arr[q])
     return arr
@@ -52,4 +53,4 @@ plt.tight_layout()
 plt.show()
 
 # To save the animation as an MP4 movie, uncomment this line
-anim.save(filename='bz.mp4', fps=30)
+# anim.save(filename='bz.mp4', fps=30)
