@@ -17,6 +17,7 @@ import numpy as np
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+mpl.rcParams['pdf.fonttype'] = 42
 # plt.close('all')
 
 t = np.linspace(0, 100, 2001)
@@ -33,30 +34,35 @@ def brusselator(r, t, a, b):
     return drdt
 
 
-bArray = [4]
+b = bc * 0.5
 # cmap = mpl.cm.get_cmap('tab10')
 # normalize = mpl.colors.Normalize(vmin=min(bArray), vmax=max(bArray))
 # colors = [cmap(normalize(value)) for value in bArray]
 
 fig, ax = plt.subplots()
 
-for bInd, b in enumerate(bArray):
-    r0 = np.random.rand(2) * bc
+for r0 in np.random.rand(100, 2) * 1.5 * bc:
     sol = odeint(brusselator, r0, t, args=(a, b))
-    ax.plot(sol[:, 0], sol[:, 1], color='C{0}'.format(bInd))
-    ax.plot(a, b / a, marker='X', markersize=10, markeredgecolor='k', color='C{0}'.format(bInd))
+    ax.plot(sol[:, 0], sol[:, 1], color='k', alpha=0.1)
+    ax.plot(a, b / a, marker='X', markersize=10, markeredgecolor='k', color='r')
+
+# for bInd, b in enumerate(bArray):
+#     r0 = np.random.rand(2) * bc
+#     sol = odeint(brusselator, r0, t, args=(a, b))
+#     ax.plot(sol[:, 0], sol[:, 1], color='C{0}'.format(bInd))
+#     ax.plot(a, b / a, marker='X', markersize=10, markeredgecolor='k', color='C{0}'.format(bInd))
 
 # Optionally add a colorbar
 # cax, _ = mpl.colorbar.make_axes(ax)
 # cbar = mpl.colorbar.ColorbarBase(cax, cmap=cmap, norm=normalize)
 # cbar.ax.set_title(r'$b$')
 
-# legend_elements = [mpl.lines.Line2D([0], [0], markersize=10, marker='X',
-#                                     linestyle='None', markeredgecolor='k',
-#                                     color='k', label='fixed point'),
-#                    mpl.lines.Line2D([0], [0], color='C{0}'.format(ind)) for ind in len(bArray)]
+legend_elements = [mpl.lines.Line2D([0], [0], markersize=10, marker='X',
+                                    linestyle='None', markeredgecolor='k',
+                                    color='r', label=r'fixed point, $(a, b/a)$'),
+                   mpl.lines.Line2D([0], [0], color='k', label='trajectory')]
 
-# ax.legend(handles=legend_elements, loc='best')
-ax.set(xlabel='x', ylabel='y', title=r'Brusselator, $a$={a}, $b_c$={bc}'.format(a=a, bc=bc))
+ax.legend(handles=legend_elements, loc='best')
+ax.set(xlabel=r'$[X]$', ylabel=r'$[Y]$', title=r'Brusselator, $a$={a}, $b_c$={bc}, $b=${b}'.format(a=a, bc=bc, b=b))
 
 plt.show()
