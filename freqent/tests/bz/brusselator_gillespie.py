@@ -16,7 +16,8 @@ Brusselator given by
 '''
 
 import numpy as np
-import numba
+from datetime import datetime
+# import numba
 
 
 class brusselatorStochSim():
@@ -38,30 +39,40 @@ class brusselatorStochSim():
     All chemical quantities are given as total number of molecules,
     not concentrations.
     '''
-    def __init__(self, population_init, rates, V, t_points):
+    def __init__(self, population_init, rates, V, t_points, seed=None):
         self.rates = rates  # reaction rates given in docstring
         self.V = V  # volume of reaction spaces
         self.t_points = t_points  # time points to output simulation results
         self.pop0 = population_init  # store initial point, [X, Y, A, B, C]
 
-        # find and store steady state
-        x_ss = population_init[2] * rates[0] / rates[1]
-        y_ss = self.V * x_ss * ((rates[2] * (population_init[3] / V) + rates[5] * x_ss**2) /
-                                (rates[3] * (population_init[4] / V) + rates[4] * x_ss**2))
-        self.ss = np.array([x_ss, y_ss])
+        if seed is None:
+            self.seed = datetime.now().microsecond
+        else:
+            self.seed = seed
 
         # find equilibrium point (only important if detailed balance met)
-        self.eq = np.array([population_init[2] * rates[0] / rates[1],
-                            population_init[2] * rates[0] * rates[5] / (rates[1] * rates[4])])
+        X, Y, A, B, C = self.pop0
+        k0, k1, k2, k3, k4, k5 = self.rates
+
+        self.eq = np.array([A * k0 / k1, A * k0 * k5 / (k1 * k4)])
 
         # update rule for brusselator reactions given above
         # this assumes A, B, and C remain unchanged
-        self.update = np.array([[1, 0, 0, 0, 0],
-                                [-1, 0, 0, 0, 0],
-                                [-1, 1, 0, 0, 0],
-                                [1, -1, 0, 0, 0],
-                                [1, -1, 0, 0, 0],
-                                [-1, 1, 0, 0, 0]])
+        self.update = np.array([[1, 0, 0, 0, 0],    # A -> X, k0
+                                [-1, 0, 0, 0, 0],   # X -> A, k1
+                                [-1, 1, 0, 0, 0],   # B + X -> Y + C, k2
+                                [1, -1, 0, 0, 0],   # Y + C -> B + X, k3
+                                [1, -1, 0, 0, 0],   # 2X + Y -> 3X, k4
+                                [-1, 1, 0, 0, 0]])  # 3X -> 2X + Y, k5
+
+        # update rule for brusselator reactions given above
+        # this assumes A, B, and C change
+        # self.update = np.array([[1, 0, -1, 0, 0],   # A -> X, k0
+        #                         [-1, 0, 1, 0, 0],   # X -> A, k1
+        #                         [-1, 1, 0, -1, 1],  # B + X -> Y + C, k2
+        #                         [1, -1, 0, 1, -1],  # Y + C -> B + X, k3
+        #                         [1, -1, 0, 0, 0],   # 2X + Y -> 3X, k4
+        #                         [-1, 1, 0, 0, 0]])  # 3X -> 2X + Y, k5
 
         # preallocate space for evolved population
         self.population = np.empty((len(self.t_points), len(population_init)), dtype=int)
@@ -117,23 +128,25 @@ class brusselatorStochSim():
 
         # draw two random numbers
         r1 = np.random.rand()
-        # r2 = np.random.rand()  # or just one?
+        r2 = np.random.rand()  # or just one?
 
         # pick time of next reaction
         dt = -np.log(r1) / props_sum
 
         # pick next reaction
-        reaction = self.sample_discrete(probs, r1)
+        reaction = self.sample_discrete(probs, r2)
 
         return reaction, dt
 
-    def gillespie_simulator(self):
+    def runSimulation(self, seed=None):
         '''
         Main loop to run gillespie algorithm.
-        Produce output at specified time points.
+        save output at specified time points.
         '''
 
+
         # set time and time index
+        n = 0  # use to track how many reactions occur
         t = 0.0
         i = 0
         i_time = 1
@@ -141,6 +154,7 @@ class brusselatorStochSim():
 
         while i < len(self.t_points):
             while t < self.t_points[i_time]:
+                n += 1
                 reaction, dt = self.gillespie_draw(pop)
 
                 # update population
@@ -149,6 +163,8 @@ class brusselatorStochSim():
 
                 # increment time
                 t += dt
+                txt = 'n = {0}'.format(n)
+                print(txt, end='\r')
 
             # update index
             i = np.searchsorted(self.t_points > t, True)
@@ -158,11 +174,6 @@ class brusselatorStochSim():
 
             # increment index
             i_time = i
-
-    def plot_traj(self):
-        '''
-
-        '''
 
 
 # update = np.array([[1, 0, 0, 0, 0],
