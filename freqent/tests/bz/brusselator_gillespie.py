@@ -143,8 +143,6 @@ class brusselatorStochSim():
         Main loop to run gillespie algorithm.
         save output at specified time points.
         '''
-
-
         # set time and time index
         n = 0  # use to track how many reactions occur
         t = 0.0
@@ -163,7 +161,7 @@ class brusselatorStochSim():
 
                 # increment time
                 t += dt
-                txt = 'n = {0}'.format(n)
+                txt = 't = {time:.3f}'.format(time=t)
                 print(txt, end='\r')
 
             # update index

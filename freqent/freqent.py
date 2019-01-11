@@ -4,7 +4,9 @@ import warnings
 from itertools import product
 
 
-def entropy(c_fft, T=1.0):
+def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
+            noverlap=None, nfft=None, detrend='constant', padded=False,
+            return_fft=True):
     '''
     Calculate the entropy using the frequency space measure:
 
@@ -17,11 +19,43 @@ def entropy(c_fft, T=1.0):
 
     Parameters
     ----------
-    c_fft : 3D array
-        an MxNxN matrix that gives an NxN correlation matrix as a function of
-        M frequencies
-    sample_spacing : float
-        Sample spacing (inverse of sample rate) of data in seconds. Default = 1
+    data : 2D or 3D array
+        If 2D, an NxM array that gives length M time series data of N variables.
+        e.g. data[n] returns time series for nth variable.
+        If 3D, an JxNxM array that gives length M time series of N variables for
+        J different replicates. Each replicate's correlation matrix will be
+        calculated and averaged together before calculating entropy
+    sample_spacing : float, optional
+        Sampling interval of the time series. Defaults to 1.0.
+    window : str or tuple or array_like, optional
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `scipy.signal.get_window` to generate the window values,
+        which are DFT-even by default. See `get_window` for a list of windows
+        and required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg. Defaults
+        to a Boxcar window.
+    nperseg : int, optional
+        Length of each segment. Defaults to None, which takes nperseg=len(x)
+        but if window is str or tuple, is set to 256, and if window is
+        array_like, is set to the length of the window.
+    noverlap : int, optional
+        Number of points to overlap between segments. If `None`,
+        ``noverlap = nperseg // 2``. Defaults to `None`.
+    nfft : int, optional
+        Length of the FFT used, if a zero padded FFT is desired. If
+        `None`, the FFT length is `nperseg`. Defaults to `None`.
+    detrend : str or function or `False`, optional
+        Specifies how to detrend each segment. If `detrend` is a
+        string, it is passed as the `type` argument to the `detrend`
+        function. If it is a function, it takes a segment and returns a
+        detrended segment. If `detrend` is `False`, no detrending is
+        done. Defaults to 'constant'.
+    padded : bool, optional
+        Specifies whether the input signal is zero-padded at the end to
+        make the signal fit exactly into an integer number of window
+        segments, so that all of the signal is included in the output.
+        Defaults to `False`. Padding occurs after boundary extension, if
+        `boundary` is not `None`, and `padded` is `True`.
 
     Returns
     -------
@@ -29,10 +63,41 @@ def entropy(c_fft, T=1.0):
         entropy production rate given correlation functions
     '''
 
-    # T = sample_spacing * (c_fft.shape[0] - 1)
-
     # get inverse of each NxN submatrix of c_fft. See the stackexchange:
     # https://stackoverflow.com/questions/41850712/compute-inverse-of-2d-arrays-along-the-third-axis-in-a-3d-array-without-loops
+
+    if data.ndim == 3:
+        print('Assuming data dimensions are nReplicates, nVariables, nTimePoints.\n',
+              'If not, you are about to get nonsense.')
+        j, n, m = data.shape  # number of replicates, number of variables, number of time points
+        c_fft_all = np.zeros(data.shape)
+        for ii in range(j):
+            c_fft_all[ii, ...], _ = corr_matrix(data[ii, ...],
+                                                sample_spacing,
+                                                window,
+                                                nperseg,
+                                                noverlap,
+                                                nfft,
+                                                detrend,
+                                                padded,
+                                                return_fft)
+        c_fft = c_fft_all.mean(axis=0)
+
+    elif data.ndim == 2:
+        c_fft, _ = corr_matrix(data,
+                               sample_spacing,
+                               window,
+                               nperseg,
+                               noverlap,
+                               nfft,
+                               detrend,
+                               padded,
+                               return_fft)
+    elif data.ndim not in [2, 3]:
+        raise ValueError('Number of dimensions of data needs to be 2 or 3. \n',
+                         'Currently is {0}'.format(data.ndim))
+
+
     c_fft_inv = np.linalg.inv(c_fft)
     s = np.sum((c_fft_inv - np.transpose(c_fft_inv, (0, 2, 1))) * c_fft)
 
@@ -41,8 +106,6 @@ def entropy(c_fft, T=1.0):
     return s
 
 
-# def corr_matrix(data, sample_spacing=1, mode='full', method='auto',
-#                 norm='biased', window='boxcar', return_fft=False):
 def corr_matrix(data, sample_spacing=1, window='boxcar', nperseg=None,
                 noverlap=None, nfft=None, detrend='constant', padded=False,
                 return_fft=True):
@@ -273,8 +336,42 @@ def _direct_csd(x, y, sample_spacing=1.0, window='boxcar', nperseg=None,
         return np.fft.fftshift(csd)
 
 
+def _smooth(data, window=None, axis=0):
+    '''
+    Helper function that smooths data  using a specified window along a specified axis.
+    Only smooths 1D data within data
+
+    Parameters
+    ----------
+    data: 2D array
+        NxM data array
+    window: str or tuple or array_like, optional
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `scipy.signal.get_window` to generate the window values,
+        which are DFT-even by default. See `get_window` for a list of windows
+        and required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg. Defaults
+        to a Boxcar window.
+    axis: int, optional
+        Axis along which to smooth the data
+
+    Results
+    -------
+    smooth_data : 2D array
+        NxM array that contains data smoothed with window along axis
+    '''
+
+    # roll axis that will be smoothed
+    smooth_data = np.rollaxis(data, axis)
+
+    win = signal.get_window(window)
+
+
+
+
 def _correlate_mean(x, y, sample_spacing=1.0, mode='full', method='auto', norm='biased', return_fft=False):
     '''
+    DEPRECATED
     Calculate cross-correlation between two time series. Just a wrapper
     around scipy.signal.correlate function that takes a mean rather than
     just a sum. Helper function for corr_matrix.

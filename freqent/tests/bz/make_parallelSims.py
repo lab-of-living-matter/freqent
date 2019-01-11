@@ -14,7 +14,7 @@ B = V
 C = V * 16
 t_points = np.linspace(0, 100, 1001)
 nSim = 10
-filename = '/media/daniel/storage11/Dropbox/LLM_Danny/frequencySpaceDissipation/tests/brusselator/stochastic_simulations/eq_10sim'
+filename = '/media/daniel/storage11/Dropbox/LLM_Danny/frequencySpaceDissipation/tests/brusselator/stochastic_simulations/nq_10sim'
 
 
 def get_traj(seed):
@@ -54,9 +54,9 @@ params = {'rates': rates,
           't_points': t_points,
           'seeds': seeds}
 
-with open(filename + '_params.csv', 'w') as csv_file:
-    w = csv.DictWriter(csv_file, params.keys())
-    w.writeheader()
-    w.writerow(params)
+# with open(filename + '_params.csv', 'w') as csv_file:
+#     w = csv.DictWriter(csv_file, params.keys())
+#     w.writeheader()
+#     w.writerow(params)
 
-fig.savefig(filename + '.pdf', format='pdf')
+# fig.savefig(filename + '.pdf', format='pdf')
