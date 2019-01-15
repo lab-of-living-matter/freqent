@@ -12,6 +12,11 @@ from astropy.convolution import Gaussian1DKernel, convolve
 from itertools import product
 # import scipy.signal as signal
 
+'''
+NOTE: THIS ONLY WORKS WITH FREQENT VERSION 0.0.1, BEFORE freqent.entropy TOOK IN
+DATA DIRECTLY, RATHER THAN USING AN ALREADY CALCULATED CORRELATION FUNCTION
+'''
+
 mpl.rcParams['pdf.fonttype'] = 42
 # plt.close('all')
 

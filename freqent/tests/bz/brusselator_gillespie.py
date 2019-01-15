@@ -44,6 +44,7 @@ class brusselatorStochSim():
         self.V = V  # volume of reaction spaces
         self.t_points = t_points  # time points to output simulation results
         self.pop0 = population_init  # store initial point, [X, Y, A, B, C]
+        self.epr = np.zeros(len(t_points))  # store entropy production rate
 
         if seed is None:
             self.seed = datetime.now().microsecond
@@ -138,7 +139,7 @@ class brusselatorStochSim():
 
         return reaction, dt
 
-    def runSimulation(self, seed=None):
+    def runSimulation(self):
         '''
         Main loop to run gillespie algorithm.
         save output at specified time points.
@@ -150,10 +151,19 @@ class brusselatorStochSim():
         i_time = 1
         pop = np.asarray(self.pop0).copy()
 
+        # set seed
+        np.random.seed(self.seed)
+        # current = np.zeros(self.update.shape[0])
+
         while i < len(self.t_points):
+            current = np.zeros(self.update.shape[0])
+
             while t < self.t_points[i_time]:
                 n += 1
                 reaction, dt = self.gillespie_draw(pop)
+
+                # add to current
+                current[reaction] += 1 / dt
 
                 # update population
                 pop_prev = pop.copy()
@@ -170,25 +180,9 @@ class brusselatorStochSim():
             # update population
             self.population[i_time:min(i, len(self.t_points))] = pop_prev
 
+            # update entropy production rate at this point
+            self.epr[i_time:min(i, len(self.t_points))] = (np.sum((current[::2] - current[1::2]) *
+                                                           np.log(current[::2] / current[1::2])))
+
             # increment index
             i_time = i
-
-
-# update = np.array([[1, 0, 0, 0, 0],
-#                    [-1, 0, 0, 0, 0],
-#                    [-1, 1, 0, 0, 0],
-#                    [1, -1, 0, 0, 0],
-#                    [1, -1, 0, 0, 0],
-#                    [-1, 1, 0, 0, 0]])
-# rates = [0.5, 0.25, 1, 0.25, 1, 0.25]
-# V = 100
-# A = V
-# B = V
-# C = B * rates[2] * rates[4] / (rates[3] * rates[5])
-# X0 = 10
-# Y0 = 10
-# pop_init = [X0, Y0, A, B, C]
-# t_points = np.linspace(0, 100, 501)
-
-# pop = gillespie_simulator(pop_init, rates, V, propensities_brusselator,
-#                           update, t_points)

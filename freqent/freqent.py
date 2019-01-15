@@ -2,11 +2,12 @@ import numpy as np
 import scipy.signal as signal
 import warnings
 from itertools import product
+from astropy.convolution import Gaussian1DKernel, convolve
 
 
 def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
             noverlap=None, nfft=None, detrend='constant', padded=False,
-            return_fft=True):
+            smooth_corr=True, sigma=1, subtract_bias=True):
     '''
     Calculate the entropy using the frequency space measure:
 
@@ -56,6 +57,14 @@ def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
         segments, so that all of the signal is included in the output.
         Defaults to `False`. Padding occurs after boundary extension, if
         `boundary` is not `None`, and `padded` is `True`.
+    smooth_corr : bool, optional
+        option to smooth the correlation function or not
+    sigma : int, optional
+        if smooth_corr, standard deviation of gaussian kernel used to
+        smooth corelation matrix
+    subtract_bias : bool, optional
+        option to subtract systematic bias from entropy estimate or not.
+        Bias given by N(N-1) / (2 sqrt(pi)) * omega_max / (J * T_max * sigma)
 
     Returns
     -------
@@ -63,45 +72,43 @@ def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
         entropy production rate given correlation functions
     '''
 
-    # get inverse of each NxN submatrix of c_fft. See the stackexchange:
-    # https://stackoverflow.com/questions/41850712/compute-inverse-of-2d-arrays-along-the-third-axis-in-a-3d-array-without-loops
-
     if data.ndim == 3:
         print('Assuming data dimensions are nReplicates, nVariables, nTimePoints.\n',
               'If not, you are about to get nonsense.')
-        j, n, m = data.shape  # number of replicates, number of variables, number of time points
+        nRep, nVar, nTime = data.shape  # number of replicates, number of variables, number of time points
         c_fft_all = np.zeros(data.shape)
-        for ii in range(j):
-            c_fft_all[ii, ...], _ = corr_matrix(data[ii, ...],
-                                                sample_spacing,
-                                                window,
-                                                nperseg,
-                                                noverlap,
-                                                nfft,
-                                                detrend,
-                                                padded,
-                                                return_fft)
+        for ii in range(nRep):
+            c_fft_all[ii, ...], omega = corr_matrix(data[ii, ...], sample_spacing, window, nperseg,
+                                                    noverlap, nfft, detrend, padded, return_fft=True)
         c_fft = c_fft_all.mean(axis=0)
 
     elif data.ndim == 2:
-        c_fft, _ = corr_matrix(data,
-                               sample_spacing,
-                               window,
-                               nperseg,
-                               noverlap,
-                               nfft,
-                               detrend,
-                               padded,
-                               return_fft)
+        nRep = 1
+        nVar, nTime = data.shape
+        c_fft, omega = corr_matrix(data, sample_spacing, window, nperseg,
+                                   noverlap, nfft, detrend, padded, return_fft=True)
     elif data.ndim not in [2, 3]:
         raise ValueError('Number of dimensions of data needs to be 2 or 3. \n',
                          'Currently is {0}'.format(data.ndim))
 
+    T = sample_spacing * nTime  # find total time of simulation
+    dw = 2 * np.pi / T  # find spacing of fourier frequencies
 
+    # smooth c_fft if wanted
+    if smooth_corr:
+        c_fft = _gauss_smooth(c_fft, sigma)
+
+    # get inverse of each NxN submatrix of c_fft. Broadcasts to find inverse of square
+    # matrix in last two dimensions of matrix
     c_fft_inv = np.linalg.inv(c_fft)
     s = np.sum((c_fft_inv - np.transpose(c_fft_inv, (0, 2, 1))) * c_fft)
 
     s /= 2 * T
+
+    # Calculate and subtract off bias if wanted
+    if subtract_bias:
+        bias = (np.pi**-0.5) * (nVar * (nVar - 1) / 2) * (omega.max() / (nRep * T * sigma * dw))
+        s -= bias
 
     return s
 
@@ -336,37 +343,45 @@ def _direct_csd(x, y, sample_spacing=1.0, window='boxcar', nperseg=None,
         return np.fft.fftshift(csd)
 
 
-def _smooth(data, window=None, axis=0):
+def _gauss_smooth(corr, stddev=10, axis=0):
     '''
-    Helper function that smooths data  using a specified window along a specified axis.
-    Only smooths 1D data within data
+    Helper function that smooths a correlation matrix along its time axis with a Gaussian.
+    To be used on the correlation functions out of corr_matrix.
 
     Parameters
     ----------
-    data: 2D array
-        NxM data array
-    window: str or tuple or array_like, optional
-        Desired window to use. If `window` is a string or tuple, it is
-        passed to `scipy.signal.get_window` to generate the window values,
-        which are DFT-even by default. See `get_window` for a list of windows
-        and required parameters. If `window` is array_like it will be used
-        directly as the window and its length must be nperseg. Defaults
-        to a Boxcar window.
+    corr: 2D array
+        MxNxN correlation matrix array. M is the number of time points,
+        N is the number of variables
+    stddev: int
+        standard deviation of gaussian used to smooth data, in units of the sampling
+        spacing between points in data
     axis: int, optional
         Axis along which to smooth the data
 
     Results
     -------
-    smooth_data : 2D array
-        NxM array that contains data smoothed with window along axis
+    smooth_corr : 2D array
+        NxMxM array that contains data smoothed with window along axis
+
+    See also
+    --------
+    freqent.corr_matrix()
+    astropy.convolution.convolve()
     '''
 
-    # roll axis that will be smoothed
-    smooth_data = np.rollaxis(data, axis)
+    nvars = corr.shape[-1]
+    smooth_corr = np.zeros(corr.shape, dtype=complex)
+    idx_pairs = list(product(np.arange(nvars), repeat=2))
+    gauss = Gaussian1DKernel(stddev)
 
-    win = signal.get_window(window)
+    for idx in idx_pairs:
+        smooth_corr[:, idx[0], idx[1]].real = convolve(corr[:, idx[0], idx[1]].real,
+                                                       gauss, normalize_kernel=True)
+        smooth_corr[:, idx[0], idx[1]].imag = convolve(corr[:, idx[0], idx[1]].imag,
+                                                       gauss, normalize_kernel=True)
 
-
+    return smooth_corr
 
 
 def _correlate_mean(x, y, sample_spacing=1.0, mode='full', method='auto', norm='biased', return_fft=False):

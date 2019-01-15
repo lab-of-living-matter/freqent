@@ -60,3 +60,5 @@ params = {'rates': rates,
 #     w.writerow(params)
 
 # fig.savefig(filename + '.pdf', format='pdf')
+
+plt.show()
