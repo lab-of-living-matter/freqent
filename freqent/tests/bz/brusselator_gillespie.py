@@ -17,6 +17,7 @@ Brusselator given by
 
 import numpy as np
 from datetime import datetime
+from scipy import sparse
 # import numba
 
 
@@ -45,6 +46,8 @@ class brusselatorStochSim():
         self.t_points = t_points  # time points to output simulation results
         self.pop0 = population_init  # store initial point, [X, Y, A, B, C]
         self.epr = np.zeros(len(t_points))  # store entropy production rate
+        # self.occupancy = sparse.dok_matrix((self.V * 20, self.V * 20))
+        self.occupancy = np.zeros((self.V * 15, self.V * 15))
 
         if seed is None:
             self.seed = datetime.now().microsecond
@@ -153,21 +156,25 @@ class brusselatorStochSim():
 
         # set seed
         np.random.seed(self.seed)
+
         # current = np.zeros(self.update.shape[0])
 
         while i < len(self.t_points):
-            current = np.zeros(self.update.shape[0])
+            # current = np.zeros(self.update.shape[0])
 
             while t < self.t_points[i_time]:
                 n += 1
                 reaction, dt = self.gillespie_draw(pop)
 
-                # add to current
-                current[reaction] += 1 / dt
+                # # add to current
+                # current[reaction] += 1 / dt
 
                 # update population
                 pop_prev = pop.copy()
                 pop += self.update[reaction, :]
+
+                # track population. Keep Y in rows, X in columns
+                self.occupancy[pop_prev[1], pop_prev[0]] += dt
 
                 # increment time
                 t += dt
@@ -181,8 +188,10 @@ class brusselatorStochSim():
             self.population[i_time:min(i, len(self.t_points))] = pop_prev
 
             # update entropy production rate at this point
-            self.epr[i_time:min(i, len(self.t_points))] = (np.sum((current[::2] - current[1::2]) *
-                                                           np.log(current[::2] / current[1::2])))
+            # self.epr[i_time:min(i, len(self.t_points))] = (np.sum((current[::2] - current[1::2]) *
+            #                                                np.log(current[::2] / current[1::2])))
 
             # increment index
             i_time = i
+
+        self.occupancy /= self.t_points.max()
