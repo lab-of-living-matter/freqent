@@ -44,10 +44,13 @@ class brusselatorStochSim():
         self.rates = rates  # reaction rates given in docstring
         self.V = V  # volume of reaction spaces
         self.t_points = t_points  # time points to output simulation results
-        self.pop0 = population_init  # store initial point, [X, Y, A, B, C]
-        self.epr = np.zeros(len(t_points))  # store entropy production rate
-        # self.occupancy = sparse.dok_matrix((self.V * 20, self.V * 20))
-        self.occupancy = np.zeros((self.V * 15, self.V * 15))
+
+        X, Y, A, B, C = population_init
+        k0, k1, k2, k3, k4, k5 = self.rates
+
+        self.pop0 = [X, Y]  # store initial point, [X, Y, A, B, C]
+        self.ep = np.zeros(len(t_points))  # store entropy production time series
+        # self.occupancy = np.zeros((self.V * 15, self.V * 15))
 
         if seed is None:
             self.seed = datetime.now().microsecond
@@ -55,32 +58,34 @@ class brusselatorStochSim():
             self.seed = seed
 
         # find equilibrium point (only important if detailed balance met)
-        X, Y, A, B, C = self.pop0
-        k0, k1, k2, k3, k4, k5 = self.rates
-
         self.eq = np.array([A * k0 / k1, A * k0 * k5 / (k1 * k4)])
 
         # update rule for brusselator reactions given above
         # this assumes A, B, and C remain unchanged
-        self.update = np.array([[1, 0, 0, 0, 0],    # A -> X, k0
-                                [-1, 0, 0, 0, 0],   # X -> A, k1
-                                [-1, 1, 0, 0, 0],   # B + X -> Y + C, k2
-                                [1, -1, 0, 0, 0],   # Y + C -> B + X, k3
-                                [1, -1, 0, 0, 0],   # 2X + Y -> 3X, k4
-                                [-1, 1, 0, 0, 0]])  # 3X -> 2X + Y, k5
+        self.update = np.array([[1, 0],    # A -> X, k0
+                                [-1, 0],   # X -> A, k1
+                                [-1, 1],   # B + X -> Y + C, k2
+                                [1, -1],   # Y + C -> B + X, k3
+                                [1, -1],   # 2X + Y -> 3X, k4
+                                [-1, 1]])  # 3X -> 2X + Y, k5
 
-        # update rule for brusselator reactions given above
-        # this assumes A, B, and C change
+        # preallocate space for evolved population
+        self.population = np.zeros((len(self.t_points), 2), dtype=int)
+        self.population[0, :] = self.pop0
+        self.chemostat = np.array([A, B, C])
+
+        # # update rule for brusselator reactions given above
+        # # this assumes A, B, and C change
         # self.update = np.array([[1, 0, -1, 0, 0],   # A -> X, k0
         #                         [-1, 0, 1, 0, 0],   # X -> A, k1
         #                         [-1, 1, 0, -1, 1],  # B + X -> Y + C, k2
         #                         [1, -1, 0, 1, -1],  # Y + C -> B + X, k3
         #                         [1, -1, 0, 0, 0],   # 2X + Y -> 3X, k4
         #                         [-1, 1, 0, 0, 0]])  # 3X -> 2X + Y, k5
-
-        # preallocate space for evolved population
-        self.population = np.empty((len(self.t_points), len(population_init)), dtype=int)
-        self.population[0, :] = self.pop0
+        #
+        # # preallocate space for evolved population
+        # self.population = np.zeros((len(self.t_points), len(population_init)), dtype=int)
+        # self.population[0, :] = self.pop0
 
     def reset(self):
         self.__init__(self.pop0, self.rates, self.V, self.t_points)
@@ -98,19 +103,19 @@ class brusselatorStochSim():
 
         Returns
         -------
-        a : array
+        props : array
             array with propensities measured given the current population
         '''
         X, Y, A, B, C = population
         k0, k1, k2, k3, k4, k5 = self.rates
 
-        a = np.array([k0 * A,
-                      k1 * X,
-                      k2 * B * X / self.V,
-                      k3 * C * Y / self.V,
-                      k4 * X * (X - 1) * Y / self.V**2,
-                      k5 * X * (X - 1) * (X - 2) / self.V**2])
-        return a
+        props = np.array([k0 * A,
+                          k1 * X,
+                          k2 * B * X / self.V,
+                          k3 * C * Y / self.V,
+                          k4 * X * (X - 1) * Y / self.V**2,
+                          k5 * X * (X - 1) * (X - 2) / self.V**2])
+        return props
 
     def sample_discrete(self, probs, r):
         '''
@@ -140,7 +145,7 @@ class brusselatorStochSim():
         # pick next reaction
         reaction = self.sample_discrete(probs, r2)
 
-        return reaction, dt
+        return reaction, dt, props
 
     def runSimulation(self):
         '''
@@ -148,50 +153,56 @@ class brusselatorStochSim():
         save output at specified time points.
         '''
         # set time and time index
-        n = 0  # use to track how many reactions occur
         t = 0.0
         i = 0
         i_time = 1
-        pop = np.asarray(self.pop0).copy()
+        ep = 0
 
         # set seed
         np.random.seed(self.seed)
 
-        # current = np.zeros(self.update.shape[0])
-
+        # do first random draw
+        pop = np.asarray(self.pop0).copy()
+        reaction, dt, props = self.gillespie_draw(np.concatenate((pop, self.chemostat)))
         while i < len(self.t_points):
             # current = np.zeros(self.update.shape[0])
-
             while t < self.t_points[i_time]:
-                n += 1
-                reaction, dt = self.gillespie_draw(pop)
-
-                # # add to current
-                # current[reaction] += 1 / dt
-
                 # update population
                 pop_prev = pop.copy()
                 pop += self.update[reaction, :]
 
                 # track population. Keep Y in rows, X in columns
-                self.occupancy[pop_prev[1], pop_prev[0]] += dt
+                # self.occupancy[pop_prev[1], pop_prev[0]] += dt
+
+                # Calculate trajectory entropy. On the way, calculate next set of random draws
+                # Do next Gillespie draw
+                reaction_next, dt_next, props_next = self.gillespie_draw(np.concatenate((pop, self.chemostat)))
+
+                # Find backwards reaction from what was just done
+                # [0, 2, 4] <--> [1, 3, 5]
+                # If reaction is an even number (or 0) add one, if an odd number, subtract one
+                backward_reaction = reaction + (-1)**(reaction % 2)
+
+
+                # add to entropy
+                ep += np.log(props[reaction] / props_next[backward_reaction])
 
                 # increment time
                 t += dt
                 txt = 't = {time:.3f}'.format(time=t)
                 print(txt, end='\r')
 
+                # update reaction, dt, and propensities
+                reaction, dt, props = reaction_next, dt_next, props_next
+
             # update index
             i = np.searchsorted(self.t_points > t, True)
 
             # update population
             self.population[i_time:min(i, len(self.t_points))] = pop_prev
-
-            # update entropy production rate at this point
-            # self.epr[i_time:min(i, len(self.t_points))] = (np.sum((current[::2] - current[1::2]) *
-            #                                                np.log(current[::2] / current[1::2])))
+            self.ep[i_time:min(i, len(self.t_points))] = ep
 
             # increment index
             i_time = i
 
-        self.occupancy /= self.t_points.max()
+        # self.occupancy /= self.t_points.max()
