@@ -76,7 +76,7 @@ def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
         print('Assuming data dimensions are nReplicates, nVariables, nTimePoints.\n',
               'If not, you are about to get nonsense.')
         nRep, nVar, nTime = data.shape  # number of replicates, number of variables, number of time points
-        c_fft_all = np.zeros(data.shape)
+        c_fft_all = np.zeros((nRep, nTime, nVar, nVar), dtype=complex)
         for ii in range(nRep):
             c_fft_all[ii, ...], omega = corr_matrix(data[ii, ...], sample_spacing, window, nperseg,
                                                     noverlap, nfft, detrend, padded, return_fft=True)

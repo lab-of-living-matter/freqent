@@ -1,73 +1,132 @@
 import numpy as np
 from datetime import datetime
+import time
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import multiprocessing
 import csv
 from brusselator_gillespie import brusselatorStochSim
+import argparse
+import os
+import pickle
 mpl.rcParams['pdf.fonttype'] = 42
-
-rates = [0.5, 0.25, 1, 0.25, 1, 0.25]
-V = 100
-A = V
-B = V *7
-C = V
-t_points = np.linspace(0, 100, 1001)
-nSim = 10
-filename = '/media/daniel/storage11/Dropbox/LLM_Danny/frequencySpaceDissipation/tests/brusselator/stochastic_simulations/nq_10sim'
 
 
 def get_traj(seed):
     '''
-    function to pass to multiprocessing pool
+    function to pass to multiprocessing pool to run parallel simulations
     '''
     np.random.seed(seed)
-    [X0, Y0] = (np.random.rand(2) * 7 * V).astype(int)
-    bz = brusselatorStochSim([X0, Y0, A, B, C], rates, V, t_points, seed)
+    [X0, Y0] = (np.random.rand(2) * 7 * args.V).astype(int)
+    bz = brusselatorStochSim([X0, Y0, args.A, args.B, args.C], args.rates, args.V, t_points, seed)
     bz.runSimulation()
 
     return [bz.population, bz.ep]
 
 
-seeds = np.zeros(nSim)
+parser = argparse.ArgumentParser()
+parser.add_argument('--rates', type=float, nargs=6,
+                    default=[0.5, 0.25, 1, 0.25, 1, 0.25])
+parser.add_argument('--V', type=float, default=100,
+                    help='Volume of solution')
+parser.add_argument('--A', type=int, default=100,
+                    help='Number of A molecules in solution')
+parser.add_argument('--B', type=int, default=100 * 7,
+                    help='Number of B molecules in solution')
+parser.add_argument('--C', type=int, default=100,
+                    help='Number of C molecules in solution')
+parser.add_argument('--t_final', type=float, default=100,
+                    help='Final time of simulations in seconds')
+parser.add_argument('--n_t_points', type=int, default=1001,
+                    help='Number of time points between 0 and t_final')
+parser.add_argument('--nSim', type=int, default=10,
+                    help='Number of simulations to run in parallel')
+parser.add_argument('--seed_type', type=str, default='time',
+                    help='Type of seed to use. Either "time" to use current microsecond,'
+                         ' or "input" for inputting specific seeds')
+parser.add_argument('--seed_input', type=int, nargs='*',
+                    help='If seed_type="input", the seeds to use for the simulations')
+parser.add_argument('--savepath', default='.',
+                    help='path to save outputs of simulations ')
 
-for ii in range(nSim):
-    seeds[ii] = datetime.now().microsecond
+args = parser.parse_args()
 
-with multiprocessing.Pool(processes=10) as pool:
+# get time points of outputs
+t_points = np.linspace(0, args.t_final, args.n_t_points)
+
+# get non-equilibrium parameter
+# if not equal to 1, then system is away from equilibrium
+alpha = args.B * args.rates[2] * args.rates[4] / (args.C * args.rates[3] * args.rates[5])
+
+# handle random seeds
+if str(args.seed_type) == 'time':
+    seeds = np.zeros(args.nSim)
+    for ii in range(args.nSim):
+        seeds[ii] = datetime.now().microsecond
+        time.sleep(0.0001)
+
+elif str(args.seed_type) == 'input':
+    seeds = list(args.seed_input)
+elif str(args.seed_type) not in ['time', 'input']:
+    raise ValueError('Seed_type must be either "time" or "input"\n'
+                     'Currently {0}'.format(str(args.seed_type)))
+
+if int(args.nSim) < 10:
+    nProcesses = int(args.nSim)
+else:
+    nProcesses = 10
+
+with multiprocessing.Pool(processes=nProcesses) as pool:
     result = pool.map(get_traj, seeds.astype(int))
 
-# trajs = np.asarray(result)
-
+# plotting
 fig_traj, ax_traj = plt.subplots()
 fig_ep, ax_ep = plt.subplots()
 ep_mean = np.zeros(t_points.shape)
-for ii in range(nSim):
+for ii in range(args.nSim):
     ax_traj.plot(result[ii][0][:, 0], result[ii][0][:, 1], 'k', alpha=0.2)
     ax_ep.plot(t_points, result[ii][1], 'k', alpha=0.3)
     ep_mean += result[ii][1]
 
-ep_mean /= nSim
+ep_mean /= args.nSim
 
 ax_ep.plot(t_points, ep_mean, 'r', linewidth=2)
 
-# ax.set(xlabel='X', ylabel='Y')
-# ax.set_aspect(np.diff(ax.set_xlim())[0] / np.diff(ax.set_ylim())[0])
-# plt.tight_layout()
+ax_traj.set(xlabel='X', ylabel='Y')
+ax_traj.set_aspect(np.diff(ax_traj.set_xlim())[0] / np.diff(ax_traj.set_ylim())[0])
+plt.tight_layout()
 
-# params = {'rates': rates,
-#           'V': V,
-#           'A': A,
-#           'B': B,
-#           'C': C,
-#           't_points': t_points,
-#           'seeds': seeds}
+ax_ep.set(xlabel='t [s]', ylabel=r'$\Delta S$')
+ax_ep.set_aspect(np.diff(ax_ep.set_xlim())[0] / np.diff(ax_ep.set_ylim())[0])
+plt.tight_layout()
 
-# # with open(filename + '_params.csv', 'w') as csv_file:
-# #     w = csv.DictWriter(csv_file, params.keys())
-# #     w.writeheader()
-# #     w.writerow(params)
+# create filename
+filename = 'alpha{a}_nSim{n}'.format(a=alpha, n=args.nSim)
 
-# # fig.savefig(filename + '.pdf', format='pdf')
+# save parameters
+params = vars(args)
+params['datetime'] = datetime.now()
+params['seeds'] = seeds
 
-plt.show()
+with open(os.path.join(args.savepath, filename + '_params.csv'), 'w') as csv_file:
+    w = csv.DictWriter(csv_file, params.keys())
+    w.writeheader()
+    w.writerow(params)
+
+# save figures
+fig_traj.savefig(os.path.join(args.savepath, filename + '_traj.pdf'), format='pdf')
+fig_ep.savefig(os.path.join(args.savepath, filename + '_ep.pdf'), format='pdf')
+
+# save data
+trajs = np.zeros((args.nSim, 2, args.n_t_points))
+ep = np.zeros((args.nSim, args.n_t_points))
+for ii in range(args.nSim):
+    trajs[ii] = result[ii][0].T
+    ep[ii] = result[ii][1]
+
+data = {'trajs': trajs,
+        'ep': ep,
+        't_points': t_points}
+with open(os.path.join(args.savepath, 'alpha{a}_nSim{n}_data.pickle'.format(a=alpha, n=args.nSim)), 'wb') as f:
+    # Pickle the 'data' dictionary using the highest protocol available.
+    pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
