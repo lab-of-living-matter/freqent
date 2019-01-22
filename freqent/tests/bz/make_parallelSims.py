@@ -9,6 +9,7 @@ from brusselator_gillespie import brusselatorStochSim
 import argparse
 import os
 import pickle
+from scipy import stats
 mpl.rcParams['pdf.fonttype'] = 42
 
 
@@ -79,18 +80,22 @@ else:
 with multiprocessing.Pool(processes=nProcesses) as pool:
     result = pool.map(get_traj, seeds.astype(int))
 
-# plotting
+# plotting and preparing data for saving
 fig_traj, ax_traj = plt.subplots()
 fig_ep, ax_ep = plt.subplots()
-ep_mean = np.zeros(t_points.shape)
+
+trajs = np.zeros((args.nSim, 2, args.n_t_points))
+eps = np.zeros((args.nSim, args.n_t_points))
+
 for ii in range(args.nSim):
-    ax_traj.plot(result[ii][0][:, 0], result[ii][0][:, 1], 'k', alpha=0.2)
-    ax_ep.plot(t_points, result[ii][1], 'k', alpha=0.3)
-    ep_mean += result[ii][1]
+    traj = result[ii][0].T
+    ep = result[ii][1]
+    ax_traj.plot(traj[0], traj[1], 'k', alpha=0.2)
+    ax_ep.plot(t_points, ep, 'k', alpha=0.3)
+    trajs[ii] = traj
+    eps[ii] = ep
 
-ep_mean /= args.nSim
-
-ax_ep.plot(t_points, ep_mean, 'r', linewidth=2)
+ax_ep.plot(t_points, eps.mean(axis=0), 'r', linewidth=2)
 
 ax_traj.set(xlabel='X', ylabel='Y')
 ax_traj.set_aspect(np.diff(ax_traj.set_xlim())[0] / np.diff(ax_traj.set_ylim())[0])
@@ -99,6 +104,10 @@ plt.tight_layout()
 ax_ep.set(xlabel='t [s]', ylabel=r'$\Delta S$')
 ax_ep.set_aspect(np.diff(ax_ep.set_xlim())[0] / np.diff(ax_ep.set_ylim())[0])
 plt.tight_layout()
+
+# Calculate mean entropy production rate from halway through the simulation to ensure steady state reached
+epr, intercept, r_value, p_val, std_err = stats.linregress(t_points[args.n_t_points // 2],
+                                                           eps.mean(axis=0)[args.n_t_points // 2])
 
 # create filename
 filename = 'alpha{a}_nSim{n}'.format(a=alpha, n=args.nSim)
@@ -117,16 +126,10 @@ with open(os.path.join(args.savepath, filename + '_params.csv'), 'w') as csv_fil
 fig_traj.savefig(os.path.join(args.savepath, filename + '_traj.pdf'), format='pdf')
 fig_ep.savefig(os.path.join(args.savepath, filename + '_ep.pdf'), format='pdf')
 
-# save data
-trajs = np.zeros((args.nSim, 2, args.n_t_points))
-ep = np.zeros((args.nSim, args.n_t_points))
-for ii in range(args.nSim):
-    trajs[ii] = result[ii][0].T
-    ep[ii] = result[ii][1]
-
 data = {'trajs': trajs,
-        'ep': ep,
-        't_points': t_points}
+        'eps': eps,
+        't_points': t_points,
+        'epr': epr}
 with open(os.path.join(args.savepath, 'alpha{a}_nSim{n}_data.pickle'.format(a=alpha, n=args.nSim)), 'wb') as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
