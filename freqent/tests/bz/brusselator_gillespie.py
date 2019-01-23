@@ -42,7 +42,7 @@ class brusselatorStochSim():
     '''
     def __init__(self, population_init, rates, V, t_points, seed=None):
         self.rates = rates  # reaction rates given in docstring
-        self.V = V  # volume of reaction spaces
+        self.V = V  # volume of reaction space
         self.t_points = t_points  # time points to output simulation results
 
         X, Y, A, B, C = population_init
@@ -208,9 +208,9 @@ class brusselatorStochSim():
         # self.occupancy /= self.t_points.max()
 
 
-class brusselatorFieldStochSim():
+class brusselator1DFieldStochSim():
     '''
-    Class for evolving a reaction-diffusion equation
+    Class for evolving a 1D reaction-diffusion equation
     The reactions are those of the Brusselator
 
                k0
@@ -227,16 +227,30 @@ class brusselatorFieldStochSim():
 
     All chemical quantities are given as total number of molecules,
     not concentrations.
+
+    Diffusion is modeled as two chains of "chemical reactions" between
+    K different subvolumes
+
+         d        d        d        d
+    X_1 <==> X_2 <==> X_3 <==> ... <==> X_K
+         d        d        d        d
+
+         d        d        d        d
+    Y_1 <==> Y_2 <==> Y_3 <==> ... <==> Y_K
+         d        d        d        d
+
+    Where d = D / h^2, where h is the length of the subvolumes.
     '''
-    def __init__(self, population_init, rates, V, t_points, seed=None):
+    def __init__(self, XY_init, ABC, rates, V, t_points,
+                 D, n_subvolumes, l_subVolumes, seed=None):
         self.rates = rates  # reaction rates given in docstring
-        self.V = V  # volume of reaction spaces
+        self.V = V  # volume of each reaction subvolume
         self.t_points = t_points  # time points to output simulation results
-
-        X, Y, A, B, C = population_init
-        k0, k1, k2, k3, k4, k5 = self.rates
-
-        self.pop0 = [X, Y]  # store initial point, [X, Y, A, B, C]
+        self.D = D  # diffusion constant for X and Y, as 2-element array [D_X, D_Y]
+        self.h = l_subVolumes  # length of subvolumes
+        self.K = n_subvolumes  # number of subvolumes
+        self.XY0 = XY_init  # 2 by K array of initial values for X and Y
+        self.ABC = np.asarray(ABC)  # number of chemostatted molecules IN EACH SUBVOLUME
         self.ep = np.zeros(len(t_points))  # store entropy production time series
         # self.occupancy = np.zeros((self.V * 15, self.V * 15))
 
@@ -245,11 +259,91 @@ class brusselatorFieldStochSim():
         else:
             self.seed = seed
 
-        # find equilibrium point (only important if detailed balance met)
-        self.eq = np.array([A * k0 / k1, A * k0 * k5 / (k1 * k4)])
+        # Store propensities for t=0, to be updated throughout simulation
+        # Order given as (each line is K reactions)
+        #     - X diffusing clockwise (1 -> 2 ->...-> K -> 1)
+        #     - X diffusing counter-clockwise (K -> K-1 ->...-> 2 -> 1 -> K)
+        #     - Y diffusing clockwise (1 -> 2 ->...-> K -> 1)
+        #     - Y diffusing counter-clockwise (K -> K-1 ->...-> 2 -> 1 -> K)
+        #     - k0 reaction for each cell
+        #     - k1 reaction for each cell
+        #     - k2 reaction for each cell
+        #     - k3 reaction for each cell
+        #     - k4 reaction for each cell
+        #     - k5 reaction for each cell
+        X, Y = XY_init
+        k0, k1, k2, k3, k4, k5 = self.rates
+        dx = self.D[0] / self.h**2  # diffusion rate of X molecule
+        dy = self.D[1] / self.h**2  # diffusion rate of Y molecule
+        A, B, C = self.ABC
 
-        # update rule for brusselator reactions given above
-        # this assumes A, B, and C remain unchanged
+        x_cw = X * dx
+        x_ccw = np.flip(X) * dx
+        y_cw = Y * dy
+        y_ccw = np.flip(Y) * dy
+        k0_reaction = k0 * A,
+        k1_reaction = k1 * X,
+        k2_reaction = k2 * B * X / self.V,
+        k3_reaction = k3 * C * Y / self.V,
+        k4_reaction = k4 * X * (X - 1) * Y / self.V**2,
+        k5_reaction = k5 * X * (X - 1) * (X - 2) / self.V**2
+
+        self.props = np.concatenate((x_cw,
+                                     x_ccw,
+                                     y_cw,
+                                     y_ccw,
+                                     k0_reaction,
+                                     k1_reaction,
+                                     k2_reaction,
+                                     k3_reaction,
+                                     k4_reaction,
+                                     k5_reaction))
+
+        # # find equilibrium point (only important if detailed balance met)
+        # self.eq = np.array([A * k0 / k1, A * k0 * k5 / (k1 * k4)])
+
+        # write update matrices. See Notability note from 1/22/2019 for details
+
+        # create diagonal matrix to move X_i -> X_i+1
+        # with periodic b.c., X_K -> X_1
+        # start at X_1
+        x_cw_update = (-np.eye(self.K, dtype=int) +
+                       np.eye(self.K, k=1, dtype=int) +
+                       np.eye(self.K, k=-(self.K - 1), dtype=int))
+        # y clockwise is the same
+        y_cw_update = x_cw_update
+
+        # create anti-diagonal matrix to move X_i -> X_i-1
+        # with periodic b.c., X_1 -> X_K
+        # start at X_K
+        x_ccw_update = (-np.eye(self.K, dtype=int)[::-1] +
+                        np.eye(self.K, k=-1, dtype=int)[::-1] +
+                        np.eye(self.K, k=(self.K - 1), dtype=int)[::-1])
+        # y counter-clockwise is the same
+        y_ccw_update = x_ccw_update
+
+        x_update = np.vstack((x_cw_update,  # i -> i+1 diffusion
+                              x_ccw_update,  # i -> i-1 diffusion
+                              np.zeros((self.K, self.K), dtype=int),  # x doesn't change
+                              np.zeros((self.K, self.K), dtype=int),  # when y diffuses
+                              np.eye(self.K, dtype=int),  # A -> X, k0
+                              -np.eye(self.K, dtype=int),  # X -> A, k1
+                              -np.eye(self.K, dtype=int),  # B + X -> Y + C, k2
+                              np.eye(self.K, dtype=int),  # Y + C -> B + X, k3
+                              np.eye(self.K, dtype=int),  # 2X + Y -> 3X, k4
+                              -np.eye(self.K, dtype=int)))  # 3X -> 2X + Y, k5
+
+        y_update = np.vstack((np.zeros((self.K, self.K), dtype=int),  # y doesn't change
+                              np.zeros((self.K, self.K), dtype=int),  # when x diffuses
+                              y_cw_update,  # i -> i+1 diffusion
+                              y_ccw_update,  # i -> i-1 diffusion
+                              np.zeros((self.K, self.K), dtype=int),  # A -> X, k0
+                              np.zeros((self.K, self.K), dtype=int),  # X -> A, k1
+                              np.eye(self.K, dtype=int),  # B + X -> Y + C, k2
+                              -np.eye(self.K, dtype=int),  # Y + C -> B + X, k3
+                              -np.eye(self.K, dtype=int),  # 2X + Y -> 3X, k4
+                              np.eye(self.K, dtype=int)))  # 3X -> 2X + Y, k5
+
         self.update = np.array([[1, 0],    # A -> X, k0
                                 [-1, 0],   # X -> A, k1
                                 [-1, 1],   # B + X -> Y + C, k2
@@ -258,51 +352,67 @@ class brusselatorFieldStochSim():
                                 [-1, 1]])  # 3X -> 2X + Y, k5
 
         # preallocate space for evolved population
-        self.population = np.zeros((len(self.t_points), 2), dtype=int)
-        self.population[0, :] = self.pop0
-        self.chemostat = np.array([A, B, C])
-
-        # # update rule for brusselator reactions given above
-        # # this assumes A, B, and C change
-        # self.update = np.array([[1, 0, -1, 0, 0],   # A -> X, k0
-        #                         [-1, 0, 1, 0, 0],   # X -> A, k1
-        #                         [-1, 1, 0, -1, 1],  # B + X -> Y + C, k2
-        #                         [1, -1, 0, 1, -1],  # Y + C -> B + X, k3
-        #                         [1, -1, 0, 0, 0],   # 2X + Y -> 3X, k4
-        #                         [-1, 1, 0, 0, 0]])  # 3X -> 2X + Y, k5
-        #
-        # # preallocate space for evolved population
-        # self.population = np.zeros((len(self.t_points), len(population_init)), dtype=int)
-        # self.population[0, :] = self.pop0
+        # Dimensions are [time, chemical_species, subvolume]
+        self.population = np.zeros((len(self.t_points), 2, self.K), dtype=int)
+        self.population[0, :] = self.XY0
 
     def reset(self):
         self.__init__(self.pop0, self.rates, self.V, self.t_points)
 
-    def propensities_brusselator(self, population):
+    def propensities_brusselator(self, XY):
         '''
         Calculates propensities for the reversible brusselator to be used
         in the Gillespie algorithm
 
         Parameters
         ----------
-        population : array-like
-            array with current number of species in the mixture.
-            Given in order [X, Y, A, B, C]
+        XY : array-like
+            2xK array with current number of species in each subvolume
 
         Returns
         -------
         props : array
-            array with propensities measured given the current population
+            array with propensities measured given the current population in
+            a given cell. Order given as (each line is K reactions)
+            - X diffusing clockwise (1 -> 2 ->...-> K -> 1)
+            - X diffusing counter-clockwise (K -> K-1 ->...-> 2 -> 1 -> K)
+            - Y diffusing clockwise (1 -> 2 ->...-> K -> 1)
+            - Y diffusing counter-clockwise (K -> K-1 ->...-> 2 -> 1 -> K)
+            - k0 reaction for each cell
+            - k1 reaction for each cell
+            - k2 reaction for each cell
+            - k3 reaction for each cell
+            - k4 reaction for each cell
+            - k5 reaction for each cell
         '''
-        X, Y, A, B, C = population
+        X, Y = XY
         k0, k1, k2, k3, k4, k5 = self.rates
+        dx = self.D[0] / self.h**2  # diffusion rate of X molecule
+        dy = self.D[1] / self.h**2  # diffusion rate of Y molecule
+        A, B, C = self.ABC
 
-        props = np.array([k0 * A,
-                          k1 * X,
-                          k2 * B * X / self.V,
-                          k3 * C * Y / self.V,
-                          k4 * X * (X - 1) * Y / self.V**2,
-                          k5 * X * (X - 1) * (X - 2) / self.V**2])
+        x_cw = X * dx
+        x_ccw = np.flip(X) * dx
+        y_cw = Y * dy
+        y_ccw = np.flip(Y) * dy
+        k0_reaction = k0 * A,
+        k1_reaction = k1 * X,
+        k2_reaction = k2 * B * X / self.V,
+        k3_reaction = k3 * C * Y / self.V,
+        k4_reaction = k4 * X * (X - 1) * Y / self.V**2,
+        k5_reaction = k5 * X * (X - 1) * (X - 2) / self.V**2
+
+        props = np.concatenate((x_cw,
+                                x_ccw,
+                                y_cw,
+                                y_ccw,
+                                k0_reaction,
+                                k1_reaction,
+                                k2_reaction,
+                                k3_reaction,
+                                k4_reaction,
+                                k5_reaction))
+
         return props
 
     def sample_discrete(self, probs, r):
