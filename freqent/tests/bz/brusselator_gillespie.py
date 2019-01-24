@@ -485,8 +485,6 @@ class brusselator1DFieldStochSim():
 
                 # increment time
                 t += dt
-                txt = 't = {time:.3f}'.format(time=t)
-                print(txt, end='\r')
 
                 # update reaction, dt, and propensities
                 reaction, dt, props = reaction_next, dt_next, props_next
