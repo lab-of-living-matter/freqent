@@ -124,28 +124,30 @@ epr_spectral = (fe.entropy(trajs,
                            subtract_bias=True)).real
 
 
-# create filename
+# create filename and create folder with that name under savepath
 filename = 'alpha{a}_nSim{n}'.format(a=alpha, n=args.nSim)
+if not os.path.exists(os.path.join(args.savepath, filename)):
+    os.makedirs(os.path.join(args.savepath, filename))
 
 # save parameters
 params = vars(args)
 params['datetime'] = datetime.now()
 params['seeds'] = seeds
 
-with open(os.path.join(args.savepath, filename + '_params.csv'), 'w') as csv_file:
+with open(os.path.join(args.savepath, filename, 'params.csv'), 'w') as csv_file:
     w = csv.DictWriter(csv_file, params.keys())
     w.writeheader()
     w.writerow(params)
 
 # save figures
-fig_traj.savefig(os.path.join(args.savepath, filename + '_traj.pdf'), format='pdf')
-fig_ep.savefig(os.path.join(args.savepath, filename + '_ep.pdf'), format='pdf')
+fig_traj.savefig(os.path.join(args.savepath, filename, 'traj.pdf'), format='pdf')
+fig_ep.savefig(os.path.join(args.savepath, filename, 'ep.pdf'), format='pdf')
 
 data = {'trajs': trajs,
         'eps': eps,
         't_points': t_points,
         'epr': epr,
         'epr_spectral': epr_spectral}
-with open(os.path.join(args.savepath, 'alpha{a}_nSim{n}_data.pickle'.format(a=alpha, n=args.nSim)), 'wb') as f:
+with open(os.path.join(args.savepath, filename, 'data.pickle'), 'wb') as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
