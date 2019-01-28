@@ -246,7 +246,7 @@ class brusselator1DFieldStochSim():
         self.rates = rates  # reaction rates given in docstring
         self.V = V  # volume of each reaction subvolume
         self.t_points = t_points  # time points to output simulation results
-        self.D = D  # diffusion constant for X and Y, as 2-element array [D_X, D_Y]
+        self.D = np.asarray(D)  # diffusion constant for X and Y, as 2-element array [D_X, D_Y]
         self.h = l_subVolumes  # length of subvolumes
         self.K = n_subvolumes  # number of subvolumes
         self.XY0 = XY_init  # 2 by K array of initial values for X and Y
@@ -275,17 +275,19 @@ class brusselator1DFieldStochSim():
         k0, k1, k2, k3, k4, k5 = self.rates
         dx = self.D[0] / self.h**2  # diffusion rate of X molecule
         dy = self.D[1] / self.h**2  # diffusion rate of Y molecule
-        A, B, C = self.ABC
+        A = np.repeat(self.ABC[0], self.K)
+        B = np.repeat(self.ABC[1], self.K)
+        C = np.repeat(self.ABC[2], self.K)
 
         x_cw = X * dx
         x_ccw = np.flip(X) * dx
         y_cw = Y * dy
         y_ccw = np.flip(Y) * dy
-        k0_reaction = k0 * A,
-        k1_reaction = k1 * X,
-        k2_reaction = k2 * B * X / self.V,
-        k3_reaction = k3 * C * Y / self.V,
-        k4_reaction = k4 * X * (X - 1) * Y / self.V**2,
+        k0_reaction = k0 * A
+        k1_reaction = k1 * X
+        k2_reaction = k2 * B * X / self.V
+        k3_reaction = k3 * C * Y / self.V
+        k4_reaction = k4 * X * (X - 1) * Y / self.V**2
         k5_reaction = k5 * X * (X - 1) * (X - 2) / self.V**2
 
         self.props = np.concatenate((x_cw,
@@ -344,12 +346,9 @@ class brusselator1DFieldStochSim():
                               -np.eye(self.K, dtype=int),  # 2X + Y -> 3X, k4
                               np.eye(self.K, dtype=int)))  # 3X -> 2X + Y, k5
 
-        self.update = np.array([[1, 0],    # A -> X, k0
-                                [-1, 0],   # X -> A, k1
-                                [-1, 1],   # B + X -> Y + C, k2
-                                [1, -1],   # Y + C -> B + X, k3
-                                [1, -1],   # 2X + Y -> 3X, k4
-                                [-1, 1]])  # 3X -> 2X + Y, k5
+        # Build update matrix index by [reaction, species, compartment]
+        # with size [10*K, 2, K]
+        self.update = np.stack((x_update, y_update), axis=1)
 
         # preallocate space for evolved population
         # Dimensions are [time, chemical_species, subvolume]
@@ -357,61 +356,108 @@ class brusselator1DFieldStochSim():
         self.population[0, :] = self.XY0
 
     def reset(self):
-        self.__init__(self.pop0, self.rates, self.V, self.t_points)
+        self.__init__(self.XY0, self.ABC, self.rates, self.V, self.t_points,
+                      self.D, self.K, self.h)
 
-    def propensities_brusselator(self, XY):
+    # Functions to update the propensities with
+    # XY is current population as 2xK array
+    def update_x_diffusion(self, XY, compartment):
+        dx = self.D[0] / self.h**2
+        return XY[0, compartment] * dx
+
+    def update_y_diffusion(self, XY, compartment):
+        dy = self.D[1] / self.h**2
+        return XY[1, compartment] * dy
+
+    def update_k0_reaction(self, XY, compartment):
+        return self.rates[0] * self.ABC[0]
+
+    def update_k1_reaction(self, XY, compartment):
+        X = XY[0, compartment]
+        return self.rates[1] * X
+
+    def update_k2_reaction(self, XY, compartment):
+        X = XY[0, compartment]
+        return self.rates[2] * self.ABC[1] * X / self.V
+
+    def update_k3_reaction(self, XY, compartment):
+        Y = XY[1, compartment]
+        return self.rates[3] * self.ABC[2] * Y / self.V
+
+    def update_k4_reaction(self, XY, compartment):
+        X = XY[0, compartment]
+        Y = XY[1, compartment]
+        return self.rates[4] * X * (X - 1) * Y / self.V**2
+
+    def update_k5_reaction(self, XY, compartment):
+        X = XY[0, compartment]
+        return self.rates[5] * X * (X - 1) * (X - 2) / self.V**2
+
+    def update_propensities(self, XY, mu):
         '''
-        Calculates propensities for the reversible brusselator to be used
-        in the Gillespie algorithm
+        update the propensities of the 1D reaction diffusion system
+        Anything that changes the quantity of X must change reactions
+        0, 1, 5, 6, 8, 9
+
+        Anything that changes the quantity of Y must change reactions
+        2, 3, 7, 8
+
+        Reaction 4 never changes (fixed by quantity of A)
+
+        For order of reactions, see self.__init__
 
         Parameters
         ----------
-        XY : array-like
-            2xK array with current number of species in each subvolume
+        mu : int
+            Which reaction is chosen
 
         Returns
         -------
-        props : array
-            array with propensities measured given the current population in
-            a given cell. Order given as (each line is K reactions)
-            - X diffusing clockwise (1 -> 2 ->...-> K -> 1)
-            - X diffusing counter-clockwise (K -> K-1 ->...-> 2 -> 1 -> K)
-            - Y diffusing clockwise (1 -> 2 ->...-> K -> 1)
-            - Y diffusing counter-clockwise (K -> K-1 ->...-> 2 -> 1 -> K)
-            - k0 reaction for each cell
-            - k1 reaction for each cell
-            - k2 reaction for each cell
-            - k3 reaction for each cell
-            - k4 reaction for each cell
-            - k5 reaction for each cell
+        self.props : array-like
+            updated propensities array
         '''
-        X, Y = XY
-        k0, k1, k2, k3, k4, k5 = self.rates
-        dx = self.D[0] / self.h**2  # diffusion rate of X molecule
-        dy = self.D[1] / self.h**2  # diffusion rate of Y molecule
-        A, B, C = self.ABC
+        dependsOnX = [0, 1, 5, 6, 8, 9]
+        dependsOnY = [2, 3, 7, 8]
 
-        x_cw = X * dx
-        x_ccw = np.flip(X) * dx
-        y_cw = Y * dy
-        y_ccw = np.flip(Y) * dy
-        k0_reaction = k0 * A,
-        k1_reaction = k1 * X,
-        k2_reaction = k2 * B * X / self.V,
-        k3_reaction = k3 * C * Y / self.V,
-        k4_reaction = k4 * X * (X - 1) * Y / self.V**2,
-        k5_reaction = k5 * X * (X - 1) * (X - 2) / self.V**2
+        affectsX = [0, 1, 4, 5, 6, 7, 8, 9]
+        affectsY = [2, 3, 6, 7, 8, 9]
 
-        props = np.concatenate((x_cw,
-                                x_ccw,
-                                y_cw,
-                                y_ccw,
-                                k0_reaction,
-                                k1_reaction,
-                                k2_reaction,
-                                k3_reaction,
-                                k4_reaction,
-                                k5_reaction))
+        whichReactionType = mu // self.K
+        compartment = mu % self.K
+
+        if whichReactionType == 0:
+            # X diffuses to the right
+            # a * K picks the reaction to update
+            # mu % K gives the compartment where the reaction happened
+            toChange = np.sort([a * self.K + mu % self.K for a in dependsOnX] +
+                               [a * self.K + mu % self.K + 1 for a in dependsOnX])
+
+            self.props[toChange] =
+        elif whichReactionType == 1:
+            # X diffuses to the left
+            toChange = np.sort([a * self.K + mu % self.K for a in dependsOnX] +
+                               [a * self.K + mu % self.K - 1 for a in dependsOnX])
+        elif whichReactionType == 2:
+            # Y diffuses to the right
+            toChange = np.sort([a * self.K + mu % self.K for a in dependsOnY] +
+                               [a * self.K + mu % self.K + 1 for a in dependsOnY])
+        elif whichReactionType == 3:
+            # Y diffuses to the left
+            toChange = np.sort([a * self.K + mu % self.K for a in dependsOnY] +
+                               [a * self.K + mu % self.K - 1 for a in dependsOnY])
+        elif whichReactionType in [4, 5]:
+            # A <=> X
+            toChange = np.sort([a * self.K + mu % self.K for a in dependsOnX])
+        elif whichReactionType in [6, 7, 8, 9]:
+            # B + X <=> C + Y
+            # and
+            # 2X + Y <=> 3X
+            toChange = np.sort([a * self.K + mu % self.K for a in dependsOnX + dependsOnY])
+        else:
+            raise ValueError('Reaction number is between 0 and {nReact}.\n Current number is {m}'.format(nReact=10 * self.K - 1, m=mu))
+
+
+
 
         return props
 
