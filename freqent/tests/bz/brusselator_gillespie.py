@@ -185,7 +185,8 @@ class brusselatorStochSim():
 
 
                 # add to entropy
-                ep += np.log(props[reaction] / props_next[backward_reaction])
+                ep += np.log((props[reaction] / props.sum()) /
+                             (props_next[backward_reaction] / props_next.sum()))
 
                 # increment time
                 t += dt
@@ -483,7 +484,8 @@ class brusselator1DFieldStochSim():
 
 
                 # add to entropy
-                ep += np.log(props[reaction] / props_next[backward_reaction])
+                ep += np.log((props[reaction] / props.sum()) /
+                             (props_next[backward_reaction] / props_next.sum()))
 
                 # increment time
                 t += dt
