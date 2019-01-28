@@ -40,6 +40,7 @@ class brusselatorStochSim():
     All chemical quantities are given as total number of molecules,
     not concentrations.
     '''
+
     def __init__(self, population_init, rates, V, t_points, seed=None):
         self.rates = rates  # reaction rates given in docstring
         self.V = V  # volume of reaction space
@@ -183,15 +184,12 @@ class brusselatorStochSim():
                 # If reaction is an even number (or 0) add one, if an odd number, subtract one
                 backward_reaction = reaction + (-1)**(reaction % 2)
 
-
                 # add to entropy
                 ep += np.log((props[reaction] / props.sum()) /
                              (props_next[backward_reaction] / props_next.sum()))
 
                 # increment time
                 t += dt
-                txt = 't = {time:.3f}'.format(time=t)
-                print(txt, end='\r')
 
                 # update reaction, dt, and propensities
                 reaction, dt, props = reaction_next, dt_next, props_next
@@ -242,6 +240,7 @@ class brusselator1DFieldStochSim():
 
     Where d = D / h^2, where h is the length of the subvolumes.
     '''
+
     def __init__(self, XY_init, ABC, rates, V, t_points,
                  D, n_subvolumes, l_subVolumes, seed=None):
         self.rates = rates  # reaction rates given in docstring
@@ -482,15 +481,12 @@ class brusselator1DFieldStochSim():
                 # If reaction is an even number (or 0) add one, if an odd number, subtract one
                 backward_reaction = reaction + (-1)**(reaction % 2)
 
-
                 # add to entropy
                 ep += np.log((props[reaction] / props.sum()) /
                              (props_next[backward_reaction] / props_next.sum()))
 
                 # increment time
                 t += dt
-                txt = 't = {time:.3f}'.format(time=t)
-                print(txt, end='\r')
 
                 # update reaction, dt, and propensities
                 reaction, dt, props = reaction_next, dt_next, props_next
