@@ -1,8 +1,10 @@
 import numpy as np
 from datetime import datetime
 import time
-import matplotlib.pyplot as plt
 import matplotlib as mpl
+mpl.use('Agg')  # use backend that doesn't immediately create figures
+
+import mpl.pyplot as plt
 import multiprocessing
 import csv
 from brusselator_gillespie import brusselatorStochSim
