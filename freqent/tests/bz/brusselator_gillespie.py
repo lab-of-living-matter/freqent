@@ -318,9 +318,9 @@ class brusselator1DFieldStochSim():
         # create anti-diagonal matrix to move X_i -> X_i-1
         # with periodic b.c., X_1 -> X_K
         # start at X_K
-        x_ccw_update = (-np.eye(self.K, dtype=int)[::-1] +
-                        np.eye(self.K, k=-1, dtype=int)[::-1] +
-                        np.eye(self.K, k=(self.K - 1), dtype=int)[::-1])
+        x_ccw_update = (-np.eye(self.K, dtype=int) +
+                        np.eye(self.K, k=-1, dtype=int) +
+                        np.eye(self.K, k=(self.K - 1), dtype=int))
         # y counter-clockwise is the same
         y_ccw_update = x_ccw_update
 
@@ -408,6 +408,8 @@ class brusselator1DFieldStochSim():
 
         Parameters
         ----------
+        XY : array-like
+            current populationt with which to update the brusselator propensities
         mu : int
             Which reaction is chosen
 
