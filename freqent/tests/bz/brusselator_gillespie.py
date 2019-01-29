@@ -361,39 +361,40 @@ class brusselator1DFieldStochSim():
 
     # Functions to update the propensities with
     # XY is current population as 2xK array
-    def update_x_diffusion(self, XY, compartment):
-        dx = self.D[0] / self.h**2
-        return XY[0, compartment] * dx
+    def reaction_update(self, XY, compartment, reactionType):
+        if reactionType in [0, 1]:
+            dx = self.D[0] / self.h**2
+            return XY[0, compartment] * dx
 
-    def update_y_diffusion(self, XY, compartment):
-        dy = self.D[1] / self.h**2
-        return XY[1, compartment] * dy
+        elif reactionType in [2, 3]:
+            dy = self.D[1] / self.h**2
+            return XY[1, compartment] * dy
 
-    def update_k0_reaction(self, XY, compartment):
-        return self.rates[0] * self.ABC[0]
+        elif reactionType == 4:
+            return self.rates[0] * self.ABC[0]
 
-    def update_k1_reaction(self, XY, compartment):
-        X = XY[0, compartment]
-        return self.rates[1] * X
+        elif reactionType == 5:
+            X = XY[0, compartment]
+            return self.rates[1] * X
 
-    def update_k2_reaction(self, XY, compartment):
-        X = XY[0, compartment]
-        return self.rates[2] * self.ABC[1] * X / self.V
+        elif reactionType == 6:
+            X = XY[0, compartment]
+            return self.rates[2] * self.ABC[1] * X / self.V
 
-    def update_k3_reaction(self, XY, compartment):
-        Y = XY[1, compartment]
-        return self.rates[3] * self.ABC[2] * Y / self.V
+        elif reactionType == 7:
+            Y = XY[1, compartment]
+            return self.rates[3] * self.ABC[2] * Y / self.V
 
-    def update_k4_reaction(self, XY, compartment):
-        X = XY[0, compartment]
-        Y = XY[1, compartment]
-        return self.rates[4] * X * (X - 1) * Y / self.V**2
+        elif reactionType == 8:
+            X = XY[0, compartment]
+            Y = XY[1, compartment]
+            return self.rates[4] * X * (X - 1) * Y / self.V**2
 
-    def update_k5_reaction(self, XY, compartment):
-        X = XY[0, compartment]
-        return self.rates[5] * X * (X - 1) * (X - 2) / self.V**2
+        elif reactionType == 9:
+            X = XY[0, compartment]
+            return self.rates[5] * X * (X - 1) * (X - 2) / self.V**2
 
-    def update_propensities(self, XY, mu):
+    def update_propensities(self, XY, reaction):
         '''
         update the propensities of the 1D reaction diffusion system
         Anything that changes the quantity of X must change reactions
@@ -409,9 +410,10 @@ class brusselator1DFieldStochSim():
         Parameters
         ----------
         XY : array-like
-            current populationt with which to update the brusselator propensities
-        mu : int
-            Which reaction is chosen
+            2xK array of current population used to update the
+            brusselator propensities
+        reaction : int
+            Which reaction was chosen, integer from 0 to 10K - 1
 
         Returns
         -------
@@ -421,47 +423,41 @@ class brusselator1DFieldStochSim():
         dependsOnX = [0, 1, 5, 6, 8, 9]
         dependsOnY = [2, 3, 7, 8]
 
-        affectsX = [0, 1, 4, 5, 6, 7, 8, 9]
-        affectsY = [2, 3, 6, 7, 8, 9]
+        reactionType = reaction // self.K
+        compartment = reaction % self.K
 
-        whichReactionType = mu // self.K
-        compartment = mu % self.K
-
-        if whichReactionType == 0:
+        if reactionType == 0:
             # X diffuses to the right
-            # a * K picks the reaction to update
-            # mu % K gives the compartment where the reaction happened
-            toChange = np.sort([a * self.K + mu % self.K for a in dependsOnX] +
-                               [a * self.K + mu % self.K + 1 for a in dependsOnX])
-
-            self.props[toChange] =
-        elif whichReactionType == 1:
+            toChange = np.sort([a * self.K + compartment for a in dependsOnX] +
+                               [a * self.K + (compartment + 1) % self.K for a in dependsOnX])
+            # Use (compartment + 1) % K in case you diffuse to the right from the rightmost
+            # compartment. In that case, compartment = K - 1, and (compartment + 1) % K = 0
+            # meaning you diffuse from the end of the ring to its beginning
+        elif reactionType == 1:
             # X diffuses to the left
-            toChange = np.sort([a * self.K + mu % self.K for a in dependsOnX] +
-                               [a * self.K + mu % self.K - 1 for a in dependsOnX])
-        elif whichReactionType == 2:
+            toChange = np.sort([a * self.K + compartment for a in dependsOnX] +
+                               [a * self.K + compartment - 1 for a in dependsOnX])
+        elif reactionType == 2:
             # Y diffuses to the right
-            toChange = np.sort([a * self.K + mu % self.K for a in dependsOnY] +
-                               [a * self.K + mu % self.K + 1 for a in dependsOnY])
-        elif whichReactionType == 3:
+            toChange = np.sort([a * self.K + compartment for a in dependsOnY] +
+                               [a * self.K + (compartment + 1) % self.K for a in dependsOnY])
+        elif reactionType == 3:
             # Y diffuses to the left
-            toChange = np.sort([a * self.K + mu % self.K for a in dependsOnY] +
-                               [a * self.K + mu % self.K - 1 for a in dependsOnY])
-        elif whichReactionType in [4, 5]:
+            toChange = np.sort([a * self.K + compartment for a in dependsOnY] +
+                               [a * self.K + compartment - 1 for a in dependsOnY])
+        elif reactionType in [4, 5]:
             # A <=> X
-            toChange = np.sort([a * self.K + mu % self.K for a in dependsOnX])
-        elif whichReactionType in [6, 7, 8, 9]:
-            # B + X <=> C + Y
-            # and
-            # 2X + Y <=> 3X
-            toChange = np.sort([a * self.K + mu % self.K for a in dependsOnX + dependsOnY])
+            toChange = np.sort([a * self.K + compartment for a in dependsOnX])
+        elif reactionType in [6, 7, 8, 9]:
+            # B + X <=> C + Y and 2X + Y <=> 3X
+            toChange = np.sort([a * self.K + compartment for a in dependsOnX + dependsOnY])
         else:
-            raise ValueError('Reaction number is between 0 and {nReact}.\n Current number is {m}'.format(nReact=10 * self.K - 1, m=mu))
+            raise ValueError('Reaction number should be between 0 and {nReact}.\n Current number is {m}'.format(nReact=10 * self.K - 1, m=reaction))
 
-
-
-
-        return props
+        for propInd in toChange:
+            # Can't use compartment as second argument because diffusion also changes
+            # quantities in neighboring compartments
+            self.props[propInd] = self.reaction_update(XY, toChange % self.K, reactionType)
 
     def sample_discrete(self, probs, r):
         '''
@@ -474,12 +470,11 @@ class brusselator1DFieldStochSim():
             n += 1
         return n - 1
 
-    def gillespie_draw(self, population):
+    def gillespie_draw(self):
 
         # get propensities
-        props = self.propensities_brusselator(population)
-        props_sum = props.sum()
-        probs = props / props_sum
+        props_sum = self.props.sum()
+        probs = self.props / props_sum
 
         # draw two random numbers
         r1 = np.random.rand()
@@ -491,7 +486,7 @@ class brusselator1DFieldStochSim():
         # pick next reaction
         reaction = self.sample_discrete(probs, r2)
 
-        return reaction, dt, props
+        return reaction, dt, probs
 
     def runSimulation(self):
         '''
@@ -508,21 +503,24 @@ class brusselator1DFieldStochSim():
         np.random.seed(self.seed)
 
         # do first random draw
-        pop = np.asarray(self.pop0).copy()
-        reaction, dt, props = self.gillespie_draw(np.concatenate((pop, self.chemostat)))
+        pop = np.asarray(self.XY0).copy()
+        reaction, dt, probs = self.gillespie_draw()
         while i < len(self.t_points):
             # current = np.zeros(self.update.shape[0])
             while t < self.t_points[i_time]:
                 # update population
                 pop_prev = pop.copy()
-                pop += self.update[reaction, :]
+                pop += self.update[reaction, ...]
+
+                # update propensities
+                self.update_propensities(pop, reaction)
 
                 # track population. Keep Y in rows, X in columns
                 # self.occupancy[pop_prev[1], pop_prev[0]] += dt
 
                 # Calculate trajectory entropy. On the way, calculate next set of random draws
                 # Do next Gillespie draw
-                reaction_next, dt_next, props_next = self.gillespie_draw(np.concatenate((pop, self.chemostat)))
+                reaction_next, dt_next, probs_next = self.gillespie_draw()
 
                 # Find backwards reaction from what was just done
                 # [0, 2, 4] <--> [1, 3, 5]
@@ -530,14 +528,13 @@ class brusselator1DFieldStochSim():
                 backward_reaction = reaction + (-1)**(reaction % 2)
 
                 # add to entropy
-                ep += np.log((props[reaction] / props.sum()) /
-                             (props_next[backward_reaction] / props_next.sum()))
+                ep += np.log(probs[reaction] / probs_next[backward_reaction])
 
                 # increment time
                 t += dt
 
                 # update reaction, dt, and propensities
-                reaction, dt, props = reaction_next, dt_next, props_next
+                reaction, dt, probs = reaction_next, dt_next, probs_next
 
             # update index
             i = np.searchsorted(self.t_points > t, True)
