@@ -45,6 +45,7 @@ class brusselatorStochSim():
         self.rates = rates  # reaction rates given in docstring
         self.V = V  # volume of reaction space
         self.t_points = t_points  # time points to output simulation results
+        self.n = 0  # number of simulation time steps taken
 
         X, Y, A, B, C = population_init
         k0, k1, k2, k3, k4, k5 = self.rates
@@ -89,7 +90,7 @@ class brusselatorStochSim():
         # self.population[0, :] = self.pop0
 
     def reset(self):
-        self.__init__(self.pop0, self.rates, self.V, self.t_points)
+        self.__init__(self.pop0, self.rates, self.V, self.t_points, self.seed)
 
     def propensities_brusselator(self, population):
         '''
@@ -168,6 +169,7 @@ class brusselatorStochSim():
         while i < len(self.t_points):
             # current = np.zeros(self.update.shape[0])
             while t < self.t_points[i_time]:
+                self.n += 1
                 # update population
                 pop_prev = pop.copy()
                 pop += self.update[reaction, :]
