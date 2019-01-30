@@ -25,7 +25,7 @@ def get_traj(seed):
     bz = brusselatorStochSim([X0, Y0, args.A, args.B, args.C], args.rates, args.V, t_points, seed)
     bz.runSimulation()
 
-    return [bz.population, bz.ep]
+    return [bz.population, bz.ep, bz.n]
 
 
 parser = argparse.ArgumentParser()
@@ -89,6 +89,7 @@ fig_ep, ax_ep = plt.subplots()
 
 trajs = np.zeros((args.nSim, 2, args.n_t_points))
 eps = np.zeros((args.nSim, args.n_t_points))
+n = np.zeros(args.nSim)
 
 for ii in range(args.nSim):
     traj = result[ii][0].T
@@ -97,6 +98,7 @@ for ii in range(args.nSim):
     ax_ep.plot(t_points, ep, 'k', alpha=0.3)
     trajs[ii] = traj
     eps[ii] = ep
+    n[ii] = result[ii][2]
 
 ax_ep.plot(t_points, eps.mean(axis=0), 'r', linewidth=2)
 
@@ -148,6 +150,7 @@ fig_ep.savefig(os.path.join(args.savepath, filename, 'ep.pdf'), format='pdf')
 data = {'trajs': trajs,
         'eps': eps,
         't_points': t_points,
+        'n': n,
         'epr': epr,
         'epr_spectral': epr_spectral}
 with open(os.path.join(args.savepath, filename, 'data.pickle'), 'wb') as f:
