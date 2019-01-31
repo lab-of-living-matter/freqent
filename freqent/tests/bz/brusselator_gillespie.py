@@ -18,7 +18,8 @@ Brusselator given by
 import numpy as np
 from datetime import datetime
 from scipy import sparse
-# import numba
+import pdb
+from numba import jit, jitclass, int32, float32
 
 
 class brusselatorStochSim():
@@ -209,6 +210,22 @@ class brusselatorStochSim():
         # self.occupancy /= self.t_points.max()
 
 
+spec = [('rates', float32[:]),
+        ('V', float32),
+        ('t_points', float32[:]),
+        ('D', float32[:]),
+        ('h', float32),
+        ('K', int32),
+        ('XY0', int32[:, :]),
+        ('ABC', int32[:]),
+        ('ep', float32[:]),
+        ('seed', int32),
+        ('props', float32[:]),
+        ('update', float32[:, :]),
+        ('population', float32[:, :, :])]
+
+
+# @jitclass(spec)
 class brusselator1DFieldStochSim():
     '''
     Class for evolving a 1D reaction-diffusion equation
@@ -248,18 +265,18 @@ class brusselator1DFieldStochSim():
         self.rates = rates  # reaction rates given in docstring
         self.V = V  # volume of each reaction subvolume
         self.t_points = t_points  # time points to output simulation results
-        self.D = np.asarray(D)  # diffusion constant for X and Y, as 2-element array [D_X, D_Y]
+        self.D = np.asarray(D, dtype=np.float32)  # diffusion constant for X and Y, as 2-element array [D_X, D_Y]
         self.h = l_subVolumes  # length of subvolumes
         self.K = n_subvolumes  # number of subvolumes
         self.XY0 = XY_init  # 2 by K array of initial values for X and Y
-        self.ABC = np.asarray(ABC)  # number of chemostatted molecules IN EACH SUBVOLUME
-        self.ep = np.zeros(len(t_points))  # store entropy production time series
+        self.ABC = np.asarray(ABC, dtype=np.float32)  # number of chemostatted molecules IN EACH SUBVOLUME
+        self.ep = np.zeros(len(t_points), dtype=np.float32)  # store entropy production time series
         # self.occupancy = np.zeros((self.V * 15, self.V * 15))
 
-        if seed is None:
-            self.seed = datetime.now().microsecond
-        else:
-            self.seed = seed
+        # if seed is None:
+        #     self.seed = datetime.now().microsecond
+        # else:
+        self.seed = seed
 
         # Store propensities for t=0, to be updated throughout simulation
         # Order given as (each line is K reactions)
@@ -319,7 +336,7 @@ class brusselator1DFieldStochSim():
 
         # create anti-diagonal matrix to move X_i -> X_i-1
         # with periodic b.c., X_1 -> X_K
-        # start at X_K
+        # start at X_1
         x_ccw_update = (-np.eye(self.K, dtype=int) +
                         np.eye(self.K, k=-1, dtype=int) +
                         np.eye(self.K, k=(self.K - 1), dtype=int))
@@ -396,6 +413,10 @@ class brusselator1DFieldStochSim():
             X = XY[0, compartment]
             return self.rates[5] * X * (X - 1) * (X - 2) / self.V**2
 
+        else:
+            raise ValueError('reactionType should be between 0 and 9.\n'
+                              'Entered reactionType is {0}'.format(reactionType))
+
     def update_propensities(self, XY, reaction):
         '''
         update the propensities of the 1D reaction diffusion system
@@ -430,23 +451,29 @@ class brusselator1DFieldStochSim():
 
         if reactionType == 0:
             # X diffuses to the right
+            # Take into account periodic boundary conditions
+            rightCompartment = (compartment + 1) - ((compartment + 1) // self.K) * self.K
             toChange = np.sort([a * self.K + compartment for a in dependsOnX] +
-                               [a * self.K + (compartment + 1) % self.K for a in dependsOnX])
-            # Use (compartment + 1) % K in case you diffuse to the right from the rightmost
-            # compartment. In that case, compartment = K - 1, and (compartment + 1) % K = 0
-            # meaning you diffuse from the end of the ring to its beginning
+                               [a * self.K + rightCompartment for a in dependsOnX])
         elif reactionType == 1:
             # X diffuses to the left
+            # Take into account periodic boundary conditions
+            leftCompartment = (compartment - 1) - ((compartment - 1) // self.K) * self.K
             toChange = np.sort([a * self.K + compartment for a in dependsOnX] +
-                               [a * self.K + compartment - 1 for a in dependsOnX])
+                               [a * self.K + leftCompartment for a in dependsOnX])
         elif reactionType == 2:
             # Y diffuses to the right
+            # Take into account periodic boundary conditions
+            rightCompartment = (compartment + 1) - ((compartment + 1) // self.K) * self.K
+
             toChange = np.sort([a * self.K + compartment for a in dependsOnY] +
-                               [a * self.K + (compartment + 1) % self.K for a in dependsOnY])
+                               [a * self.K + rightCompartment for a in dependsOnY])
         elif reactionType == 3:
             # Y diffuses to the left
+            # Take into account periodic boundary conditions
+            leftCompartment = (compartment - 1) - ((compartment - 1) // self.K) * self.K
             toChange = np.sort([a * self.K + compartment for a in dependsOnY] +
-                               [a * self.K + compartment - 1 for a in dependsOnY])
+                               [a * self.K + leftCompartment for a in dependsOnY])
         elif reactionType in [4, 5]:
             # A <=> X
             toChange = np.sort([a * self.K + compartment for a in dependsOnX])
@@ -459,8 +486,9 @@ class brusselator1DFieldStochSim():
         for propInd in toChange:
             # Can't use compartment as second argument because diffusion also changes
             # quantities in neighboring compartments
-            self.props[propInd] = self.reaction_update(XY, toChange % self.K, reactionType)
+            self.props[propInd] = self.reaction_update(XY, propInd % self.K, propInd // self.K)
 
+    @jit
     def sample_discrete(self, probs, r):
         '''
         Randomly sample an index with probability given by probs (assumed normalized)
@@ -472,6 +500,7 @@ class brusselator1DFieldStochSim():
             n += 1
         return n - 1
 
+    @jit
     def gillespie_draw(self):
 
         # get propensities
@@ -516,6 +545,8 @@ class brusselator1DFieldStochSim():
 
                 # update propensities
                 self.update_propensities(pop, reaction)
+                if np.isnan(self.props).sum():
+                    pdb.set_trace()
 
                 # track population. Keep Y in rows, X in columns
                 # self.occupancy[pop_prev[1], pop_prev[0]] += dt
@@ -524,13 +555,28 @@ class brusselator1DFieldStochSim():
                 # Do next Gillespie draw
                 reaction_next, dt_next, probs_next = self.gillespie_draw()
 
-                # Find backwards reaction from what was just done
-                # [0, 2, 4] <--> [1, 3, 5]
-                # If reaction is an even number (or 0) add one, if an odd number, subtract one
-                backward_reaction = reaction + (-1)**(reaction % 2)
 
-                # add to entropy
-                ep += np.log(probs[reaction] / probs_next[backward_reaction])
+                # Find backwards reaction from what was just done
+                # First, get the reaction type
+                reactionType = reaction // self.K
+                # Then get the backward reaction given the reaction type
+                if reactionType in [0, 2]:
+                    # if diffuse to right, diffuse to left from next compartment over
+                    # make sure to take care of boundary condition
+                    backward_reaction = reaction + ((self.K + 1) // self.K) * self.K
+                elif reactionType in [1, 3]:
+                    # if diffuse to left, diffuse to right from next compartment over
+                    # make sure to take care of boundary condition
+                    backward_reaction = reaction - ((self.K + 1) // self.K) * self.K
+                elif reactionType in [4, 6, 8]:
+                    # "forward" chemical reactions
+                    backward_reaction = reaction + self.K
+                elif reactionType in [5, 7, 9]:
+                    # "backward" chemical reactions
+                    backward_reaction = reaction - self.K
+
+                # # add to entropy
+                # ep += np.log(probs[reaction] / probs_next[backward_reaction])
 
                 # increment time
                 t += dt
@@ -539,6 +585,8 @@ class brusselator1DFieldStochSim():
                 reaction, dt, probs = reaction_next, dt_next, probs_next
 
             # update index
+            # pdb.set_trace()
+            print(np.searchsorted(self.t_points > t, True))
             i = np.searchsorted(self.t_points > t, True)
 
             # update population
