@@ -555,25 +555,24 @@ class brusselator1DFieldStochSim():
                 # Do next Gillespie draw
                 reaction_next, dt_next, probs_next = self.gillespie_draw()
 
-
-                # Find backwards reaction from what was just done
-                # First, get the reaction type
-                reactionType = reaction // self.K
-                # Then get the backward reaction given the reaction type
-                if reactionType in [0, 2]:
-                    # if diffuse to right, diffuse to left from next compartment over
-                    # make sure to take care of boundary condition
-                    backward_reaction = reaction + ((self.K + 1) // self.K) * self.K
-                elif reactionType in [1, 3]:
-                    # if diffuse to left, diffuse to right from next compartment over
-                    # make sure to take care of boundary condition
-                    backward_reaction = reaction - ((self.K + 1) // self.K) * self.K
-                elif reactionType in [4, 6, 8]:
-                    # "forward" chemical reactions
-                    backward_reaction = reaction + self.K
-                elif reactionType in [5, 7, 9]:
-                    # "backward" chemical reactions
-                    backward_reaction = reaction - self.K
+                # # Find backwards reaction from what was just done
+                # # First, get the reaction type
+                # reactionType = reaction // self.K
+                # # Then get the backward reaction given the reaction type
+                # if reactionType in [0, 2]:
+                #     # if diffuse to right, diffuse to left from next compartment over
+                #     # make sure to take care of boundary condition
+                #     backward_reaction = reaction + ((self.K + 1) // self.K) * self.K
+                # elif reactionType in [1, 3]:
+                #     # if diffuse to left, diffuse to right from next compartment over
+                #     # make sure to take care of boundary condition
+                #     backward_reaction = reaction - ((self.K + 1) // self.K) * self.K
+                # elif reactionType in [4, 6, 8]:
+                #     # "forward" chemical reactions
+                #     backward_reaction = reaction + self.K
+                # elif reactionType in [5, 7, 9]:
+                #     # "backward" chemical reactions
+                #     backward_reaction = reaction - self.K
 
                 # # add to entropy
                 # ep += np.log(probs[reaction] / probs_next[backward_reaction])
@@ -586,7 +585,7 @@ class brusselator1DFieldStochSim():
 
             # update index
             # pdb.set_trace()
-            print(np.searchsorted(self.t_points > t, True))
+            # print(np.searchsorted(self.t_points > t, True))
             i = np.searchsorted(self.t_points > t, True)
 
             # update population
