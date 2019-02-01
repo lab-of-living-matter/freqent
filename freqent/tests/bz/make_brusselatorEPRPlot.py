@@ -18,8 +18,9 @@ for fInd, f in enumerate(glob(os.path.join(folder, '*/'))):
         epr_spectral[fInd] = data['epr_spectral']
 
 fig, ax = plt.subplots()
-ax.loglog(alpha, epr, '.')
-ax.loglog(alpha, epr_spectral, '.')
+ax.loglog(alpha, epr, '.', label='True EPR')
+ax.loglog(alpha, epr_spectral, '.', label='Spectral EPR')
 ax.set(xlabel=r'$\alpha$', ylabel=r'$\dot{\Sigma}$')
+plt.legend()
 
 plt.show()
