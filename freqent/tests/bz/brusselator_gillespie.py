@@ -271,7 +271,7 @@ class brusselator1DFieldStochSim():
         self.XY0 = XY_init  # 2 by K array of initial values for X and Y
         self.ABC = np.asarray(ABC, dtype=np.float32)  # number of chemostatted molecules IN EACH SUBVOLUME
         self.ep = np.zeros(len(t_points), dtype=np.float32)  # store entropy production time series
-        # self.occupancy = np.zeros((self.V * 15, self.V * 15))
+        self.n = 0  # keep track of how many reactions are being done
 
         # if seed is None:
         #     self.seed = datetime.now().microsecond
@@ -539,6 +539,7 @@ class brusselator1DFieldStochSim():
         while i < len(self.t_points):
             # current = np.zeros(self.update.shape[0])
             while t < self.t_points[i_time]:
+                self.n += 1  # add 1 to reactions taken
                 # update population
                 pop_prev = pop.copy()
                 pop += self.update[reaction, ...]
@@ -555,27 +556,40 @@ class brusselator1DFieldStochSim():
                 # Do next Gillespie draw
                 reaction_next, dt_next, probs_next = self.gillespie_draw()
 
-                # # Find backwards reaction from what was just done
-                # # First, get the reaction type
-                # reactionType = reaction // self.K
-                # # Then get the backward reaction given the reaction type
-                # if reactionType in [0, 2]:
-                #     # if diffuse to right, diffuse to left from next compartment over
-                #     # make sure to take care of boundary condition
-                #     backward_reaction = reaction + ((self.K + 1) // self.K) * self.K
-                # elif reactionType in [1, 3]:
-                #     # if diffuse to left, diffuse to right from next compartment over
-                #     # make sure to take care of boundary condition
-                #     backward_reaction = reaction - ((self.K + 1) // self.K) * self.K
-                # elif reactionType in [4, 6, 8]:
-                #     # "forward" chemical reactions
-                #     backward_reaction = reaction + self.K
-                # elif reactionType in [5, 7, 9]:
-                #     # "backward" chemical reactions
-                #     backward_reaction = reaction - self.K
+                # Find backwards reaction from what was just done
+                # First, get the reaction type
+                reactionType = reaction // self.K
+                # Then get the backward reaction given the reaction type
+                if reactionType in [0, 2]:
+                    # if diffuse to right, diffuse to left from next compartment over
+                    # make sure to take care of boundary condition
+
+                    # This expression was attained after a lot of trial and error...
+                    # it returns [K+1, K+1, K+1, K+1, K+1, K+1, K+1, K+1, K+1, 1]
+                    left_diffusion = 1 + self.K - ((reaction % self.K + 1) // self.K) * self.K
+
+                    backward_reaction = reaction + left_diffusion
+                elif reactionType in [1, 3]:
+                    # if diffuse to left, diffuse to right from next compartment over
+                    # make sure to take care of boundary condition
+
+                    # This expression was attained after a lot of trial and error...
+                    # it returns [-1, -K-1, -K-1, -K-1, -K-1, -K-1, -K-1, -K-1, -K-1, -K-1]
+                    right_diffusion = -1 - self.K - ((reaction % self.K - 1) // self.K) * self.K
+
+                    backward_reaction = reaction + right_diffusion
+                elif reactionType in [4, 6, 8]:
+                    # "forward" chemical reactions
+                    backward_reaction = reaction + self.K
+                elif reactionType in [5, 7, 9]:
+                    # "backward" chemical reactions
+                    backward_reaction = reaction - self.K
 
                 # # add to entropy
-                # ep += np.log(probs[reaction] / probs_next[backward_reaction])
+                if probs_next[backward_reaction] == 0:
+                    pdb.set_trace()
+
+                ep += np.log(probs[reaction] / probs_next[backward_reaction])
 
                 # increment time
                 t += dt
