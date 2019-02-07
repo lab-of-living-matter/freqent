@@ -127,6 +127,298 @@ def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
     return s
 
 
+"""
+Module to calculate dynamic structure factor for 2D movies
+
+Created on Wed Jul 5 22:48:12 2017
+
+Daniel S. Seara
+www.github.com/dsseara
+daniel.seara@yale.edu
+"""
+import numpy as np
+import scipy.signal as signal
+from astropy.convolution import convolve_fft
+import warnings
+
+
+def azimuthal_average(data, center=None, binsize=1, mask=None, weight=None,
+                      dx=1.0):
+    """
+    Calculates the azimuthal average of a 2D array
+
+    Parameters
+    ----------
+    data : array_like
+        2D numpy array of numerical data
+    center : array_like, optional
+        1x2 numpy array the center of the image from which to measure the
+        radial profile from, in units of array index. Default is center of
+        data array
+    binsize : scalar, optional
+        radial width of each annulus over which to average,
+        in units of array index
+    mask : {array_like, 'circle', None}, optional
+        Mask of data. Either a 2D array same size as data with 0s where you
+        want to exclude data, "circle", which only includes data in the
+        largest inscribable circle within the data, or None, which uses no mask.
+        Defaults to None
+    dx : float, optional
+        Sampling spacing in data. To be used when returning radial coordinate.
+        Defaults to 1.0
+
+    Returns
+    -------
+    radialProfile : array_like
+        Radially averaged 1D array from data array
+    r : array_like
+        Radial coordinate of radial_profile
+
+    Based on radialProfile found at:
+    http://www.astrobetter.com/wiki/tiki-index.php?page=python_radial_profiles
+
+    To do
+    -----
+    1) Make "circle" option of mask accept non-square inputs
+    """
+    data = np.asarray(data)
+    # Get all the indices in x and y direction
+    [y, x] = np.indices(data.shape)
+
+    # Define the center from which to measure the radius
+    if not center:
+        center = np.array([(x.max() - x.min()) / 2, (y.max() - y.min()) / 2])
+
+    # Get distance from all points to center
+    r = np.hypot(x - center[0], y - center[1])
+
+    if mask is None:
+        mask = np.ones(data.shape, dtype='bool')
+    elif mask is 'circle':
+        radius = (x.max() + 1) / 2
+        mask = (r < radius)
+    else:
+        mask = np.asarray(mask)
+
+    if weight is None:
+        weight = np.ones(data.shape)
+
+    # Get the bins according to binsize
+    nbins = int(np.round((r * mask).max()) / binsize) + 1
+    maxbin = nbins * binsize
+    binEdges = np.linspace(0, maxbin, nbins + 1)
+
+    binCenters = (binEdges[1] - binEdges[0]) / 2 + binEdges[:-1]
+
+    # Number of data points in each bin. Cut out last point, always 0
+    nBinnedData = np.histogram(r, binEdges, weights=mask * weight)[0][:-1]
+    # Azimuthal average
+    radialProfile = (np.histogram(r, binEdges,
+                                  weights=data * mask * weight)[0][:-1] /
+                     nBinnedData)
+
+    return radialProfile, binCenters[:-1] * binsize * dx
+
+
+def azimuthal_average_3D(data, tdim=0, center=None, binsize=1, mask=None,
+                         weight=None, dx=1.0):
+    """
+    Takes 3D data and gets radial component of two dimensions
+
+    Parameters
+    ----------
+    data : array_like
+        3D numpy array, 1 dimension is time, the other two are spatial.
+        User specifies which dimension in temporal
+    tdim : scalar, optional
+        specifies which dimension of data is temporal. Options are 0, 1, 2.
+        Defaults to 0
+    center : array_like or None, optional
+        1x2 numpy array the center of the image from which to measure the
+        radial profile from, in units of array index. If None, uses center
+        of spatial slice of array. Defaults to None
+    binsize : scalar, optional
+        radial width of each annulus over which to average,
+        in units of array index
+    mask : {array_like, 'circle', None}, optional
+        Mask of data. Either a 2D array same size as data with 0s where you
+        want to exclude data, "circle", which only includes data in the
+        largest inscribable circle within the data, or None, which uses no mask.
+        Defaults to None
+    dx : float, optional
+        Sampling spacing in dimensions of data over which the averagin is done.
+        To be used when returning radial coordinate. Defaults to 1.0
+
+    Returns
+    -------
+    tr_profile : array_like
+        2D, spatially radially averaged data over time.
+        First dimesion is time, second is spatial
+    r : array_like
+        Radial coordinate of radial_profile
+
+    See also: azimuthal_average
+
+    TO DO
+    -----
+    1) Allow input of non-square data to average over
+    """
+
+    data = np.asarray(data)
+
+    # Put temporal axis first
+    data = np.rollaxis(data, tdim)
+
+    for frame, spatial_data in enumerate(data):
+        radial_profile, r = azimuthal_average(spatial_data,
+                                              center,
+                                              binsize,
+                                              mask,
+                                              weight,
+                                              dx)
+        if frame == 0:
+            tr_profile = radial_profile
+        else:
+            tr_profile = np.vstack((tr_profile, radial_profile))
+
+    return tr_profile, r
+
+
+def csdn(data1, data2, sample_spacing=None, window=None,
+         detrend='constant', nfft=None):
+    """
+    Estimate cross spectral density of n-dimensional data.
+
+    Parameters
+    ----------
+    data1, data2 : array_like
+        N-dimensional input arrays, can be complex, must have same size
+    sample_spacing : array_like, optional
+        Sampling frequency in each dimension of data. Defaults to 1 for all
+        dimensions
+    window : string, float, or tuple, optional
+        Type of window to use, defaults to 'boxcar' with shape of data, i.e.
+        data stays the same. See `scipy.signal.get_window` for all windows
+        allowed
+    detrend : str or function or `False`, optional
+        Specifies how to detrend each segment. If `detrend` is a
+        string, it is passed as the `type` argument to the `detrend`
+        function. If it is a function, it takes a segment and returns a
+        detrended segment. If `detrend` is `False`, no detrending is
+        done. Defaults to 'constant'.
+    nfft : array_like, optional
+        Length of the FFT used in each dimension, if a zero padded FFT is
+        desired. If `None`, the FFT is taken over entire array. Defaults to `None`.
+    Returns
+    -------
+    psd : array_like
+        Power spectrum of data as nd numpy array
+    freqs : list
+        list whose nth element is a numpy array of fourier coordinates of nth
+        dimension of data
+
+    See also
+    --------
+    scipy.signal.get_window
+    """
+
+    data1 = np.asarray(data1)
+    data2 = np.asarray(data2)
+    same_data = data2 is data1
+
+    if data1.shape != data2.shape:
+        raise ValueError('Both inputs must have same size.')
+
+    if window is None:
+        window = 'boxcar'
+
+    if sample_spacing is None:
+        fs = np.ones(data1.ndim)
+    else:
+        sample_spacing = np.asarray(sample_spacing)
+        if sample_spacing.size != data1.ndim:
+            raise ValueError('sample_spacing.size = {0}, need data1.ndim = {1} values'
+                             .format(fs.size, data1.ndim))
+
+    data1, win = _nd_window(data1, window)
+    data2, _ = _nd_window(data2, window)
+    freqs = []
+
+    # Window squared and summed, generalized to nd
+    # See Numerical Recipes, section 13.4.1
+    wss = 1
+    for arr in win:
+        wss *= (arr**2).sum()
+
+    # Set scaling
+    scale = sample_spacing / wss
+    data1_fft = np.fft.fftn(data1, s=nfft)
+    data2_fft = np.fft.fftn(data2, s=nfft)
+
+    csd = data1_fft * np.conjugate(data2_fft)
+
+    csd *= scale
+
+    for dim, Delta in enumerate(sample_spacing):
+        freqs.append(np.linspace(-np.pi * Delta, np.pi * Delta, csd.shape[dim]))
+
+    # if return_onesided:
+    #     if np.iscomplexobj(data):
+    #         return_onesided = False
+    #         warnings.warn('Input data is complex, switching to '
+    #                       'return_onesided=False')
+    #     else:
+    #         psd = _one_side(psd)
+    #         for dim, array in enumerate(freqs):
+    #             freqs[dim] = _one_side(array)
+
+    return csd, freqs
+
+
+def _nd_window(data, window):
+    """
+    Windows n-dimensional array. Done to mitigate boundary effects in the FFT.
+    This is a helper function for csdn
+    Adapted from: https://stackoverflow.com/questions/27345861/
+                  extending-1d-function-across-3-dimensions-for-data-windowing
+
+    Parameters
+    ----------
+    data : array_like
+        nd input data to be windowed, modified in place.
+    window : string, float, or tuple
+        Type of window to create. Same as `scipy.signal.get_window()`
+    nperseg : array_like
+        Length of each segment in each dimension. If `None`, uses whole
+        dimension length. Defaults to `None`.
+
+    Results
+    -------
+    data : array_like
+        windowed version of input array, data
+    win : list of arrays
+        each element returns the window used on the corresponding dimension of
+        `data`
+
+    See also
+    --------
+    `scipy.signal.get_window()`
+    `sqw.psdn()`
+    """
+    win = []
+    for axis, axis_size in enumerate(data.shape):
+        # set up shape for numpy broadcasting
+        filter_shape = [1, ] * data.ndim
+        filter_shape[axis] = axis_size
+        win.append(signal.get_window(window, axis_size).reshape(filter_shape))
+        # scale the window intensities to maintain image intensity
+        np.power(win[axis], (1.0 / data.ndim), out=win[axis])
+        data *= win[axis]
+
+    return data, win
+
+
+
 def corr_matrix(data, sample_spacing=1, window='boxcar', nperseg=None,
                 noverlap=None, nfft=None, detrend='constant', padded=False,
                 return_fft=True):
@@ -348,8 +640,7 @@ def _direct_csd(x, y, sample_spacing=1.0, window='boxcar', nperseg=None,
         csd = x_fft * np.conjugate(x_fft)
 
     csd *= scale
-
-    csd = np.mean(csd, axis=0)  # take average over segments
+    csd = np.mean(csd, axis=0)
     if not return_fft:
         # return the cross-covariance sequence
         ccvs = np.fft.fftshift(np.fft.ifft(csd)) / sample_spacing
