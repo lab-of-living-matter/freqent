@@ -127,165 +127,8 @@ def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
     return s
 
 
-"""
-Module to calculate dynamic structure factor for 2D movies
-
-Created on Wed Jul 5 22:48:12 2017
-
-Daniel S. Seara
-www.github.com/dsseara
-daniel.seara@yale.edu
-"""
-import numpy as np
-import scipy.signal as signal
-from astropy.convolution import convolve_fft
-import warnings
-
-
-def azimuthal_average(data, center=None, binsize=1, mask=None, weight=None,
-                      dx=1.0):
-    """
-    Calculates the azimuthal average of a 2D array
-
-    Parameters
-    ----------
-    data : array_like
-        2D numpy array of numerical data
-    center : array_like, optional
-        1x2 numpy array the center of the image from which to measure the
-        radial profile from, in units of array index. Default is center of
-        data array
-    binsize : scalar, optional
-        radial width of each annulus over which to average,
-        in units of array index
-    mask : {array_like, 'circle', None}, optional
-        Mask of data. Either a 2D array same size as data with 0s where you
-        want to exclude data, "circle", which only includes data in the
-        largest inscribable circle within the data, or None, which uses no mask.
-        Defaults to None
-    dx : float, optional
-        Sampling spacing in data. To be used when returning radial coordinate.
-        Defaults to 1.0
-
-    Returns
-    -------
-    radialProfile : array_like
-        Radially averaged 1D array from data array
-    r : array_like
-        Radial coordinate of radial_profile
-
-    Based on radialProfile found at:
-    http://www.astrobetter.com/wiki/tiki-index.php?page=python_radial_profiles
-
-    To do
-    -----
-    1) Make "circle" option of mask accept non-square inputs
-    """
-    data = np.asarray(data)
-    # Get all the indices in x and y direction
-    [y, x] = np.indices(data.shape)
-
-    # Define the center from which to measure the radius
-    if not center:
-        center = np.array([(x.max() - x.min()) / 2, (y.max() - y.min()) / 2])
-
-    # Get distance from all points to center
-    r = np.hypot(x - center[0], y - center[1])
-
-    if mask is None:
-        mask = np.ones(data.shape, dtype='bool')
-    elif mask is 'circle':
-        radius = (x.max() + 1) / 2
-        mask = (r < radius)
-    else:
-        mask = np.asarray(mask)
-
-    if weight is None:
-        weight = np.ones(data.shape)
-
-    # Get the bins according to binsize
-    nbins = int(np.round((r * mask).max()) / binsize) + 1
-    maxbin = nbins * binsize
-    binEdges = np.linspace(0, maxbin, nbins + 1)
-
-    binCenters = (binEdges[1] - binEdges[0]) / 2 + binEdges[:-1]
-
-    # Number of data points in each bin. Cut out last point, always 0
-    nBinnedData = np.histogram(r, binEdges, weights=mask * weight)[0][:-1]
-    # Azimuthal average
-    radialProfile = (np.histogram(r, binEdges,
-                                  weights=data * mask * weight)[0][:-1] /
-                     nBinnedData)
-
-    return radialProfile, binCenters[:-1] * binsize * dx
-
-
-def azimuthal_average_3D(data, tdim=0, center=None, binsize=1, mask=None,
-                         weight=None, dx=1.0):
-    """
-    Takes 3D data and gets radial component of two dimensions
-
-    Parameters
-    ----------
-    data : array_like
-        3D numpy array, 1 dimension is time, the other two are spatial.
-        User specifies which dimension in temporal
-    tdim : scalar, optional
-        specifies which dimension of data is temporal. Options are 0, 1, 2.
-        Defaults to 0
-    center : array_like or None, optional
-        1x2 numpy array the center of the image from which to measure the
-        radial profile from, in units of array index. If None, uses center
-        of spatial slice of array. Defaults to None
-    binsize : scalar, optional
-        radial width of each annulus over which to average,
-        in units of array index
-    mask : {array_like, 'circle', None}, optional
-        Mask of data. Either a 2D array same size as data with 0s where you
-        want to exclude data, "circle", which only includes data in the
-        largest inscribable circle within the data, or None, which uses no mask.
-        Defaults to None
-    dx : float, optional
-        Sampling spacing in dimensions of data over which the averagin is done.
-        To be used when returning radial coordinate. Defaults to 1.0
-
-    Returns
-    -------
-    tr_profile : array_like
-        2D, spatially radially averaged data over time.
-        First dimesion is time, second is spatial
-    r : array_like
-        Radial coordinate of radial_profile
-
-    See also: azimuthal_average
-
-    TO DO
-    -----
-    1) Allow input of non-square data to average over
-    """
-
-    data = np.asarray(data)
-
-    # Put temporal axis first
-    data = np.rollaxis(data, tdim)
-
-    for frame, spatial_data in enumerate(data):
-        radial_profile, r = azimuthal_average(spatial_data,
-                                              center,
-                                              binsize,
-                                              mask,
-                                              weight,
-                                              dx)
-        if frame == 0:
-            tr_profile = radial_profile
-        else:
-            tr_profile = np.vstack((tr_profile, radial_profile))
-
-    return tr_profile, r
-
-
-def csdn(data1, data2, sample_spacing=None, window=None,
-         detrend='constant', nfft=None):
+def _direct_csdn(data1, data2, sample_spacing=None, window=None,
+                 detrend='constant', nfft=None):
     """
     Estimate cross spectral density of n-dimensional data.
 
@@ -326,8 +169,9 @@ def csdn(data1, data2, sample_spacing=None, window=None,
     data2 = np.asarray(data2)
     same_data = data2 is data1
 
-    if data1.shape != data2.shape:
-        raise ValueError('Both inputs must have same size.')
+    if not same_data:
+        if data1.shape != data2.shape:
+            raise ValueError('Both inputs must have same size.')
 
     if window is None:
         window = 'boxcar'
@@ -341,10 +185,10 @@ def csdn(data1, data2, sample_spacing=None, window=None,
                              .format(fs.size, data1.ndim))
 
     data1, win = _nd_window(data1, window)
-    data2, _ = _nd_window(data2, window)
+
     freqs = []
 
-    # Window squared and summed, generalized to nd
+    # Window squared and summed, generalized to n-dimensions
     # See Numerical Recipes, section 13.4.1
     wss = 1
     for arr in win:
@@ -353,9 +197,13 @@ def csdn(data1, data2, sample_spacing=None, window=None,
     # Set scaling
     scale = sample_spacing / wss
     data1_fft = np.fft.fftn(data1, s=nfft)
-    data2_fft = np.fft.fftn(data2, s=nfft)
 
-    csd = data1_fft * np.conjugate(data2_fft)
+    if not same_data:
+        data2, _ = _nd_window(data2, window)
+        data2_fft = np.fft.fftn(data2, s=nfft)
+        csd = data1_fft * np.conjugate(data2_fft)
+    else:
+        csd = data1_fft * np.conjugate(data1_fft)
 
     csd *= scale
 
@@ -416,7 +264,6 @@ def _nd_window(data, window):
         data *= win[axis]
 
     return data, win
-
 
 
 def corr_matrix(data, sample_spacing=1, window='boxcar', nperseg=None,
@@ -528,128 +375,7 @@ def corr_matrix(data, sample_spacing=1, window='boxcar', nperseg=None,
         return c, freqs
 
 
-def _direct_csd(x, y, sample_spacing=1.0, window='boxcar', nperseg=None,
-                noverlap=None, nfft=None, detrend='constant', padded=False,
-                return_fft=True):
-    '''
-    Estimate the direct cross power spectral density using Welch's method.
-    Basically just copying scipy.signal.csd with some default differences.
-
-    Parameters
-    ---------
-    x : array_like
-        Array or sequence containing the data to be analyzed.
-    y : array_like
-        Array or sequence containing the data to be analyzed. If this is
-        the same object in memory as `x` (i.e. ``_spectral_helper(x,
-        x, ...)``), the extra computations are spared.
-    sample_spacing : float, optional
-        Sampling interval of the time series. Defaults to 1.0.
-    window : str or tuple or array_like, optional
-        Desired window to use. If `window` is a string or tuple, it is
-        passed to `scipy.signal.get_window` to generate the window values,
-        which are DFT-even by default. See `get_window` for a list of windows
-        and required parameters. If `window` is array_like it will be used
-        directly as the window and its length must be nperseg. Defaults
-        to a Boxcar window.
-    nperseg : int, optional
-        Length of each segment. Defaults to None, which takes nperseg=len(x)
-        but if window is str or tuple, is set to 256, and if window is
-        array_like, is set to the length of the window.
-    noverlap : int, optional
-        Number of points to overlap between segments. If `None`,
-        ``noverlap = nperseg // 2``. Defaults to `None`.
-    nfft : int, optional
-        Length of the FFT used, if a zero padded FFT is desired. If
-        `None`, the FFT length is `nperseg`. Defaults to `None`.
-    detrend : str or function or `False`, optional
-        Specifies how to detrend each segment. If `detrend` is a
-        string, it is passed as the `type` argument to the `detrend`
-        function. If it is a function, it takes a segment and returns a
-        detrended segment. If `detrend` is `False`, no detrending is
-        done. Defaults to 'constant'.
-    padded : bool, optional
-        Specifies whether the input signal is zero-padded at the end to
-        make the signal fit exactly into an integer number of window
-        segments, so that all of the signal is included in the output.
-        Defaults to `False`. Padding occurs after boundary extension, if
-        `boundary` is not `None`, and `padded` is `True`.
-    '''
-
-    # make sure we have np.arrays and subtract mean
-    x = np.asarray(x)
-    y = np.asarray(y)
-    same_data = y is x
-
-    # Check if x and y are the same length, zero-pad if necessary
-    if not same_data:
-        if x.shape[0] != y.shape[0]:
-            if x.shape[0] < y.shape[0]:
-                pad_shape = list(x.shape)
-                pad_shape[0] = y.shape[0] - x.shape[0]
-                x = np.concatenate((x, np.zeros(pad_shape)), -1)
-            else:
-                pad_shape = list(y.shape)
-                pad_shape[0] = x.shape[0] - y.shape[0]
-                y = np.concatenate((y, np.zeros(pad_shape)), -1)
-
-    nstep = nperseg - noverlap
-
-    # Handle detrending and window functions
-    if not detrend:
-        def detrend_func(d):
-            return d
-    elif not hasattr(detrend, '__call__'):
-        def detrend_func(d):
-            return signal.signaltools.detrend(d, type=detrend, axis=-1)
-    else:
-        detrend_func = detrend
-
-    win = signal.get_window(window, Nx=nperseg)
-    scale = sample_spacing / (win * win).sum()
-
-    if padded:
-        # Pad to integer number of windowed segments
-        # I.e make x.shape[-1] = nperseg + (nseg-1)*nstep, with integer nseg
-        nadd = (-(x.shape[-1] - nperseg) % nstep) % nperseg
-        zeros_shape = list(x.shape[:-1]) + [nadd]
-        x = np.concatenate((x, np.zeros(zeros_shape)), axis=-1)
-        if not same_data:
-            zeros_shape = list(y.shape[:-1]) + [nadd]
-            y = np.concatenate((y, np.zeros(zeros_shape)), axis=-1)
-
-    # break up array into segments, window each segment
-    step = nperseg - noverlap
-    shape = x.shape[:-1] + ((x.shape[-1] - noverlap) // step, nperseg)
-    strides = x.strides[:-1] + (step * x.strides[-1], x.strides[-1])
-    x_reshaped = np.lib.stride_tricks.as_strided(x, shape=shape, strides=strides)
-
-    # detrend each segment
-    x_reshaped = detrend_func(x_reshaped)
-
-    x_reshaped = win * x_reshaped
-    x_fft = np.fft.fft(x_reshaped, n=nfft)
-
-    if not same_data:
-        y_reshaped = np.lib.stride_tricks.as_strided(y, shape=shape, strides=strides)
-        y_reshaped = detrend_func(y_reshaped)
-        y_reshaped = win * y_reshaped
-        y_fft = np.fft.fft(y_reshaped, n=nfft)
-        csd = x_fft * np.conjugate(y_fft)
-    else:
-        csd = x_fft * np.conjugate(x_fft)
-
-    csd *= scale
-    csd = np.mean(csd, axis=0)
-    if not return_fft:
-        # return the cross-covariance sequence
-        ccvs = np.fft.fftshift(np.fft.ifft(csd)) / sample_spacing
-        return ccvs
-    else:
-        return np.fft.fftshift(csd)
-
-
-def _gauss_smooth(corr, stddev=10, axis=0):
+def _nd_gauss_smooth(corr, stddev=10, axis=0):
     '''
     Helper function that smooths a correlation matrix along its time axis with a Gaussian.
     To be used on the correlation functions out of corr_matrix.
