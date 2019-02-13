@@ -90,4 +90,4 @@ anim = animation.FuncAnimation(fig, animate, frames=nframes - 1, blit=True, farg
 plt.show()
 
 # save the animation
-# anim.save(filename='spinOsc.mp4', fps=100)
+anim.save(filename='spinOsc.avi', fps=100)
