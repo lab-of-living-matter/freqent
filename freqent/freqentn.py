@@ -6,9 +6,9 @@ from itertools import product
 import pdb
 
 
-def entropy(data, sample_spacing=None, window='boxcar', nperseg=None,
-            noverlap=None, nfft=None, detrend='constant', padded=False,
-            smooth_corr=True, sigma=1, subtract_bias=True, many_traj=True):
+def entropy(data, sample_spacing, window='boxcar', nperseg=None,
+            noverlap=None, nfft=None, detrend='constant', smooth_corr=True,
+            sigma=1, subtract_bias=True, many_traj=True):
     '''
     Calculate the entropy using the frequency space measure:
 
@@ -26,11 +26,10 @@ def entropy(data, sample_spacing=None, window='boxcar', nperseg=None,
         data is an array that gives spacetime data of N variables.
         e.g. data[n] returns data of nth variable. data[n] is k+1 dimensional.
         First dimension is time, last k dimensions are space
-    sample_spacing : float or array-like, optional
+    sample_spacing : float or array-like
         Sampling interval of data. Can either be a sequence with each element
         referring to each dimension of data[n], or a constant if the spacing is
-        the same for all dimensions. Defaults to None, which inputs 1 for all
-        dimensions.
+        the same for all dimensions.
     window : str or tuple or array_like, optional
         Desired window to use. If `window` is a string or tuple, it is
         passed to `scipy.signal.get_window` to generate the window values,
@@ -75,52 +74,77 @@ def entropy(data, sample_spacing=None, window='boxcar', nperseg=None,
         entropy production rate given correlation functions
     '''
 
-    if many_traj:
-        nRep = data.shape[0]  # number of replicates
-        nVar = data.shape[1]  # number of variables
-        ntspace = data.shape[2:]  # size of space time
-        c_fft_all = np.zeros((nRep, *ntspace, nVar, nVar), dtype=complex)
+    if not sample_spacing:
+        raise ValueError('sample_spacing must be given as a single value for all dimensions\n'
+                         'or as a sequence with as many elements as the number of dimensions of the data')
 
-        for ii in range(nRep):
-            c_fft_all[ii, ...], omega = corr_matrix(data[ii, ...],
-                                                    sample_spacing,
-                                                    window,
-                                                    nperseg,
-                                                    noverlap,
-                                                    nfft,
-                                                    detrend)
-        c_fft = c_fft_all.mean(axis=0)
+    if many_traj:
+        # number of replicates, number of variables, number of time and space points
+        nrep, nvar, nt, *nspace = data.shape
+        c_all = np.zeros((nrep, nt, *nspace, nvar, nvar), dtype=complex)
+
+        for ii in range(nrep):
+            c_all[ii, ...], freqs = corr_matrix(data[ii, ...],
+                                                sample_spacing,
+                                                window,
+                                                nperseg,
+                                                noverlap,
+                                                nfft,
+                                                detrend)
+        c = c_fft_all.mean(axis=0)
 
     else:
-        nRep = 1
-        nVar = data.shape[0]
-        ntspace = data.shape[1:]
-        c_fft, omega = corr_matrix(data,
-                                   sample_spacing,
-                                   window,
-                                   nperseg,
-                                   noverlap,
-                                   nfft,
-                                   detrend)
+        nrep = 1
+        nvar, nt, *nspace = data.shape
+        c, freqs = corr_matrix(data,
+                               sample_spacing,
+                               window,
+                               nperseg,
+                               noverlap,
+                               nfft,
+                               detrend)
 
-    T = sample_spacing[0] * ntspace[0]  # find total time of simulation
-    L = sample_spacing[1:] * ntspace[1:]
-    dw = 2 * np.pi / T  # find spacing of fourier frequencies
+    if type(sample_spacing) is int:
+        sample_spacing = np.asarray([sample_spacing] * (len(nspace) + 1))
+    elif len(sample_spacing) == len(nspace) + 1:
+        sample_spacing = np.asarray(sample_spacing)
 
-    # smooth c_fft if wanted
+    TL = sample_spacing * np.array([nt, *nspace])  # find total time and length of simulation
+    dk = 2 * np.pi / TL  # find spacing of all frequencies, temporal and spatial
+
+    # smooth c if wanted
     if smooth_corr:
-        c_fft = _gauss_smooth(c_fft, sigma)
 
-    # get inverse of each NxN submatrix of c_fft. Broadcasts to find inverse of square
-    # matrix in last two dimensions of matrix
-    c_fft_inv = np.linalg.inv(c_fft)
-    s = np.sum((c_fft_inv - np.transpose(c_fft_inv, (0, 2, 1))) * c_fft)
+        if type(sigma) is int:
+            sigma = [sigma] * (len(TL))
+        elif len(sigma) == len(TL):
+            sigma = np.asarray(sigma)
+        else:
+            raise ValueError('sigma is either a single value for all dimensions\n'
+                             'or has as many elements as the number of dimensions of the data')
 
-    s /= 2 * T
+        c = _nd_gauss_smooth(c, sigma)
+
+    # get inverse of each NxN submatrix of c.
+    # Broadcasts to find inverse of square matrix in last two dimensions of matrix
+    c_inv = np.linalg.inv(c)
+
+    # transpose last two indices
+    axes = list(range(c.ndim))
+    axes[-2:] = [axes[-1], axes[-2]]
+    c_inv_transpose = np.transpose(c_inv, axes=axes)
+
+    # first axis is temporal frequency.
+    # flip along that axis to get C^-T(k, -w)
+    s = np.sum((np.flip(c_inv_transpose, axis=0) - c_inv_transpose) * c)
+
+    s /= 2 * TL[0]
 
     # Calculate and subtract off bias if wanted
     if subtract_bias:
-        bias = (np.pi**-0.5) * (nVar * (nVar - 1) / 2) * (omega.max() / (nRep * T * sigma * dw))
+        bias = ((1 / nrep) * (nvar * (nvar - 1) / 2) *
+                np.prod([((freqs[n].max() / sigma[n]) / (TL[n] * dk[n])) for n in range(len(TL))]))
+        print(bias)
         s -= bias
 
     return s
@@ -184,8 +208,8 @@ def corr_matrix(data, sample_spacing=None, window='boxcar', nperseg=None,
     '''
 
     data = np.asarray(data)
-    nvars = data.shape[0]  # total number of variables
-    ntspace = data.shape[1:]  # number of time points and space points
+    # get total number of variables and number of time points and space points
+    nvar, *ntspace = data.shape
 
     ####################################################################
     # Not sure how to implement Welch's method robustly here
@@ -196,6 +220,15 @@ def corr_matrix(data, sample_spacing=None, window='boxcar', nperseg=None,
     #         raise ValueError('nperseg must be a positive integer')
     # else:
     #     nperseg = npts
+    #
+    # noverlap checks
+    # if noverlap is None:
+    #     noverlap = nperseg // 2
+    # else:
+    #     noverlap = int(noverlap)
+    # if noverlap >= nperseg:
+    #     raise ValueError('noverlap must be less than nperseg.')
+    ####################################################################
 
     # nfft checks
     if nfft is None:
@@ -214,21 +247,7 @@ def corr_matrix(data, sample_spacing=None, window='boxcar', nperseg=None,
         else:
             raise ValueError('size of fft taken is either an integer for all dimensions or equal to the number of dimensions as the data')
 
-    # noverlap checks
-    # if noverlap is None:
-    #     noverlap = nperseg // 2
-    # else:
-    #     noverlap = int(noverlap)
-    # if noverlap >= nperseg:
-    #     raise ValueError('noverlap must be less than nperseg.')
-    ####################################################################
-
-    # preallocate correlation matrix
-    c = np.zeros((*nfft, nvars, nvars), dtype=complex)
-
-    # get all pairs of indices
-    idx_pairs = list(product(np.arange(nvars), repeat=2))
-
+    # sample_spacing checks
     if sample_spacing is None:
         sample_spacing = np.ones(len(ntspace))
     else:
@@ -240,6 +259,12 @@ def corr_matrix(data, sample_spacing=None, window='boxcar', nperseg=None,
             raise ValueError('sample_spacing is either a single value for all dimensions\n'
                              'or has as many elements as the number of dimensions of the data')
 
+    # preallocate correlation matrix
+    c = np.zeros((*nfft, nvar, nvar), dtype=complex)
+
+    # get all pairs of indices
+    idx_pairs = list(product(np.arange(nvar), repeat=2))
+
     for idx in idx_pairs:
         c[..., idx[0], idx[1]] = csdn(data[idx[0]], data[idx[1]],
                                       sample_spacing=sample_spacing,
@@ -250,7 +275,7 @@ def corr_matrix(data, sample_spacing=None, window='boxcar', nperseg=None,
     freqs = []
 
     for dim, Delta in enumerate(sample_spacing):
-        freqs.append(np.linspace(-np.pi / Delta, np.pi / Delta, ntspace[dim]))
+        freqs.append(2 * np.pi * np.fft.fftshift(np.fft.fftfreq(ntspace[dim], sample_spacing[dim])))
 
     return c, freqs
 
@@ -386,7 +411,7 @@ def _nd_window(data, window):
     return data, win
 
 
-def _nd_gauss_smooth(corr, stddev=10, mode='reflect'):
+def _nd_gauss_smooth(corr, stddev=1, mode='reflect'):
     '''
     Helper function that smooths a correlation matrix along its time axis with a Gaussian.
     To be used on the correlation functions out of corr_matrix.
@@ -415,9 +440,9 @@ def _nd_gauss_smooth(corr, stddev=10, mode='reflect'):
     scipy.ndimage.gaussian_filter()
     '''
 
-    nvars = corr.shape[-1]
+    nvar = corr.shape[-1]
     smooth_corr = np.zeros(corr.shape, dtype=complex)
-    idx_pairs = list(product(np.arange(nvars), repeat=2))
+    idx_pairs = list(product(np.arange(nvar), repeat=2))
 
     for idx in idx_pairs:
         smooth_corr[..., idx[0], idx[1]].real = gaussian_filter(corr[..., idx[0], idx[1]].real,

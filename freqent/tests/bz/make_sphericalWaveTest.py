@@ -60,7 +60,7 @@ data[0] = r0t
 data[1] = r1t
 
 c, freqs = fen.corr_matrix(data, sample_spacing=[dt, dx, dy])
-c = fen._nd_gauss_smooth(c, stddev=1)
+c = fen._nd_gauss_smooth(c, stddev=[1, 2, 2])
 
 idx_array = list(product(np.arange(2), repeat=2))
 
@@ -79,12 +79,12 @@ axReal[1, 0].set(xlabel=r'$k$ (rad/um)', ylabel=r'$\omega$ (rad/s)')
 axReal[0, 0].set(ylabel=r'$\omega$ (rad/s)')
 axReal[1, 1].set(xlabel=r'$k$ (rad/um)')
 figReal.suptitle(r'$\Re[\langle r_i(\mathbf{{k}}, \omega) r_j^*(\mathbf{{k}}, \omega) \rangle]$')
-figReal.savefig(os.path.join(savepath, 'sphericalWaveCSD_Real_smoothed_sigma1.pdf'), format='pdf')
+# figReal.savefig(os.path.join(savepath, 'sphericalWaveCSD_Real_smoothed_sigma1.pdf'), format='pdf')
 
 axImag[1, 0].set(xlabel=r'$k$ (rad/um)', ylabel=r'$\omega$ (rad/s)')
 axImag[0, 0].set(ylabel=r'$\omega$ (rad/s)')
 axImag[1, 1].set(xlabel=r'$k$ (rad/um)')
 figImag.suptitle(r'$\Im[\langle r_i(\mathbf{{k}}, \omega) r_j^*(\mathbf{{k}}, \omega) \rangle]$')
-figImag.savefig(os.path.join(savepath, 'sphericalWaveCSD_Imag_smoothed_sigma1.pdf'), format='pdf')
+# figImag.savefig(os.path.join(savepath, 'sphericalWaveCSD_Imag_smoothed_sigma1.pdf'), format='pdf')
 
 plt.show()
