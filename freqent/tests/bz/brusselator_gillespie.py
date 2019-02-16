@@ -260,22 +260,19 @@ class brusselator1DFieldStochSim():
     Where d = D / h^2, where h is the length of the subvolumes.
     '''
 
-    def __init__(self, XY_init, ABC, rates, V, t_points,
-                 D, n_subvolumes, l_subVolumes, seed=None):
+    def __init__(self, XY_init, ABC, rates, t_points,
+                 D, n_subvolumes, v_subVolumes, seed=None):
         self.rates = rates  # reaction rates given in docstring
-        self.V = V  # volume of each reaction subvolume
+        # self.V = V  # volume of each reaction subvolume
         self.t_points = t_points  # time points to output simulation results
         self.D = np.asarray(D, dtype=np.float32)  # diffusion constant for X and Y, as 2-element array [D_X, D_Y]
-        self.h = l_subVolumes  # length of subvolumes
+        self.V = v_subVolumes  # length of subvolumes
         self.K = n_subvolumes  # number of subvolumes
         self.XY0 = XY_init  # 2 by K array of initial values for X and Y
         self.ABC = np.asarray(ABC, dtype=np.float32)  # number of chemostatted molecules IN EACH SUBVOLUME
         self.ep = np.zeros(len(t_points), dtype=np.float32)  # store entropy production time series
         self.n = 0  # keep track of how many reactions are being done
-
-        # if seed is None:
-        #     self.seed = datetime.now().microsecond
-        # else:
+        self.reactionTypeTracker = np.zeros(10)  # track which reactions take place
         self.seed = seed
 
         # Store propensities for t=0, to be updated throughout simulation
@@ -292,16 +289,16 @@ class brusselator1DFieldStochSim():
         #     - k5 reaction for each cell
         X, Y = XY_init
         k0, k1, k2, k3, k4, k5 = self.rates
-        dx = self.D[0] / self.h**2  # diffusion rate of X molecule
-        dy = self.D[1] / self.h**2  # diffusion rate of Y molecule
+        dx = self.D[0] / self.V**2  # diffusion rate of X molecule
+        dy = self.D[1] / self.V**2  # diffusion rate of Y molecule
         A = np.repeat(self.ABC[0], self.K)
         B = np.repeat(self.ABC[1], self.K)
         C = np.repeat(self.ABC[2], self.K)
 
         x_cw = X * dx
-        x_ccw = np.flip(X) * dx
+        x_ccw = X * dx
         y_cw = Y * dy
-        y_ccw = np.flip(Y) * dy
+        y_ccw = Y * dy
         k0_reaction = k0 * A
         k1_reaction = k1 * X
         k2_reaction = k2 * B * X / self.V
@@ -375,18 +372,18 @@ class brusselator1DFieldStochSim():
         self.population[0, :] = self.XY0
 
     def reset(self):
-        self.__init__(self.XY0, self.ABC, self.rates, self.V, self.t_points,
-                      self.D, self.K, self.h)
+        self.__init__(self.XY0, self.ABC, self.rates, self.t_points,
+                      self.D, self.K, self.V)
 
     # Functions to update the propensities with
     # XY is current population as 2xK array
     def reaction_update(self, XY, compartment, reactionType):
         if reactionType in [0, 1]:
-            dx = self.D[0] / self.h**2
+            dx = self.D[0] / self.V**2
             return XY[0, compartment] * dx
 
         elif reactionType in [2, 3]:
-            dy = self.D[1] / self.h**2
+            dy = self.D[1] / self.V**2
             return XY[1, compartment] * dy
 
         elif reactionType == 4:
@@ -544,6 +541,9 @@ class brusselator1DFieldStochSim():
                 pop_prev = pop.copy()
                 pop += self.update[reaction, ...]
 
+                if (pop < 0).any():
+                    pdb.set_trace()
+
                 # update propensities
                 self.update_propensities(pop, reaction)
                 if np.isnan(self.props).sum():
@@ -585,16 +585,21 @@ class brusselator1DFieldStochSim():
                     # "backward" chemical reactions
                     backward_reaction = reaction - self.K
 
-                # # add to entropy
+                # stop simulation if about to get infinite entropy
                 if probs_next[backward_reaction] == 0:
                     pdb.set_trace()
 
+                # add to entropy,
                 ep += np.log(probs[reaction] / probs_next[backward_reaction])
+
+                # Track which type of reaction just happened.
+                self.reactionTypeTracker[reactionType] += 1
 
                 # increment time
                 t += dt
 
                 # update reaction, dt, and propensities
+                # reaction_prev, dt_prev, probs_prev = reaction, dt, probs
                 reaction, dt, probs = reaction_next, dt_next, probs_next
 
             # update index
@@ -605,6 +610,7 @@ class brusselator1DFieldStochSim():
             # update population
             self.population[i_time:min(i, len(self.t_points))] = pop_prev
             self.ep[i_time:min(i, len(self.t_points))] = ep
+            self.reactionTypeTracker /= self.n
 
             # increment index
             i_time = i
