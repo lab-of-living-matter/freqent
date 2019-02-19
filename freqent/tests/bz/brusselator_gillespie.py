@@ -47,6 +47,7 @@ class brusselatorStochSim():
         self.V = V  # volume of reaction space
         self.t_points = t_points  # time points to output simulation results
         self.n = 0  # number of simulation time steps taken
+        self.reactionTypeTracker = np.zeros(6)  # track which reactions take place
 
         X, Y, A, B, C = population_init
         k0, k1, k2, k3, k4, k5 = self.rates
@@ -171,6 +172,7 @@ class brusselatorStochSim():
             # current = np.zeros(self.update.shape[0])
             while t < self.t_points[i_time]:
                 self.n += 1
+                self.reactionTypeTracker[reaction] += 1
                 # update population
                 pop_prev = pop.copy()
                 pop += self.update[reaction, :]
@@ -207,6 +209,8 @@ class brusselatorStochSim():
             # increment index
             i_time = i
 
+        # track percentage of each reaction done
+        self.reactionTypeTracker /= self.n
         # self.occupancy /= self.t_points.max()
 
 
