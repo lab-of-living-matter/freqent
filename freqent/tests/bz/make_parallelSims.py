@@ -14,6 +14,7 @@ import pickle
 from scipy import stats
 import freqent.freqent as fe
 import h5py
+import pdb
 mpl.rcParams['pdf.fonttype'] = 42
 
 
@@ -51,7 +52,7 @@ parser.add_argument('--seed_type', type=str, default='time',
                          ' or "input" for inputting specific seeds')
 parser.add_argument('--seed_input', type=int, nargs='*',
                     help='If seed_type="input", the seeds to use for the simulations')
-parser.add_argument('--sigma', '-std', type=int,
+parser.add_argument('--sigma', '-std', type=int, default=2,
                     help='Size of Gaussian to smooth with in units of sample spacing')
 parser.add_argument('--savepath', default='.',
                     help='path to save outputs of simulations ')
@@ -84,21 +85,25 @@ if int(args.nSim) < 10:
 else:
     nProcesses = 10
 
+print('Running simulations...')
+tic = time.time()
 with multiprocessing.Pool(processes=nProcesses) as pool:
     result = pool.map(get_traj, seeds.astype(int))
+toc = time.time()
+print('Done. Total time = {t:.2f} s'.format(t=toc - tic))
 
 # plotting and preparing data for saving
 fig_traj, ax_traj = plt.subplots()
 fig_ep, ax_ep = plt.subplots()
 
 # save entropy produced
-eps = np.zeros((args.nSim, args.n_t_points))
+eps = np.zeros((args.nSim, args.n_t_points), dtype=float)
 
 # save trajectories
-trajs = np.zeros((args.nSim, 2, args.n_t_points))
+trajs = np.zeros((args.nSim, 2, args.n_t_points), dtype=int)
 
 # save total number of simulation steps, in order to see what percentage of data we're getting
-ns = np.zeros(args.nSim)
+ns = np.zeros(args.nSim, dtype=int)
 
 for ii in range(args.nSim):
     traj = result[ii].population.T
@@ -144,32 +149,46 @@ epr_spectral = (fe.entropy(trajs,
 
 # create filename and create folder with that name under savepath
 filename = 'alpha{a}_nSim{n}_sigma{s}'.format(a=alpha, n=args.nSim, s=args.sigma)
-if not os.path.exists(os.path.join(args.savepath, filename)):
-    os.makedirs(os.path.join(args.savepath, filename))
+# if not os.path.exists(os.path.join(args.savepath, filename)):
+#     os.makedirs(os.path.join(args.savepath, filename))
 
 # save parameters
 params = vars(args)
-params['datetime'] = datetime.now()
+params['datetime'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 params['seeds'] = seeds
 
-with open(os.path.join(args.savepath, filename, 'params.csv'), 'w') as csv_file:
-    w = csv.DictWriter(csv_file, params.keys())
-    w.writeheader()
-    w.writerow(params)
+# all you need are the exact seeds. seed_input is often None, which
+# creates a problem in saving below
+params.pop('seed_input')
+params.pop('seed_type')
+
+# with open(os.path.join(args.savepath, filename, 'params.csv'), 'w') as csv_file:
+#     w = csv.DictWriter(csv_file, params.keys())
+#     w.writeheader()
+#     w.writerow(params)
 
 # save figures
-fig_traj.savefig(os.path.join(args.savepath, filename, 'traj.pdf'), format='pdf')
-fig_ep.savefig(os.path.join(args.savepath, filename, 'ep.pdf'), format='pdf')
+fig_traj.savefig(os.path.join(args.savepath, filename + '_traj.pdf'), format='pdf')
+fig_ep.savefig(os.path.join(args.savepath, filename + '_ep.pdf'), format='pdf')
 
-data = {'trajs': trajs,
-        'eps': eps,
-        't_points': t_points,
-        'n': n,
-        'epr': epr,
-        'epr_spectral': epr_spectral}
-with open(os.path.join(args.savepath, filename, 'data.pickle'), 'wb') as f:
-    # Pickle the 'data' dictionary using the highest protocol available.
-    pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+dat = {'trajs': trajs,
+       'eps': eps,
+       't_points': t_points,
+       'ns': ns,
+       'epr': epr,
+       'epr_spectral': epr_spectral}
 
-with open(os.path.join(args.savepath, filename, 'sims.pickle'), 'wb') as f:
+with h5py.File(os.path.join(args.savepath, filename + '.hdf5'), 'w') as f:
+    # save data and params to hdf5 file
+    datagrp = f.create_group('data')
+    paramsgrp = f.create_group('params')
+
+    for name in dat.keys():
+        datagrp.create_dataset(name, data=dat[name])
+
+    for name in params.keys():
+        paramsgrp.create_dataset(name, data=params[name])
+
+
+with open(os.path.join(args.savepath, filename + '_simObjects.pickle'), 'wb') as f:
     pickle.dump(result, f, pickle.HIGHEST_PROTOCOL)
