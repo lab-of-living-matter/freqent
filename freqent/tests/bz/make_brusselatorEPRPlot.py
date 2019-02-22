@@ -2,26 +2,37 @@ import os
 from glob import glob
 import numpy as np
 import matplotlib.pyplot as plt
-import pickle
+import h5py
 import freqent.freqent as fe
 
-folder = '/mnt/llmStorage203/Danny/brusselatorSims/reactionsOnly/190130'
+folder = '/media/daniel/storage11/local_LLM_Danny/freqent/190220/highResBruss'
 
-alpha = np.asarray([float(x.split('alpha')[-1].split('_')[0]) for x in glob(os.path.join(folder, '*/'))])
+alpha = np.array([float(x.split(os.path.sep)[-1].split('_')[0].split('alpha')[-1]) for x in glob(os.path.join(folder, '*.hdf5'))])
 
 epr = np.zeros(len(alpha))
-epr_spectral = np.zeros(len(alpha))
-for fInd, f in enumerate(glob(os.path.join(folder, '*/'))):
-    print('Opening {f}...'.format(f=f.split(os.path.sep)[-2]))
-    with open(os.path.join(f, 'data.pickle'), 'rb') as d:
-        data = pickle.load(d)
-        epr[fInd] = data['epr']
-        epr_spectral[fInd] = data['epr_spectral']
 
-fig, ax = plt.subplots()
-ax.loglog(alpha, epr, '.', label='True EPR')
-ax.loglog(alpha, epr_spectral, '.', label='Spectral EPR')
-ax.set(xlabel=r'$\alpha$', ylabel=r'$\dot{\Sigma}$')
-plt.legend()
+sigmaArray = list(range(1, 11))
+epr_spectral = np.zeros((len(sigmaArray), len(alpha)))
 
-plt.show()
+
+for fInd, fullPath in enumerate(glob(os.path.join(folder, '*.hdf5'))):
+    f = fullPath.split(os.path.sep)[-1]
+    print('Opening {f}...'.format(f=f))
+    with h5py.File(fullPath, 'r') as d:
+        epr[fInd] = d['data']['epr'][()]
+        # trajs = d['data']['trajs'][:]
+        # t_points = d['data']['t_points'][:]
+        dt = np.diff(d['data']['t_points'][:])[0]
+
+        for sigInd, sigma in enumerate(sigmaArray):
+            epr_spectral[sigInd, fInd] = fe.entropy(d['data']['trajs'][:],
+                                                    sample_spacing=dt,
+                                                    sigma=sigma)
+
+# fig, ax = plt.subplots()
+# ax.loglog(alpha, epr, '.', label='True EPR')
+# ax.loglog(alpha, epr_spectral, '.', label='Spectral EPR')
+# ax.set(xlabel=r'$\alpha$', ylabel=r'$\dot{\Sigma}$')
+# plt.legend()
+
+# plt.show()
