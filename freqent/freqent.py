@@ -122,9 +122,10 @@ def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
     # Calculate and subtract off bias if wanted
     if subtract_bias:
         bias = (np.pi**-0.5) * (nVar * (nVar - 1) / 2) * (omega.max() / (nRep * T * sigma * dw))
+        print(bias)
         s -= bias
 
-    return s
+    return s.real
 
 
 def corr_matrix(data, sample_spacing=1, window='boxcar', nperseg=None,
