@@ -17,7 +17,6 @@ Brusselator given by
 
 import numpy as np
 from datetime import datetime
-from scipy import sparse
 import pdb
 from numba import jit, jitclass, int32, float32
 
@@ -54,6 +53,7 @@ class brusselatorStochSim():
 
         self.pop0 = [X, Y]  # store initial point, [X, Y, A, B, C]
         self.ep = np.zeros(len(t_points))  # store entropy production time series
+        self.ep_blind = np.zeros(len(t_points))  # store entropy production blind to specific reaction pathway
         # self.occupancy = np.zeros((self.V * 15, self.V * 15))
 
         if seed is None:
@@ -161,6 +161,7 @@ class brusselatorStochSim():
         i = 0
         i_time = 1
         ep = 0
+        ep_blind = 0
 
         # set seed
         np.random.seed(self.seed)
@@ -193,6 +194,18 @@ class brusselatorStochSim():
                 ep += np.log((props[reaction] / props.sum()) /
                              (props_next[backward_reaction] / props_next.sum()))
 
+                # Note that reactions [2, 5] and [3, 4] each give the same dynamics of
+                # (X, Y) -> (X - 1, Y + 1) and (X, Y) -> (X + 1, Y - 1), respectively
+                if reaction in [0, 1]:
+                    ep_blind += np.log((props[reaction] / props.sum()) /
+                                       (props_next[backward_reaction] / props_next.sum()))
+                elif reaction in [2, 5]:
+                    ep_blind += np.log((props[[2, 5]].sum() / props.sum()) /
+                                       (props_next[[3, 4]].sum() / props_next.sum()))
+                elif reaction in [3, 4]:
+                    ep_blind += np.log((props[[3, 4]].sum() / props.sum()) /
+                                       (props_next[[2, 5]].sum() / props_next.sum()))
+
                 # increment time
                 t += dt
 
@@ -205,6 +218,7 @@ class brusselatorStochSim():
             # update population
             self.population[i_time:min(i, len(self.t_points))] = pop_prev
             self.ep[i_time:min(i, len(self.t_points))] = ep
+            self.ep_blind[i_time:min(i, len(self.t_points))] = ep_blind
 
             # increment index
             i_time = i
