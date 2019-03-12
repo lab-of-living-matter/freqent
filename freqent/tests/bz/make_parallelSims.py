@@ -132,7 +132,7 @@ epr, intercept, r_value, p_val, std_err = stats.linregress(t_points[args.n_t_poi
                                                            eps.mean(axis=0)[args.n_t_points // 2:])
 
 # Calculate mean entropy production rate from spectral method
-epr_spectral = (fe.entropy(trajs,
+epr_spectral = (fe.entropy(trajs[..., args.n_t_points // 2:],
                            sample_spacing=dt,
                            window='boxcar',
                            nperseg=None,
@@ -189,4 +189,5 @@ with h5py.File(os.path.join(args.savepath, filename + '.hdf5'), 'w') as f:
 
 
 # with open(os.path.join(args.savepath, filename + '_simObjects.pickle'), 'wb') as f:
-#    pickle.dump(result, f, pickle.HIGHEST_PROTOCOL)
+#     pickle.dump(result, f, pickle.HIGHEST_PROTOCOL)
+
