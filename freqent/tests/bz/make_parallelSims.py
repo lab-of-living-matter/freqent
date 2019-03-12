@@ -188,5 +188,5 @@ with h5py.File(os.path.join(args.savepath, filename + '.hdf5'), 'w') as f:
         paramsgrp.create_dataset(name, data=params[name])
 
 
-with open(os.path.join(args.savepath, filename + '_simObjects.pickle'), 'wb') as f:
-    pickle.dump(result, f, pickle.HIGHEST_PROTOCOL)
+# with open(os.path.join(args.savepath, filename + '_simObjects.pickle'), 'wb') as f:
+#    pickle.dump(result, f, pickle.HIGHEST_PROTOCOL)
