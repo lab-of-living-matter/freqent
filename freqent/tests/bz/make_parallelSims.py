@@ -93,9 +93,13 @@ print('Done. Total time = {t:.2f} s'.format(t=toc - tic))
 # plotting and preparing data for saving
 fig_traj, ax_traj = plt.subplots()
 fig_ep, ax_ep = plt.subplots()
+fig_ep_blind, ax_ep_blind = plt.subplots()
 
 # save entropy produced
 eps = np.zeros((args.nSim, args.n_t_points), dtype=float)
+
+# save blind entropy produced
+ep_blinds = np.zeros((args.nSim, args.n_t_points), dtype=float)
 
 # save trajectories
 trajs = np.zeros((args.nSim, 2, args.n_t_points), dtype=int)
@@ -110,14 +114,19 @@ for ii in range(args.nSim):
     ep = result[ii].ep
     eps[ii] = ep
 
+    ep_blind = result[ii].ep_blind
+    ep_blinds[ii] = ep_blind
+
     n = result[ii].n
     ns[ii] = n
 
     ax_traj.plot(traj[0], traj[1], 'k', alpha=0.2)
     ax_ep.plot(t_points, ep, 'k', alpha=0.3)
+    ax_ep_blind.plot(t_points, ep_blind, 'k', alpha=0.3)
 
 
 ax_ep.plot(t_points, eps.mean(axis=0), 'r', linewidth=2)
+ax_ep_blind.plot(t_points, ep_blinds.mean(axis=0), 'r', linewidth=2)
 
 ax_traj.set(xlabel='X', ylabel='Y')
 ax_traj.set_aspect(np.diff(ax_traj.set_xlim())[0] / np.diff(ax_traj.set_ylim())[0])
@@ -127,9 +136,16 @@ ax_ep.set(xlabel='t [s]', ylabel=r'$\Delta S$')
 ax_ep.set_aspect(np.diff(ax_ep.set_xlim())[0] / np.diff(ax_ep.set_ylim())[0])
 plt.tight_layout()
 
+ax_ep_blind.set(xlabel='t [s]', ylabel=r'$\Delta S$ (blind)')
+ax_ep_blind.set_aspect(np.diff(ax_ep_blind.set_xlim())[0] / np.diff(ax_ep_blind.set_ylim())[0])
+plt.tight_layout()
+
 # Calculate mean entropy production rate from halway through the simulation to ensure steady state reached
 epr, intercept, r_value, p_val, std_err = stats.linregress(t_points[args.n_t_points // 2:],
                                                            eps.mean(axis=0)[args.n_t_points // 2:])
+
+epr_blind, intercept, r_value, p_val, std_err = stats.linregress(t_points[args.n_t_points // 2:],
+                                                                 ep_blinds.mean(axis=0)[args.n_t_points // 2:])
 
 # Calculate mean entropy production rate from spectral method
 epr_spectral = (fe.entropy(trajs[..., args.n_t_points // 2:],
@@ -168,12 +184,15 @@ params.pop('seed_type')
 # save figures
 fig_traj.savefig(os.path.join(args.savepath, filename + '_traj.pdf'), format='pdf')
 fig_ep.savefig(os.path.join(args.savepath, filename + '_ep.pdf'), format='pdf')
+fig_ep_blind.savefig(os.path.join(args.savepath, filename + '_ep_blind.pdf'), format='pdf')
 
 dat = {'trajs': trajs,
        'eps': eps,
+       'ep_blinds': ep_blinds,
        't_points': t_points,
        'ns': ns,
        'epr': epr,
+       'epr_blind': epr_blind,
        'epr_spectral': epr_spectral}
 
 with h5py.File(os.path.join(args.savepath, filename + '.hdf5'), 'w') as f:
@@ -190,4 +209,3 @@ with h5py.File(os.path.join(args.savepath, filename + '.hdf5'), 'w') as f:
 
 # with open(os.path.join(args.savepath, filename + '_simObjects.pickle'), 'wb') as f:
 #     pickle.dump(result, f, pickle.HIGHEST_PROTOCOL)
-
