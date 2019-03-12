@@ -13,7 +13,7 @@ from itertools import product
 # import scipy.signal as signal
 
 mpl.rcParams['pdf.fonttype'] = 42
-plt.close('all')
+# plt.close('all')
 
 parser = argparse.ArgumentParser(description=('Perform simulations of Brownian particles'
                                               ' in a harmonic potential plus a rotating'
@@ -80,15 +80,6 @@ def runSim(seed):
     r = spinOscLangevin(dt=args.dt, nsteps=args.nsteps, kT=args.kT, gamma=args.gamma,
                         r0=np.random.randn(args.ndim))
     r.runSimulation(k=k, alpha=alpha)
-    # c_fft, omega = fe.corr_matrix(r.pos,
-    #                               sample_spacing=r.dt,
-    #                               window='boxcar',
-    #                               nperseg=None,
-    #                               noverlap=None,
-    #                               nfft=None,
-    #                               detrend='constant',
-    #                               padded=False,
-    #                               return_fft=True)
     return r.pos
 
 
@@ -121,15 +112,43 @@ fig, ax = plt.subplots()
 
 
 idx_pairs = list(product(range(args.ndim), repeat=2))
-for nsimInd, nsim in enumerate(nsim_array):
+# for nsimInd, nsim in enumerate(nsim_array):
+#     for scaleInd, scale in enumerate(scales):
+#         bias = (np.pi**-0.5) * (args.ndim * (args.ndim - 1) / 2) * (omega.max() / (nsim * T * scale * dw))
+#         sdot = fe.entropy(pos_all[:nsim, :, args.nsteps // 2:],
+#                           sample_spacing=args.dt,
+#                           smooth_corr=True,
+#                           sigma=scale)
+#         sdotArray[nsimInd, scaleInd] = sdot.real
+#         biasArray[nsimInd, scaleInd] = bias
+#         ax.semilogx(nsim * T / 2, sdot.real, marker=(args.ndim, 0, 45), markersize=10, linestyle='None', color=colors[scaleInd, :])
+# ax.set_title(r'$\alpha = {0}$'.format(args.alpha_multiple))
+# ax.plot([nsim_array[0] * T / 2, nsim_array[-1] * T / 2],
+#         [2 * args.alpha_multiple**2 / args.k_multiple] * 2,
+#         '--k')
+
+tDivisors = np.linspace(1, 2, 5)
+t = (tDivisors**-1 - 1 / 3) * T
+sdotArray = np.zeros((len(tDivisors), len(scales)))
+biasArray = np.zeros(sdotArray.shape)
+
+for tInd, tFrac in enumerate(tDivisors):
     for scaleInd, scale in enumerate(scales):
-        bias = (np.pi**-0.5) * (args.ndim * (args.ndim - 1) / 2) * (omega.max() / (nsim * T * scale * dw))
-        sdot = fe.entropy(pos_all[:nsim, ...], sample_spacing=args.dt, sigma=scale, subtract_bias=False)
-        sdotArray[nsimInd, scaleInd] = sdot.real
-        biasArray[nsimInd, scaleInd] = bias
-        ax.semilogx(nsim * T, sdot.real, marker=(args.ndim, 0, 45), markersize=10, linestyle='None', color=colors[scaleInd, :])
+        bias = (np.pi**-0.5) * (args.ndim * (args.ndim - 1) / 2) * (omega.max() / (args.nsim * t[tInd] * scale * dw))
+        sdot = fe.entropy(pos_all[:, :, args.nsteps // 3:int(args.nsteps // tDivisors[tInd])],
+                          sample_spacing=args.dt,
+                          smooth_corr=True,
+                          sigma=scale)
+        sdotArray[tInd, scaleInd] = sdot.real
+        biasArray[tInd, scaleInd] = bias
+        ax.semilogx(args.nsim * t[tInd], sdot.real, marker=(args.ndim, 0, 45), markersize=10, linestyle='None', color=colors[scaleInd, :])
 
 ax.set_title(r'$\alpha = {0}$'.format(args.alpha_multiple))
+ax.plot([args.nsim * t[-1], args.nsim * t[0]],
+        [2 * args.alpha_multiple**2 / args.k_multiple] * 2,
+        '--k')
+
+
 
 # if args.save:
 #     argDict = vars(args)

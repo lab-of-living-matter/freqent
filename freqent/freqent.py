@@ -2,6 +2,7 @@ import numpy as np
 import scipy.signal as signal
 import warnings
 from itertools import product
+from scipy.ndimage import gaussian_filter
 from astropy.convolution import Gaussian1DKernel, convolve
 
 
@@ -120,9 +121,9 @@ def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
     s /= 2 * T
 
     # Calculate and subtract off bias if wanted
-    if subtract_bias:
+    if subtract_bias and smooth_corr:
         bias = (np.pi**-0.5) * (nVar * (nVar - 1) / 2) * (omega.max() / (nRep * T * sigma * dw))
-        print(bias)
+        # print(bias)
         s -= bias
 
     return s.real
@@ -359,26 +360,28 @@ def _direct_csd(x, y, sample_spacing=1.0, window='boxcar', nperseg=None,
         return np.fft.fftshift(csd)
 
 
-def _gauss_smooth(corr, stddev=10, axis=0):
+def _gauss_smooth(corr, stddev=10, mode='reflect'):
     '''
     Helper function that smooths a correlation matrix along its time axis with a Gaussian.
     To be used on the correlation functions out of corr_matrix.
 
     Parameters
     ----------
-    corr: 2D array
-        MxNxN correlation matrix array. M is the number of time points,
-        N is the number of variables
-    stddev: int
-        standard deviation of gaussian used to smooth data, in units of the sampling
-        spacing between points in data
-    axis: int, optional
-        Axis along which to smooth the data
+    corr: array-like
+        correlation matrix array, output of freqentn.corr_matrix.
+    stddev: scalar or sequence of scalars
+        Standard deviation for Gaussian kernel. The standard
+        deviations of the Gaussian filter are given for each axis as a
+        sequence, or as a single number, in which case it is equal for
+        all axes.
+    mode : str or sequence, optional
+        The `mode` parameter determines how the input array is
+        extended when the filter overlaps a border.
 
     Results
     -------
-    smooth_corr : 2D array
-        NxMxM array that contains data smoothed with window along axis
+    smooth_corr : array-like
+        smoothed correlation array, same size as input.
 
     See also
     --------
@@ -389,13 +392,14 @@ def _gauss_smooth(corr, stddev=10, axis=0):
     nvars = corr.shape[-1]
     smooth_corr = np.zeros(corr.shape, dtype=complex)
     idx_pairs = list(product(np.arange(nvars), repeat=2))
-    gauss = Gaussian1DKernel(stddev)
 
     for idx in idx_pairs:
-        smooth_corr[:, idx[0], idx[1]].real = convolve(corr[:, idx[0], idx[1]].real,
-                                                       gauss, normalize_kernel=True)
-        smooth_corr[:, idx[0], idx[1]].imag = convolve(corr[:, idx[0], idx[1]].imag,
-                                                       gauss, normalize_kernel=True)
+        smooth_corr[..., idx[0], idx[1]].real = gaussian_filter(corr[..., idx[0], idx[1]].real,
+                                                                sigma=stddev,
+                                                                mode=mode)
+        smooth_corr[..., idx[0], idx[1]].imag = gaussian_filter(corr[..., idx[0], idx[1]].imag,
+                                                                sigma=stddev,
+                                                                mode=mode)
 
     return smooth_corr
 
