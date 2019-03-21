@@ -18,13 +18,15 @@ def calc_epr_spectral(file):
         tStart = T / 2
         dt = np.diff(d['data']['t_points'][:])[0]
         epr = d['data']['epr'][()]
-        epr_spectral = (fe.entropy(d['data']['trajs'][..., t_points > tStart],
-                                   sample_spacing=dt,
-                                   sigma=10)).real
-    return [epr, epr_spectral]
+        epr_blind = d['data']['epr_blind'][()]
+        epr_spectral = d['data']['epr_spectral'][()]
+        # epr_spectral = (fe.entropy(d['data']['trajs'][..., t_points > tStart],
+        #                            sample_spacing=dt,
+        #                            sigma=10)).real
+    return [epr, epr_blind, epr_spectral]
 
 
-folder = '/media/daniel/storage11/local_LLM_Danny/freqent/190227/V10'
+folder = '/media/daniel/storage11/local_LLM_Danny/freqent/190313/blindBruss'
 
 alpha = np.array([float(x.split(os.path.sep)[-1].split('_')[0].split('alpha')[-1]) for x in glob(os.path.join(folder, '*.hdf5'))])
 
@@ -37,7 +39,7 @@ alpha = np.array([float(x.split(os.path.sep)[-1].split('_')[0].split('alpha')[-1
 files = glob(os.path.join(folder, '*.hdf5'))
 
 print('Getting and calculating eprs...')
-with multiprocessing.Pool(processes=9) as pool:
+with multiprocessing.Pool(processes=8) as pool:
     result = pool.map(calc_epr_spectral, files)
 print('Done.')
 
