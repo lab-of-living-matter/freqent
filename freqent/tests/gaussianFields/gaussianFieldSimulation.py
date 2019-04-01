@@ -1,13 +1,13 @@
 '''
 Simulation of coupled Gaussian fields with noise
 
-da/dt = -k * a + c * nabla^2 a + alpha * b + xi_a
-db/dt = -k * b + c * nabla^2 b - alpha * a + xi_b
+da/dt = -D * (r  + c * nabla^2) a + alpha * b + xi_a
+db/dt = -D * (r  + c * nabla^2) b - alpha * a + xi_b
 
 a and b are functions of space and time
 xi_j is zero mean Gaussian noise with correlator
 
-< xi_j (x, t) xi_k(x', t') > = 2D delta_jk delta(x-x') delta(t-t')
+< xi_j (x, t) xi_k(x', t') > = 2 Gamma delta_jk delta(x-x') delta(t-t')
 '''
 
 import numpy as np
@@ -20,8 +20,8 @@ class gaussianFields1D():
     '''
     Simulation of 1D coupled Gaussian fields with noise
 
-    da/dt = -k * a + c * nabla^2 a + alpha * b + xi_a
-    db/dt = -k * b + c * nabla^2 b - alpha * a + xi_b
+    da/dt = -D * (r  + c * nabla^2) a + alpha * b + xi_a
+    db/dt = -D * (r  + c * nabla^2) b - alpha * a + xi_b
 
     a and b are functions of space and time
     xi_j is zero mean Gaussian noise with correlator
@@ -35,9 +35,6 @@ class gaussianFields1D():
         self.dx = dx  # lattice spacing
         self.npts = np.asarray(ic).shape[-1]  # number of lattice sites
         self.nsteps = int(nsteps)  # total number of time steps to take
-        # self.k = np.asarray(k)  # spring strength as a 2-tuple, one for each field
-        # self.c = np.asarray(c)  # diffusivity as a 2-tuple, one for each field
-        # self.alpha = alpha  # interaction strength of the fields
         self.D = D  # noise strength
 
         # discretization of laplacian
@@ -56,15 +53,15 @@ class gaussianFields1D():
     def reset(self):
         self.__init__(self.dt, self.dx, self.pos[:, 0, :], self.D, self.nsteps)
 
-    def deterministicForce(self, pos, k, c, alpha):
+    def deterministicForce(self, pos, r, c, alpha):
         # spring = np.diag(-k * np.ones(self.npts))  # spring force along diagonal
 
-        spring = np.stack((-k[0] * pos[0], -k[1] * pos[1]))
+        spring = np.stack((-r[0] * pos[0], -r[1] * pos[1]))
         diffusion = np.stack((np.matmul(c[0] * self.laplacian / (self.dx**2), pos[0]),
                               np.matmul(c[1] * self.laplacian / (self.dx**2), pos[1])))
         interaction = np.stack((alpha * pos[1], -alpha * pos[0]))
 
-        return spring + diffusion + interaction
+        return self.D * (spring + diffusion) + interaction
 
     def noise(self):
         '''
