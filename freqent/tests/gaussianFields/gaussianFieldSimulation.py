@@ -28,14 +28,22 @@ class gaussianFields1D():
 
     < xi_j (x, t) xi_k(x', t') > = 2 D kT delta_jk delta(x-x') delta(t-t')
 
-    In everything below, kT = 1
+    In everything below, kT = 1. We non-dimensionalize the system as
+
+    da'/dt' = -(1  - nabla'^2) a' + alpha' * b' + tau/L^(1/2) xi_a
+    db'/dt' = -(1  - nabla'^2) b' - alpha' * a' + tau/L^(1/2) xi_b
+
+    where the length scale L = 1 / sqrt(r) and time scale T = 1/(D*r)
+    are chosen to nondimensionalize the fields a and b (which have units
+    of L^0.5) and rescale space and time. alpha' = T alpha is a dimensionless
+    number describing how far the system is driven from equilibrium.
 
     Parameters
     ----------
     dt : scalar
-        time step in seconds
+        time step in units of T = 1/(D*r)
     dx : scalar
-        spatial lattice spacing
+        spatial lattice spacing in units of L = 1/sqrt(r)
     ic : array-like
         array with initial conditions for the fields. Shape 2xN,
         where N is the total number of lattice sites
@@ -71,11 +79,11 @@ class gaussianFields1D():
     '''
 
     def __init__(self, dt, dx, ic, D, nsteps):
-        self.dt = dt  # time step in seconds
-        self.dx = dx  # lattice spacing
+        self.dt = dt  # time step in simulation time units
+        self.dx = dx  # lattice spacing in simulation length units
         self.npts = np.asarray(ic).shape[-1]  # number of lattice sites
         self.nsteps = int(nsteps)  # total number of time steps to take
-        self.D = D  # noise strength
+        # self.D = D  # noise strength
 
         # discretization of laplacian
         self.laplacian = (-2 * np.eye(self.npts, k=0) +
@@ -93,13 +101,13 @@ class gaussianFields1D():
     def reset(self):
         self.__init__(self.dt, self.dx, self.pos[:, 0, :], self.D, self.nsteps)
 
-    def deterministicForce(self, pos, r, alpha):
-        spring = np.stack((r * pos[0], r * pos[1]))
+    def deterministicForce(self, pos, alpha):
+        spring = np.stack((pos[0], pos[1]))
         diffusion = np.stack((np.matmul(self.laplacian, pos[0]),
                               np.matmul(self.laplacian, pos[1])))
         interaction = np.stack((alpha * pos[1], -alpha * pos[0]))
 
-        return -self.D * (spring - diffusion) + interaction
+        return (-spring + diffusion) + interaction
 
     def noise(self):
         '''
