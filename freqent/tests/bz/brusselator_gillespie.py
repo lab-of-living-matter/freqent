@@ -289,6 +289,7 @@ class brusselator1DFieldStochSim():
         self.XY0 = XY_init  # 2 by K array of initial values for X and Y
         self.ABC = np.asarray(ABC, dtype=np.float32)  # number of chemostatted molecules IN EACH SUBVOLUME
         self.ep = np.zeros(len(t_points), dtype=np.float32)  # store entropy production time series
+        self.ep_blind = np.zeros(len(t_points), dtype=np.float32)
         self.n = 0  # keep track of how many reactions are being done
         self.reactionTypeTracker = np.zeros(10)  # track which reactions take place
         self.seed = seed
@@ -544,6 +545,7 @@ class brusselator1DFieldStochSim():
         i = 0
         i_time = 1
         ep = 0
+        ep_blind = 0
 
         # set seed
         np.random.seed(self.seed)
@@ -610,6 +612,23 @@ class brusselator1DFieldStochSim():
                 # add to entropy,
                 ep += np.log(probs[reaction] / probs_next[backward_reaction])
 
+                # reaction type 6 and 9 give equivalent dynamics
+                if reactionType == 6:
+                    ep_blind += np.log((probs[reaction] + probs[reaction + 3]) /
+                                       (probs_next[backward_reaction] + probs_next[backward_reaction + 3]))
+                elif reactionType == 9:
+                    ep_blind += np.log((probs[reaction] + probs[reaction - 3]) /
+                                       (probs_next[backward_reaction] + probs_next[backward_reaction - 3]))
+                # reaction types 7 and 8 give equivalent dynamics
+                elif reactionType == 7:
+                    ep_blind += np.log((probs[reaction] + probs[reaction + 1]) /
+                                       (probs_next[backward_reaction] + probs_next[backward_reaction + 1]))
+                elif reactionType == 8:
+                    ep_blind += np.log((probs[reaction] + probs[reaction - 1]) /
+                                       (probs_next[backward_reaction] + probs_next[backward_reaction - 1]))
+                else:
+                    ep_blind += np.log(probs[reaction] / probs_next[backward_reaction])
+
                 # Track which type of reaction just happened.
                 self.reactionTypeTracker[reactionType] += 1
 
@@ -628,6 +647,7 @@ class brusselator1DFieldStochSim():
             # update population
             self.population[i_time:min(i, len(self.t_points))] = pop_prev
             self.ep[i_time:min(i, len(self.t_points))] = ep
+            self.ep_blind[i_time:min(i, len(self.t_points))] = ep_blind
             self.reactionTypeTracker /= self.n
 
             # increment index
