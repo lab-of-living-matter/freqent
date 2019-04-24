@@ -134,16 +134,18 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     axes[-2:] = [axes[-1], axes[-2]]
     c_inv_transpose = np.transpose(c_inv, axes=axes)
 
+    # pdb.set_trace()
+
     # first axis is temporal frequency.
     # flip along that axis to get C^-T(k, -w)
     s = np.sum((np.flip(c_inv_transpose, axis=0) - c_inv_transpose) * c)
 
-    s /= 2 * TL[0]
+    s /= 2 * TL.prod()
 
     # Calculate and subtract off bias if wanted
     if subtract_bias:
         bias = ((1 / nrep) * (nvar * (nvar - 1) / 2) *
-                np.prod([((freqs[n].max() / sigma[n]) / (TL[n] * dk[n])) for n in range(len(TL))]))
+                np.prod([((freqs[n].max() / sigma[n]) / (TL[n] * dk[n] * (np.pi)**0.5)) for n in range(len(TL))]))
         print(bias)
         s -= bias
 

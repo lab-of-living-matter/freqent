@@ -78,7 +78,7 @@ class gaussianFields1D():
 
     '''
 
-    def __init__(self, dt, dx, ic, D, nsteps):
+    def __init__(self, dt, dx, ic, nsteps):
         self.dt = dt  # time step in simulation time units
         self.dx = dx  # lattice spacing in simulation length units
         self.npts = np.asarray(ic).shape[-1]  # number of lattice sites
@@ -113,35 +113,40 @@ class gaussianFields1D():
         '''
         Gaussian white noise
         '''
-        return np.sqrt(2 * self.D / self.dt) * np.random.randn(2, self.npts)
+        return np.sqrt(2 / self.dt) * np.random.randn(2, self.npts)
 
-    def runSimulation(self, r, alpha):
+    def runSimulation(self, alpha):
         '''
         Run a simulation of the interacting fields
         '''
         # self.reset()
         for index, time in enumerate(self.t[1:]):
             pos_old = self.pos[:, index, :]
-            pos_new = pos_old + (self.deterministicForce(pos_old, r, alpha) + self.noise()) * self.dt
+            pos_new = pos_old + (self.deterministicForce(pos_old, alpha) + self.noise()) * self.dt
             self.pos[:, index + 1, :] = pos_new
 
-    def plotTrajectory(self, savepath=None, delta=1):
-        plt.ion()
+    def plotTrajectory(self, savepath=None, tmin_frac=0, tmax_frac=1, delta=1):
+        '''
+        plot the fields in time range [tmin_frac, tmax_frac] * T in steps of delta
+        '''
+        T = self.dt * self.nsteps
+        tInd = np.logical_and(self.t > tmin_frac * T, self.t < tmax_frac * T)
+
         fig, ax = plt.subplots(1, 2, sharey=True)
-        vmin = self.pos[:, self.nsteps // 5:, :].min()
-        vmax = self.pos[:, self.nsteps // 5:, :].max()
+        vmin = self.pos[:, tInd, :].min()
+        vmax = self.pos[:, tInd, :].max()
 
-        cmap = mpl.cm.get_cmap('RdBu')
+        cmap = mpl.cm.get_cmap('coolwarm')
         normalize = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
-        colors = [cmap(normalize(value)) for value in self.pos]
+        colors = [cmap(normalize(value)) for value in self.pos[:, tInd, :]]
 
-        ax[0].pcolormesh(self.L, self.t[::delta], self.pos[0, ::delta, :],
-                         cmap='RdBu', vmin=vmin, vmax=vmax, rasterized=True)
-        ax[1].pcolormesh(self.L, self.t[::delta], self.pos[1, ::delta, :],
-                         cmap='RdBu', vmin=vmin, vmax=vmax, rasterized=True)
+        ax[0].pcolorfast(self.L, self.t[tInd[::delta]], self.pos[0, tInd[::delta], :],
+                         cmap='coolwarm', vmin=vmin, vmax=vmax)
+        ax[1].pcolorfast(self.L, self.t[tInd[::delta]], self.pos[1, tInd[::delta], :],
+                         cmap='coolwarm', vmin=vmin, vmax=vmax)
 
-        ax[0].set(xlabel=r'$r \ [\mu m]$', title=r'$\phi(x, t)$', ylabel=r'$t \ [s]$')
-        ax[1].set(xlabel=r'$r \ [\mu m]$', title=r'$\psi(x, t)$')
+        ax[0].set(xlabel=r'$x \ [1/\sqrt{r}]$', title=r'$\phi(x, t)$', ylabel=r'$t \ [1/Dr]$')
+        ax[1].set(xlabel=r'$x \ [1/\sqrt{r}]$', title=r'$\psi(x, t)$')
 
         cax, _ = mpl.colorbar.make_axes(ax)
         cbar = mpl.colorbar.ColorbarBase(cax, cmap=cmap, norm=normalize)
