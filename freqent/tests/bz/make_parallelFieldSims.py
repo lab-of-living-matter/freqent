@@ -3,6 +3,7 @@ from datetime import datetime
 import time
 import matplotlib as mpl
 mpl.use('Agg')  # use backend that doesn't immediately create figures
+mpl.rcParams['pdf.fonttype'] = 42
 import matplotlib.pyplot as plt
 import multiprocessing
 import csv
@@ -11,15 +12,15 @@ import argparse
 import os
 import pickle
 from scipy import stats
-import freqent.freqent as fe
-mpl.rcParams['pdf.fonttype'] = 42
+import freqent.freqentn as fen
+import h5py
 
 
 def get_traj(seed):
     '''
     function to pass to multiprocessing pool to run parallel simulations
     '''
-    [X0, Y0] = (np.random.rand(args.K) * 7 * args.V).astype(int)
+    [X0, Y0] = (np.random.rand(args.K) * 3 * args.V).astype(int)
 
     brussfield = brusselator1DFieldStochSim([X0, Y0],
                                             [args.A, args.B, args.C],
@@ -32,17 +33,20 @@ def get_traj(seed):
                                             seed)
     brussfield.runSimulation()
 
-    return [brussfield.population, brussfield.ep, brussfield.n]
+    return [brussfield.population,
+            brussfield.ep,
+            brussfield.ep_blind,
+            brussfield.n]
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--rates', type=float, nargs=6,
-                    default=[0.5, 0.25, 1, 0.25, 1, 0.25])
+                    default=[1, 0.5, 2, 0.5, 2, 0.5])
 parser.add_argument('--V', type=float, default=100,
                     help='Volume of solution')
 parser.add_argument('--A', type=int, default=100,
                     help='Number of A molecules in solution')
-parser.add_argument('--B', type=int, default=100 * 7,
+parser.add_argument('--B', type=int, default=700,
                     help='Number of B molecules in solution')
 parser.add_argument('--C', type=int, default=100,
                     help='Number of C molecules in solution')
@@ -54,7 +58,7 @@ parser.add_argumnet('--nCompartments', '-K', type=int, default=64,
                     help='Number of compartments to divide space into')
 parser.add_argument('--lCompartment', '-l', type=float, default=100,
                     help='Length of each compartment, to be used in getting diffusive rates')
-parser.add_argument('--diffusion', '-D', type=float, nargs=2, default=[1000, 1000],
+parser.add_argument('--diffusion', '-D', type=float, nargs=2, default=[10000, 1000],
                     help='Diffusion constant of molecule X and Y')
 parser.add_argument('--nSim', type=int, default=10,
                     help='Number of simulations to run in parallel')
@@ -63,8 +67,6 @@ parser.add_argument('--seed_type', type=str, default='time',
                          ' or "input" for inputting specific seeds')
 parser.add_argument('--seed_input', type=int, nargs='*',
                     help='If seed_type="input", the seeds to use for the simulations')
-
-
 parser.add_argument('--savepath', default='.',
                     help='path to save outputs of simulations ')
 

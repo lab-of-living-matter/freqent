@@ -553,9 +553,8 @@ class brusselator1DFieldStochSim():
         # do first random draw
         pop = np.asarray(self.XY0).copy()
         reaction, dt, probs = self.gillespie_draw()
-        while i < len(self.t_points):
-            # current = np.zeros(self.update.shape[0])
-            while t < self.t_points[i_time]:
+        while i < len(self.t_points): # all time points
+            while t < self.t_points[i_time]: # time points between print outs
                 self.n += 1  # add 1 to reactions taken
                 # update population
                 pop_prev = pop.copy()
@@ -640,17 +639,14 @@ class brusselator1DFieldStochSim():
                 reaction, dt, probs = reaction_next, dt_next, probs_next
 
             # update index
-            # pdb.set_trace()
-            # print(np.searchsorted(self.t_points > t, True))
             i = np.searchsorted(self.t_points > t, True)
 
             # update population
             self.population[i_time:min(i, len(self.t_points))] = pop_prev
             self.ep[i_time:min(i, len(self.t_points))] = ep
             self.ep_blind[i_time:min(i, len(self.t_points))] = ep_blind
-            self.reactionTypeTracker /= self.n
 
             # increment index
             i_time = i
-
+        self.reactionTypeTracker /= self.n
         # self.occupancy /= self.t_points.max()
