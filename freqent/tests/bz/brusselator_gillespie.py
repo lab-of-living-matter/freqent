@@ -279,12 +279,12 @@ class brusselator1DFieldStochSim():
     '''
 
     def __init__(self, XY_init, ABC, rates, t_points,
-                 D, n_subvolumes, v_subVolumes, seed=None):
+                 D, n_subvolumes, v_subvolumes, seed=None):
         self.rates = rates  # reaction rates given in docstring
         # self.V = V  # volume of each reaction subvolume
         self.t_points = t_points  # time points to output simulation results
         self.D = np.asarray(D, dtype=np.float32)  # diffusion constant for X and Y, as 2-element array [D_X, D_Y]
-        self.V = v_subVolumes  # length of subvolumes
+        self.V = v_subvolumes  # length of subvolumes
         self.K = n_subvolumes  # number of subvolumes
         self.XY0 = XY_init  # 2 by K array of initial values for X and Y
         self.ABC = np.asarray(ABC, dtype=np.float32)  # number of chemostatted molecules IN EACH SUBVOLUME
