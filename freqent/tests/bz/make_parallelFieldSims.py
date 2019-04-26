@@ -127,7 +127,7 @@ for ii in range(args.nSim):
     eps[ii] = ep
 
     ep_blind = result[ii].ep_blind
-    ep_blinds[ii] = ep
+    ep_blinds[ii] = ep_blind
 
     n = result[ii].n
     ns[ii] = n
@@ -148,9 +148,10 @@ plt.tight_layout()
 
 ax_ep.set(xlabel='t', ylabel=r'$\Delta S$', title='')
 ax_ep.set_aspect(np.diff(ax_ep.set_xlim())[0] / np.diff(ax_ep.set_ylim())[0])
+plt.tight_layout()
 
 ax_ep_blind.set(xlabel='t', ylabel=r'$\Delta S_{blind}$')
-ax_ep_blind.set_aspect(np.diff(ax_ep.set_xlim())[0] / np.diff(ax_ep.set_ylim())[0])
+ax_ep_blind.set_aspect(np.diff(ax_ep_blind.set_xlim())[0] / np.diff(ax_ep_blind.set_ylim())[0])
 plt.tight_layout()
 
 # Calculate mean entropy production rate from halway through the simulation to ensure steady state reached
@@ -222,6 +223,7 @@ with h5py.File(os.path.join(args.savepath, filename, 'data.hdf5'), 'w') as f:
         paramsgrp.create_dataset(name, data=params[name])
 
 
+plt.show()
 # with open(os.path.join(args.savepath, filename, 'data.pickle'), 'wb') as f:
 #     # Pickle the 'data' dictionary using the highest protocol available.
 #     pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
