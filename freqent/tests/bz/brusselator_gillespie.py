@@ -279,16 +279,17 @@ class brusselator1DFieldStochSim():
     '''
 
     def __init__(self, XY_init, ABC, rates, t_points,
-                 D, n_subvolumes, v_subVolumes, seed=None):
+                 D, n_subvolumes, v_subvolumes, seed=None):
         self.rates = rates  # reaction rates given in docstring
         # self.V = V  # volume of each reaction subvolume
         self.t_points = t_points  # time points to output simulation results
         self.D = np.asarray(D, dtype=np.float32)  # diffusion constant for X and Y, as 2-element array [D_X, D_Y]
-        self.V = v_subVolumes  # length of subvolumes
+        self.V = v_subvolumes  # length of subvolumes
         self.K = n_subvolumes  # number of subvolumes
         self.XY0 = XY_init  # 2 by K array of initial values for X and Y
         self.ABC = np.asarray(ABC, dtype=np.float32)  # number of chemostatted molecules IN EACH SUBVOLUME
         self.ep = np.zeros(len(t_points), dtype=np.float32)  # store entropy production time series
+        self.ep_blind = np.zeros(len(t_points), dtype=np.float32)
         self.n = 0  # keep track of how many reactions are being done
         self.reactionTypeTracker = np.zeros(10)  # track which reactions take place
         self.seed = seed
@@ -544,6 +545,7 @@ class brusselator1DFieldStochSim():
         i = 0
         i_time = 1
         ep = 0
+        ep_blind = 0
 
         # set seed
         np.random.seed(self.seed)
@@ -551,9 +553,8 @@ class brusselator1DFieldStochSim():
         # do first random draw
         pop = np.asarray(self.XY0).copy()
         reaction, dt, probs = self.gillespie_draw()
-        while i < len(self.t_points):
-            # current = np.zeros(self.update.shape[0])
-            while t < self.t_points[i_time]:
+        while i < len(self.t_points): # all time points
+            while t < self.t_points[i_time]: # time points between print outs
                 self.n += 1  # add 1 to reactions taken
                 # update population
                 pop_prev = pop.copy()
@@ -610,6 +611,23 @@ class brusselator1DFieldStochSim():
                 # add to entropy,
                 ep += np.log(probs[reaction] / probs_next[backward_reaction])
 
+                # reaction type 6 and 9 give equivalent dynamics
+                if reactionType == 6:
+                    ep_blind += np.log((probs[reaction] + probs[reaction + 3]) /
+                                       (probs_next[backward_reaction] + probs_next[backward_reaction + 3]))
+                elif reactionType == 9:
+                    ep_blind += np.log((probs[reaction] + probs[reaction - 3]) /
+                                       (probs_next[backward_reaction] + probs_next[backward_reaction - 3]))
+                # reaction types 7 and 8 give equivalent dynamics
+                elif reactionType == 7:
+                    ep_blind += np.log((probs[reaction] + probs[reaction + 1]) /
+                                       (probs_next[backward_reaction] + probs_next[backward_reaction + 1]))
+                elif reactionType == 8:
+                    ep_blind += np.log((probs[reaction] + probs[reaction - 1]) /
+                                       (probs_next[backward_reaction] + probs_next[backward_reaction - 1]))
+                else:
+                    ep_blind += np.log(probs[reaction] / probs_next[backward_reaction])
+
                 # Track which type of reaction just happened.
                 self.reactionTypeTracker[reactionType] += 1
 
@@ -621,16 +639,14 @@ class brusselator1DFieldStochSim():
                 reaction, dt, probs = reaction_next, dt_next, probs_next
 
             # update index
-            # pdb.set_trace()
-            # print(np.searchsorted(self.t_points > t, True))
             i = np.searchsorted(self.t_points > t, True)
 
             # update population
             self.population[i_time:min(i, len(self.t_points))] = pop_prev
             self.ep[i_time:min(i, len(self.t_points))] = ep
-            self.reactionTypeTracker /= self.n
+            self.ep_blind[i_time:min(i, len(self.t_points))] = ep_blind
 
             # increment index
             i_time = i
-
+        self.reactionTypeTracker /= self.n
         # self.occupancy /= self.t_points.max()

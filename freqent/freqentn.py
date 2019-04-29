@@ -91,7 +91,7 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
                                                 noverlap,
                                                 nfft,
                                                 detrend)
-        c = c_fft_all.mean(axis=0)
+        c = c_all.mean(axis=0)
 
     else:
         nrep = 1
