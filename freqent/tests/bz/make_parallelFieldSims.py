@@ -108,7 +108,7 @@ fig_ep, ax_ep = plt.subplots()
 fig_ep_blind, ax_ep_blind = plt.subplots()
 
 # save trajectories
-trajs = np.zeros((args.nSim, 2, args.n_t_points, args.nCompartments, ))
+trajs = np.zeros((args.nSim, 2, args.n_t_points, args.nCompartments))
 
 # save entropy productions
 eps = np.zeros((args.nSim, args.n_t_points), dtype=float)
