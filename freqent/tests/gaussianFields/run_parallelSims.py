@@ -2,15 +2,14 @@ import numpy as np
 from datetime import datetime
 import time
 import matplotlib as mpl
-mpl.use('Agg')  # use backend that doesn't immediately create figures
+# mpl.use('Agg')  # use backend that doesn't immediately create figures
 mpl.rcParams['pdf.fonttype'] = 42
 import matplotlib.pyplot as plt
 import multiprocessing
-import csv
 from gaussianFieldSimulation import *
 import argparse
 import os
-from scipy import stats
+# from scipy import stats
 import freqent.freqentn as fen
 import h5py
 
@@ -34,22 +33,29 @@ parser.add_argument('--dt', type=float, default=1e-4,
                     help='time step')
 parser.add_argument('--dx', type=float, default=1e-1,
                     help='lattice spacing')
-parser.add_argument('--nsteps', type=int, default=1e6,
+parser.add_argument('--nsteps', type=int, default=1000000,
                     help='number of time steps')
-parser.add_argument('--nsites', type=int, default=2e2,
+parser.add_argument('--nsites', type=int, default=200,
                     help='number of lattice sites')
 parser.add_argument('--alpha', '-a', type=float, default=0,
                     help='strength of nonequilibrium forcing')
-
+parser.add_argument('--nSim', type=int, default=10,
+                    help='Number of simulations to run in parallel')
+parser.add_argument('--seed_type', type=str, default='time',
+                    help='Type of seed to use. Either "time" to use current microsecond,'
+                         ' or "input" for inputting specific seeds')
+parser.add_argument('--seed_input', type=int, nargs='*',
+                    help='If seed_type="input", the seeds to use for the simulations')
+parser.add_argument('--sigma', '-std', type=int, default=2,
+                    help='Size of Gaussian to smooth with, in units of sample sample_spacing')
+parser.add_argument('--savepath', default='.',
+                    help='path to save outputs of simulations ')
 
 args = parser.parse_args()
 
-# get time points of outputs
-t_points = np.linspace(0, args.t_final, args.n_t_points)
-
 # handle random seeds
 if str(args.seed_type) == 'time':
-    seeds = np.zeros(args.nSim)
+    seeds = np.zeros(args.nSim, dtype=int)
     for ii in range(args.nSim):
         seeds[ii] = datetime.now().microsecond
         time.sleep(0.0001)
@@ -68,74 +74,24 @@ else:
 print('Running simulations...')
 tic = time.time()
 with multiprocessing.Pool(processes=nProcesses) as pool:
-    result = pool.map(get_traj, seeds.astype(int))
+    result = pool.map(get_traj, seeds)
 toc = time.time()
 print('Done. Total time = {t:.2f} s'.format(t=toc - tic))
 
-# plotting and preparing data for saving
-fig_traj, ax_traj = plt.subplots(1, 2, sharey=True)
-fig_ep, ax_ep = plt.subplots()
-fig_ep_blind, ax_ep_blind = plt.subplots()
-
 # save trajectories
-trajs = np.zeros((args.nSim, 2, args.n_t_points, args.nCompartments))
+trajs = np.zeros((args.nSim, 2, args.nsteps + 1, args.nsites))
 
-# save entropy productions
-eps = np.zeros((args.nSim, args.n_t_points), dtype=float)
-
-# save blinded entropy production
-ep_blinds = np.zeros((args.nSim, args.n_t_points), dtype=float)
-
-# save total number of simulatinon steps, in order to see what percentage of data we're getting
-ns = np.zeros(args.nSim)
+# get time and space arrays
+L = result[0].L
+t = result[0].t
 
 for ii in range(args.nSim):
-    traj = np.moveaxis(result[ii].population, 1, 0)
+    traj = result[ii].pos
     trajs[ii] = traj
 
-    ep = result[ii].ep
-    eps[ii] = ep
-
-    ep_blind = result[ii].ep_blind
-    ep_blinds[ii] = ep_blind
-
-    n = result[ii].n
-    ns[ii] = n
-
-    ax_traj[0].pcolorfast(list(range(args.nCompartments)),
-                          t_points, traj[0], cmap='Reds')
-    ax_traj[1].pcolorfast(list(range(args.nCompartments)),
-                          t_points, traj[1], cmap='Blues')
-    ax_ep.plot(t_points, ep, 'k', alpha=0.3)
-    ax_ep_blind.plot(t_points, ep_blind, 'k', alpha=0.3)
-
-ax_ep.plot(t_points, eps.mean(axis=0), 'r', linewidth=2)
-ax_ep_blind.plot(t_points, ep_blinds.mean(axis=0), 'r', linewidth=2)
-
-ax_traj[0].set(xlabel='x', ylabel='t', title=r'$X(x,t)$')
-ax_traj[1].set(xlabel='x', title=r'$Y(x,t)$')
-plt.tight_layout()
-
-ax_ep.set(xlabel='t', ylabel=r'$\Delta S$', title='')
-ax_ep.set_aspect(np.diff(ax_ep.set_xlim())[0] / np.diff(ax_ep.set_ylim())[0])
-plt.tight_layout()
-
-ax_ep_blind.set(xlabel='t', ylabel=r'$\Delta S_{blind}$')
-ax_ep_blind.set_aspect(np.diff(ax_ep_blind.set_xlim())[0] / np.diff(ax_ep_blind.set_ylim())[0])
-plt.tight_layout()
-
-# Calculate mean entropy production rate from halway through the simulation to ensure steady state reached
-epr, _, _, _, _ = stats.linregress(t_points[args.n_t_points // 2:],
-                                   eps.mean(axis=0)[args.n_t_points // 2:])
-
-epr_blind, _, _, _, _ = stats.linregress(t_points[args.n_t_points // 2:],
-                                         ep_blinds.mean(axis=0)[args.n_t_points // 2:])
-
-dt = np.diff(t_points)[0]
-dx = args.lCompartment
 # Calculate mean entropy production rate from spectral method
-epr_spectral = (fen.entropy(trajs[: args.n_t_points//2:, :],
-                            sample_spacing=[dt, dx],
+epr_spectral = (fen.entropy(trajs[: args.nsteps // 2:, :],
+                            sample_spacing=[args.dt, args.dx],
                             window='boxcar',
                             nperseg=None,
                             noverlap=None,
@@ -148,7 +104,7 @@ epr_spectral = (fen.entropy(trajs[: args.n_t_points//2:, :],
 
 
 # create filename and create folder with that name under savepath
-filename = 'alpha{a}_nSim{n}_sigma{s}'.format(a=alpha, n=args.nSim, s=args.sigma)
+filename = 'alpha{a}_nSim{n}_sigma{s}'.format(a=args.alpha, n=args.nSim, s=args.sigma)
 if not os.path.exists(os.path.join(args.savepath, filename)):
     os.makedirs(os.path.join(args.savepath, filename))
 
@@ -167,18 +123,13 @@ params.pop('seed_type')
 #     w.writeheader()
 #     w.writerow(params)
 
-# save figures
-fig_traj.savefig(os.path.join(args.savepath, filename, 'traj.pdf'), format='pdf')
-fig_ep.savefig(os.path.join(args.savepath, filename, 'ep.pdf'), format='pdf')
-fig_ep_blind.savefig(os.path.join(args.savepath, filename, 'ep_blind.pdf'), format='pdf')
+# save representative figure
+result[0].plotTrajectory(savepath=os.path.join(args.savepath, filename),
+                         delta=10)
 
 dat = {'trajs': trajs,
-       'eps': eps,
-       'ep_blinds': ep_blinds,
-       't_points': t_points,
-       'n': n,
-       'epr': epr,
-       'epr_blind': epr_blind,
+       't': t,
+       'L': L,
        'epr_spectral': epr_spectral}
 
 with h5py.File(os.path.join(args.savepath, filename, 'data.hdf5'), 'w') as f:
@@ -191,9 +142,3 @@ with h5py.File(os.path.join(args.savepath, filename, 'data.hdf5'), 'w') as f:
 
     for name in params.keys():
         paramsgrp.create_dataset(name, data=params[name])
-
-
-plt.show()
-# with open(os.path.join(args.savepath, filename, 'data.pickle'), 'wb') as f:
-#     # Pickle the 'data' dictionary using the highest protocol available.
-#     pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)

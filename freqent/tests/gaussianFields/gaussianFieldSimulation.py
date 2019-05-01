@@ -140,9 +140,9 @@ class gaussianFields1D():
         normalize = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
         colors = [cmap(normalize(value)) for value in self.pos[:, tInd, :]]
 
-        ax[0].pcolorfast(self.L, self.t[tInd[::delta]], self.pos[0, tInd[::delta], :],
+        ax[0].pcolorfast(self.L, self.t[tInd][::delta], self.pos[0, tInd, :][::delta, :],
                          cmap='coolwarm', vmin=vmin, vmax=vmax)
-        ax[1].pcolorfast(self.L, self.t[tInd[::delta]], self.pos[1, tInd[::delta], :],
+        ax[1].pcolorfast(self.L, self.t[tInd][::delta], self.pos[1, tInd, :][::delta, :],
                          cmap='coolwarm', vmin=vmin, vmax=vmax)
 
         ax[0].set(xlabel=r'$x \ [1/\sqrt{r}]$', title=r'$\phi(x, t)$', ylabel=r'$t \ [1/Dr]$')
