@@ -2,7 +2,7 @@ import numpy as np
 from datetime import datetime
 import time
 import matplotlib as mpl
-# mpl.use('Agg')  # use backend that doesn't immediately create figures
+mpl.use('Agg')  # use backend that doesn't immediately create figures
 mpl.rcParams['pdf.fonttype'] = 42
 import matplotlib.pyplot as plt
 import multiprocessing

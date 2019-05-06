@@ -2,7 +2,7 @@ import numpy as np
 from datetime import datetime
 import time
 import matplotlib as mpl
-# mpl.use('Agg')  # use backend that doesn't immediately create figures
+mpl.use('Agg')  # use backend that doesn't immediately create figures
 mpl.rcParams['pdf.fonttype'] = 42
 import matplotlib.pyplot as plt
 import multiprocessing
@@ -41,6 +41,8 @@ parser.add_argument('--alpha', '-a', type=float, default=0,
                     help='strength of nonequilibrium forcing')
 parser.add_argument('--nSim', type=int, default=10,
                     help='Number of simulations to run in parallel')
+parser.add_argument('--delta', type=int, default=1,
+                    help='Downsampling rate of temporal data for saving')
 parser.add_argument('--seed_type', type=str, default='time',
                     help='Type of seed to use. Either "time" to use current microsecond,'
                          ' or "input" for inputting specific seeds')
@@ -83,15 +85,15 @@ trajs = np.zeros((args.nSim, 2, args.nsteps + 1, args.nsites))
 
 # get time and space arrays
 L = result[0].L
-t = result[0].t
+t = result[0].t[::args.delta]
 
 for ii in range(args.nSim):
-    traj = result[ii].pos
+    traj = result[ii].pos[:, ::args.delta, :]
     trajs[ii] = traj
 
 # Calculate mean entropy production rate from spectral method
-epr_spectral = (fen.entropy(trajs[: args.nsteps // 2:, :],
-                            sample_spacing=[args.dt, args.dx],
+epr_spectral = (fen.entropy(trajs[:, :, (args.nsteps / args.delta) // 2:, :],
+                            sample_spacing=[args.dt * args.delta, args.dx],
                             window='boxcar',
                             nperseg=None,
                             noverlap=None,
