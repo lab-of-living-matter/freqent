@@ -81,7 +81,7 @@ toc = time.time()
 print('Done. Total time = {t:.2f} s'.format(t=toc - tic))
 
 # save trajectories
-trajs = np.zeros((args.nSim, 2, args.nsteps + 1, args.nsites))
+trajs = np.zeros((args.nSim, 2, int(args.nsteps / args.delta) + 1, args.nsites))
 
 # get time and space arrays
 L = result[0].L
@@ -92,7 +92,7 @@ for ii in range(args.nSim):
     trajs[ii] = traj
 
 # Calculate mean entropy production rate from spectral method
-epr_spectral = (fen.entropy(trajs[:, :, (args.nsteps / args.delta) // 2:, :],
+epr_spectral = (fen.entropy(trajs[:, :, int(args.nsteps / args.delta) // 2:, :],
                             sample_spacing=[args.dt * args.delta, args.dx],
                             window='boxcar',
                             nperseg=None,
