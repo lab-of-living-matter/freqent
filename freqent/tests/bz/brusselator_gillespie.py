@@ -614,17 +614,17 @@ class brusselator1DFieldStochSim():
                 # reaction type 6 and 9 give equivalent dynamics
                 if reactionType == 6:
                     ep_blind += np.log((probs[reaction] + probs[reaction + 3 * self.K]) /
-                                       (probs_next[backward_reaction] + probs_next[backward_reaction + 3]))
+                                       (probs_next[backward_reaction] + probs_next[backward_reaction + 3 * self.K]))
                 elif reactionType == 9:
                     ep_blind += np.log((probs[reaction] + probs[reaction - 3 * self.K]) /
-                                       (probs_next[backward_reaction] + probs_next[backward_reaction - 3]))
+                                       (probs_next[backward_reaction] + probs_next[backward_reaction - 3 * self.K]))
                 # reaction types 7 and 8 give equivalent dynamics
                 elif reactionType == 7:
                     ep_blind += np.log((probs[reaction] + probs[reaction + self.K]) /
-                                       (probs_next[backward_reaction] + probs_next[backward_reaction + 1]))
+                                       (probs_next[backward_reaction] + probs_next[backward_reaction + self.K]))
                 elif reactionType == 8:
                     ep_blind += np.log((probs[reaction] + probs[reaction - self.K]) /
-                                       (probs_next[backward_reaction] + probs_next[backward_reaction - 1]))
+                                       (probs_next[backward_reaction] + probs_next[backward_reaction - self.K]))
                 else:
                     ep_blind += np.log(probs[reaction] / probs_next[backward_reaction])
 
