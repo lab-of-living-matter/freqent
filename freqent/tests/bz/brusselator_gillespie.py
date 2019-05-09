@@ -613,18 +613,26 @@ class brusselator1DFieldStochSim():
 
                 # reaction type 6 and 9 give equivalent dynamics
                 if reactionType == 6:
+                    # if reactionType = 6, the backwards reactionType = 7, whose equivalent
+                    # dynamics given by reactionType = 8
                     ep_blind += np.log((probs[reaction] + probs[reaction + 3 * self.K]) /
-                                       (probs_next[backward_reaction] + probs_next[backward_reaction + 3 * self.K]))
+                                       (probs_next[backward_reaction] + probs_next[backward_reaction + self.K]))
                 elif reactionType == 9:
+                    # if reactionType = 9, the backwards reactionType = 8, whose equivalent
+                    # dynamics given by reactionType = 7
                     ep_blind += np.log((probs[reaction] + probs[reaction - 3 * self.K]) /
-                                       (probs_next[backward_reaction] + probs_next[backward_reaction - 3 * self.K]))
+                                       (probs_next[backward_reaction] + probs_next[backward_reaction - self.K]))
                 # reaction types 7 and 8 give equivalent dynamics
                 elif reactionType == 7:
+                    # if reactionType = 7, the backwards reactionType = 6, whose equivalent
+                    # dynamics given by reactionType = 9
                     ep_blind += np.log((probs[reaction] + probs[reaction + self.K]) /
-                                       (probs_next[backward_reaction] + probs_next[backward_reaction + self.K]))
+                                       (probs_next[backward_reaction] + probs_next[backward_reaction + 3 * self.K]))
                 elif reactionType == 8:
+                    # if reactionType = 8, the backwards reactionType = 9, whose equivalent
+                    # dynamics given by reactionType = 6
                     ep_blind += np.log((probs[reaction] + probs[reaction - self.K]) /
-                                       (probs_next[backward_reaction] + probs_next[backward_reaction - self.K]))
+                                       (probs_next[backward_reaction] + probs_next[backward_reaction - 3 * self.K]))
                 else:
                     ep_blind += np.log(probs[reaction] / probs_next[backward_reaction])
 
