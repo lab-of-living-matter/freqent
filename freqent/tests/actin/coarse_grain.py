@@ -34,6 +34,9 @@ def coarse_grain(im, winsize, overlap):
     '''
     winsize = int(winsize)
 
+    if im.ndim != 2:
+        raise ValueError('im must be one frame, 2 dimensional. Current input is {n}-dimensional'.format(n=im.ndim))
+
     if overlap >= 1 or overlap < 0:
         raise ValueError('overlap must be a float less than 1, greater than or equal to 0\n'
                          'Current value is {0}'.format(overlap))
@@ -60,12 +63,3 @@ def coarse_grain(im, winsize, overlap):
                                               idx[1] - winrad:idx[1] + winrad])
 
     return cgim
-
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--image_path', '-im', type=str,
-                    help='Absolute path to image for coarse-graining')
-parser.add_argumnet('--winsize', type=int, default=33,
-                    help='Size in number of pixels of window to take mean of')
-parser.add_argument('--overlap', type=float, default=0.5,
-                    help='Fraction of overlap between windows')
