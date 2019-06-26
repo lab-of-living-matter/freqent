@@ -241,7 +241,7 @@ def corr_matrix(data, sample_spacing=None, window='boxcar', nperseg=None,
                 raise ValueError('nfft must be integer')
             else:
                 nfft = np.repeat(np.asarray(int(nfft)), len(ntspace))
-        elif len(nfft) == space_dim + 1:
+        elif len(nfft) == len(ntspace):
             if not all(type(n) is int for n in nfft):
                 raise ValueError('nfft must be a list of integers')
             else:
