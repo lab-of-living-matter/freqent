@@ -2,6 +2,7 @@ import os
 import numpy as np
 import h5py
 import freqent.freqentn as fen
+from datetime import datetime
 import pandas as pd
 
 parentDir = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/actin/'
@@ -11,6 +12,7 @@ thermal_exps = os.listdir(os.path.join(parentDir, 'thermal'))
 
 files_noncontractile = ['051612_skmmII_noncontr.hdf5',
                         '053112_smmm_noncontr_Fig4.hdf5',
+                        '071813_2.hdf5',
                         '111116_2_NC_spun_skmm.hdf5',
                         '111116_3_NC_spun_skmm.hdf5',
                         '112916_1_NC_spun_647_skmm.hdf5',
@@ -58,12 +60,13 @@ for ind, file in enumerate(files_noncontractile):
         #     print(file)
         #     files_noncontractile.pop(ind)
         #     continue
-        data = np.stack((f['data']['ordermat'][:, 2:-2, 2:-2], f['data']['cgim'][:, 2:-2, 2:-2]))
+        data = np.stack((f['data']['ordermat'][:, 2:-2, 2:-2], np.transpose(f['data']['cgim'][:, 2:-2, 2:-2], axes=[0, 2, 1])))
+        # data = np.stack((f['data']['cgim'], np.transpose(f['data']['anglemat'], axes=[0, 2, 1])))
         dx = f['params']['dx'][()]
         dt = f['params']['dt'][()]
         winsize = f['params']['winsize'][()]
         overlap = f['params']['overlap'][()]
-        winspace = 1  # int(winsize - np.ceil(winsize * overlap))
+        winspace = int(winsize - np.ceil(winsize * overlap))
         epr_nc.append(fen.entropy(data, [dt, dx * winspace, dx * winspace],
                                   window=window,
                                   nfft=nfft,
@@ -78,12 +81,13 @@ for ind, file in enumerate(files_thermal):
         # if f['params']['dt'][()] >= 30:
         #     files_thermal.pop(ind)
         #     continue
-        data = np.stack((f['data']['ordermat'][:, 2:-2, 2:-2], f['data']['cgim'][:, 2:-2, 2:-2]))
+        data = np.stack((f['data']['ordermat'][:, 2:-2, 2:-2], np.transpose(f['data']['cgim'][:, 2:-2, 2:-2], axes=[0, 2, 1])))
+        # data = np.stack((f['data']['cgim'], np.transpose(f['data']['anglemat'], axes=[0, 2, 1])))
         dx = f['params']['dx'][()]
         dt = f['params']['dt'][()]
         winsize = f['params']['winsize'][()]
         overlap = f['params']['overlap'][()]
-        winspace = 1  # int(winsize - np.ceil(winsize * overlap))
+        winspace = int(winsize - np.ceil(winsize * overlap))
         epr_thermal.append(fen.entropy(data, [dt, dx * winspace, dx * winspace],
                                        window=window,
                                        nfft=nfft,
@@ -114,7 +118,7 @@ paramsattrs = {'window': 'window used in calculating fft of signal',
                'many_traj': 'boolean of whether passing multiple trajectories into freqent.freqentn.entropy()'}
 
 
-with h5py.File(os.path.join(parentDir, 'epr.hdf5'), 'w') as f:
+with h5py.File(os.path.join(parentDir, datetime.today().strftime('%y%m%d') + '_epr.hdf5'), 'w') as f:
     datagrp = f.create_group('epr')
     paramsgrp = f.create_group('params')
 
