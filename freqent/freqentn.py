@@ -455,3 +455,145 @@ def _nd_gauss_smooth(corr, stddev=1, mode='reflect'):
                                                                 mode=mode)
 
     return smooth_corr
+
+
+def _azimuthal_average(data, center=None, binsize=1, mask=None, weight=None,
+                       dx=1.0):
+    """
+    Calculates the azimuthal average of a 2D array
+
+    Parameters
+    ----------
+    data : array_like
+        2D numpy array of numerical data
+    center : array_like, optional
+        1x2 numpy array the center of the image from which to measure the
+        radial profile from, in units of array index. Default is center of
+        data array
+    binsize : scalar, optional
+        radial width of each annulus over which to average,
+        in units of array index
+    mask : {array_like, 'circle', None}, optional
+        Mask of data. Either a 2D array same size as data with 0s where you
+        want to exclude data, "circle", which only includes data in the
+        largest inscribable circle within the data, or None, which uses no mask.
+        Defaults to None
+    dx : float, optional
+        Sampling spacing in data. To be used when returning radial coordinate.
+        Defaults to 1.0
+
+    Returns
+    -------
+    radialProfile : array_like
+        Radially averaged 1D array from data array
+    r : array_like
+        Radial coordinate of radial_profile
+
+    Based on radialProfile found at:
+    http://www.astrobetter.com/wiki/tiki-index.php?page=python_radial_profiles
+
+    To do
+    -----
+    1) Make "circle" option of mask accept non-square inputs
+    """
+    data = np.asarray(data)
+    # Get all the indices in x and y direction
+    [y, x] = np.indices(data.shape)
+
+    # Define the center from which to measure the radius
+    if not center:
+        center = np.array([(x.max() - x.min()) / 2, (y.max() - y.min()) / 2])
+
+    # Get distance from all points to center
+    r = np.hypot(x - center[0], y - center[1])
+
+    if mask is None:
+        mask = np.ones(data.shape, dtype='bool')
+    elif mask is 'circle':
+        radius = (x.max() + 1) / 2
+        mask = (r < radius)
+    else:
+        mask = np.asarray(mask)
+
+    if weight is None:
+        weight = np.ones(data.shape)
+
+    # Get the bins according to binsize
+    nbins = int(np.round((r * mask).max()) / binsize) + 1
+    maxbin = nbins * binsize
+    binEdges = np.linspace(0, maxbin, nbins + 1)
+
+    binCenters = (binEdges[1] - binEdges[0]) / 2 + binEdges[:-1]
+
+    # Number of data points in each bin. Cut out last point, always 0
+    nBinnedData = np.histogram(r, binEdges, weights=mask * weight)[0][:-1]
+    # Azimuthal average
+    radialProfile = (np.histogram(r, binEdges,
+                                  weights=data * mask * weight)[0][:-1] /
+                     nBinnedData)
+
+    return radialProfile, binCenters[:-1] * binsize * dx
+
+
+def _azimuthal_average_3D(data, tdim=0, center=None, binsize=1, mask=None,
+                          weight=None, dx=1.0):
+    """
+    Takes 3D data and gets radial component of two dimensions
+
+    Parameters
+    ----------
+    data : array_like
+        3D numpy array, 1 dimension is time, the other two are spatial.
+        User specifies which dimension in temporal
+    tdim : scalar, optional
+        specifies which dimension of data is temporal. Options are 0, 1, 2.
+        Defaults to 0
+    center : array_like or None, optional
+        1x2 numpy array the center of the image from which to measure the
+        radial profile from, in units of array index. If None, uses center
+        of spatial slice of array. Defaults to None
+    binsize : scalar, optional
+        radial width of each annulus over which to average,
+        in units of array index
+    mask : {array_like, 'circle', None}, optional
+        Mask of data. Either a 2D array same size as data with 0s where you
+        want to exclude data, "circle", which only includes data in the
+        largest inscribable circle within the data, or None, which uses no mask.
+        Defaults to None
+    dx : float, optional
+        Sampling spacing in dimensions of data over which the averagin is done.
+        To be used when returning radial coordinate. Defaults to 1.0
+
+    Returns
+    -------
+    tr_profile : array_like
+        2D, spatially radially averaged data over time.
+        First dimesion is time, second is spatial
+    r : array_like
+        Radial coordinate of radial_profile
+
+    See also: azimuthal_average
+
+    TO DO
+    -----
+    1) Allow input of non-square data to average over
+    """
+
+    data = np.asarray(data)
+
+    # Put temporal axis first
+    data = np.rollaxis(data, tdim)
+
+    for frame, spatial_data in enumerate(data):
+        radial_profile, r = azimuthal_average(spatial_data,
+                                              center,
+                                              binsize,
+                                              mask,
+                                              weight,
+                                              dx)
+        if frame == 0:
+            tr_profile = radial_profile
+        else:
+            tr_profile = np.vstack((tr_profile, radial_profile))
+
+    return tr_profile, r
