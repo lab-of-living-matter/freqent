@@ -4,8 +4,12 @@ import h5py
 import freqent.freqentn as fen
 from datetime import datetime
 import pandas as pd
+import sys
 
-parentDir = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/actin/'
+if sys.platform == 'darwin':
+  parentDir = '/Users/Danny/Dropbox/LLM_Danny/freqent/actin/'
+if sys.platform == 'linux':
+  parentDir = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/actin/'
 
 noncontractile_exps = os.listdir(os.path.join(parentDir, 'noncontractile'))
 thermal_exps = os.listdir(os.path.join(parentDir, 'thermal'))
@@ -31,16 +35,16 @@ files_noncontractile = ['051612_skmmII_noncontr.hdf5',
 #                         '729130_sm_nocontract.hdf5']
 
 files_thermal = ['112916_2_imaging.hdf5',
-                 '121516_3_imaging.hdf5',   #
-                 '111116_3_imaging.hdf5',   #
+                 '121516_3_imaging.hdf5',
+                 '111116_3_imaging.hdf5',
                  '111116_2_imaging.hdf5',
                  '120216_2_imaging.hdf5',
-                 '120916_1_imaging.hdf5',   #
-                 '112916_3_imaging.hdf5',   #
+                 '120916_1_imaging.hdf5',
+                 '112916_3_imaging.hdf5',
                  '121516_2_imaging.hdf5',
-                 '121516_4_imaging.hdf5',   #
+                 '121516_4_imaging.hdf5',
                  '120216_2_noskmm_thermalFactinNetwork.hdf5',
-                 '120216_3_imaging.hdf5']   #
+                 '120216_3_imaging.hdf5']
 
 
 epr_nc = []  #np.zeros(len(files_noncontractile))
