@@ -38,7 +38,7 @@ files_thermal = ['112916_2_imaging.hdf5',
                  '121516_3_imaging.hdf5',
                  '111116_3_imaging.hdf5',
                  '111116_2_imaging.hdf5',
-                 '120216_2_imaging.hdf5',
+                 # '120216_2_imaging.hdf5',
                  '120916_1_imaging.hdf5',
                  '112916_3_imaging.hdf5',
                  '121516_2_imaging.hdf5',
@@ -122,14 +122,14 @@ paramsattrs = {'window': 'window used in calculating fft of signal',
                'many_traj': 'boolean of whether passing multiple trajectories into freqent.freqentn.entropy()'}
 
 
-with h5py.File(os.path.join(parentDir, datetime.today().strftime('%y%m%d') + '_epr.hdf5'), 'w') as f:
-    datagrp = f.create_group('epr')
-    paramsgrp = f.create_group('params')
+# with h5py.File(os.path.join(parentDir, datetime.today().strftime('%y%m%d') + '_epr.hdf5'), 'w') as f:
+#     datagrp = f.create_group('epr')
+#     paramsgrp = f.create_group('params')
 
-    for ind, file in enumerate(files):
-        d = datagrp.create_dataset(file, data=epr[ind])
-        d.attrs['experiment type'] = labels[ind]
+#     for ind, file in enumerate(files):
+#         d = datagrp.create_dataset(file, data=epr[ind])
+#         d.attrs['experiment type'] = labels[ind]
 
-    for paramname in params.keys():
-        p = paramsgrp.create_dataset(paramname, data=params[paramname])
-        p.attrs['description'] = paramsattrs[paramname]
+#     for paramname in params.keys():
+#         p = paramsgrp.create_dataset(paramname, data=params[paramname])
+#         p.attrs['description'] = paramsattrs[paramname]
