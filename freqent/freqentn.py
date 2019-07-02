@@ -81,7 +81,23 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     if many_traj:
         # number of replicates, number of variables, number of time and space points
         nrep, nvar, nt, *nspace = data.shape
-        c_all = np.zeros((nrep, nt, *nspace, nvar, nvar), dtype=complex)
+
+        # nfft checks
+        if nfft is None:
+            nfft = [nt, *nspace]
+        else:
+            if len(nfft) == 1:
+                if type(nfft) is not int:
+                    raise ValueError('nfft must be integer')
+                else:
+                    nfft = np.repeat(np.asarray(int(nfft)), len(ntspace))
+            elif len(nfft) == len(nspace) + 1:
+                if not all(type(n) is int for n in nfft):
+                    raise ValueError('nfft must be a list of integers')
+            else:
+                raise ValueError('size of fft taken is either an integer for all dimensions or equal to the number of dimensions as the data')
+
+        c_all = np.zeros((nrep, *nfft, nvar, nvar), dtype=complex)
 
         for ii in range(nrep):
             c_all[ii, ...], freqs = corr_matrix(data[ii, ...],
@@ -96,6 +112,21 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     else:
         nrep = 1
         nvar, nt, *nspace = data.shape
+
+        if nfft is None:
+            nfft = [nt, *nspace]
+        else:
+            if len(nfft) == 1:
+                if type(nfft) is not int:
+                    raise ValueError('nfft must be integer')
+                else:
+                    nfft = np.repeat(np.asarray(int(nfft)), len(ntspace))
+            elif len(nfft) == len(nspace) + 1:
+                if not all(type(n) is int for n in nfft):
+                    raise ValueError('nfft must be a list of integers')
+            else:
+                raise ValueError('size of fft taken is either an integer for all dimensions or equal to the number of dimensions as the data')
+
         c, freqs = corr_matrix(data,
                                sample_spacing,
                                window,
@@ -109,8 +140,9 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     elif len(sample_spacing) == len(nspace) + 1:
         sample_spacing = np.asarray(sample_spacing)
 
-    TL = sample_spacing * np.array([nt, *nspace])  # find total time and length of simulation
-    dk = 2 * np.pi / TL  # find spacing of all frequencies, temporal and spatial
+    TL_fft = sample_spacing * np.asarray(nfft)  # find total time and length signal, including zero padding
+    TL = sample_spacing * np.array([nt, *nspace])  # find total time and length of input signal
+    dk = 2 * np.pi / TL_fft  # find spacing of all frequencies, temporal and spatial
 
     # smooth c if wanted
     if smooth_corr:
@@ -140,12 +172,12 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     # flip along that axis to get C^-T(k, -w)
     s = np.sum((np.flip(c_inv_transpose, axis=0) - c_inv_transpose) * c)
 
-    s /= 2 * TL.prod()
+    s /= 2 * TL_fft.prod()
 
     # Calculate and subtract off bias if wanted
     if subtract_bias:
         bias = ((1 / nrep) * (nvar * (nvar - 1) / 2) *
-                np.prod([((freqs[n].max() / sigma[n]) / (TL[n] * dk[n] * (np.pi)**0.5)) for n in range(len(TL))]))
+                np.prod([((freqs[n].max() / sigma[n]) / (TL_fft[n] * dk[n] * (np.pi)**0.5)) for n in range(len(TL_fft))]))
         # print(bias)
         s -= bias
 
@@ -277,7 +309,7 @@ def corr_matrix(data, sample_spacing=None, window='boxcar', nperseg=None,
     freqs = []
 
     for dim, Delta in enumerate(sample_spacing):
-        freqs.append(2 * np.pi * np.fft.fftshift(np.fft.fftfreq(ntspace[dim], sample_spacing[dim])))
+        freqs.append(2 * np.pi * np.fft.fftshift(np.fft.fftfreq(nfft[dim], sample_spacing[dim])))
 
     return c, freqs
 
