@@ -60,10 +60,6 @@ many_traj = False
 
 for ind, file in enumerate(files_noncontractile):
     with h5py.File(os.path.join(parentDir, 'noncontractile', file)) as f:
-        # if f['params']['dt'][()] > 10:
-        #     print(file)
-        #     files_noncontractile.pop(ind)
-        #     continue
         data = np.stack((f['data']['ordermat'][:, 2:-2, 2:-2], np.transpose(f['data']['cgim'][:, 2:-2, 2:-2], axes=[0, 2, 1])))
         # data = np.stack((f['data']['cgim'], np.transpose(f['data']['anglemat'], axes=[0, 2, 1])))
         dx = f['params']['dx'][()]
@@ -82,9 +78,6 @@ for ind, file in enumerate(files_noncontractile):
 
 for ind, file in enumerate(files_thermal):
     with h5py.File(os.path.join(parentDir, 'thermal', file)) as f:
-        # if f['params']['dt'][()] >= 30:
-        #     files_thermal.pop(ind)
-        #     continue
         data = np.stack((f['data']['ordermat'][:, 2:-2, 2:-2], np.transpose(f['data']['cgim'][:, 2:-2, 2:-2], axes=[0, 2, 1])))
         # data = np.stack((f['data']['cgim'], np.transpose(f['data']['anglemat'], axes=[0, 2, 1])))
         dx = f['params']['dx'][()]
@@ -105,6 +98,9 @@ labels = ['noncontractile'] * len(epr_nc) + ['thermal'] * len(epr_thermal)
 epr = epr_nc + epr_thermal
 files = [file.split('.')[0] for file in files_noncontractile + files_thermal]
 
+if nfft is None:
+    nfft = ''
+
 params = {'window': window,
           'nfft': nfft,
           'detrend': detrend,
@@ -122,14 +118,14 @@ paramsattrs = {'window': 'window used in calculating fft of signal',
                'many_traj': 'boolean of whether passing multiple trajectories into freqent.freqentn.entropy()'}
 
 
-# with h5py.File(os.path.join(parentDir, datetime.today().strftime('%y%m%d') + '_epr.hdf5'), 'w') as f:
-#     datagrp = f.create_group('epr')
-#     paramsgrp = f.create_group('params')
+with h5py.File(os.path.join(parentDir, datetime.today().strftime('%y%m%d') + '_epr.hdf5'), 'w') as f:
+    datagrp = f.create_group('epr')
+    paramsgrp = f.create_group('params')
 
-#     for ind, file in enumerate(files):
-#         d = datagrp.create_dataset(file, data=epr[ind])
-#         d.attrs['experiment type'] = labels[ind]
+    for ind, file in enumerate(files):
+        d = datagrp.create_dataset(file, data=epr[ind])
+        d.attrs['experiment type'] = labels[ind]
 
-#     for paramname in params.keys():
-#         p = paramsgrp.create_dataset(paramname, data=params[paramname])
-#         p.attrs['description'] = paramsattrs[paramname]
+    for paramname in params.keys():
+        p = paramsgrp.create_dataset(paramname, data=params[paramname])
+        p.attrs['description'] = paramsattrs[paramname]

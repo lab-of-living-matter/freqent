@@ -106,7 +106,10 @@ def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
         raise ValueError('Number of dimensions of data needs to be 2 or 3. \n',
                          'Currently is {0}'.format(data.ndim))
 
-    T = sample_spacing * nTime  # find total time of simulation
+    if nfft is None:
+        nfft = nTime
+
+    T = sample_spacing * nfft  # find total time of simulation
     dw = 2 * np.pi / T  # find spacing of fourier frequencies
 
     # smooth c_fft if wanted
@@ -116,9 +119,12 @@ def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
     # get inverse of each NxN submatrix of c_fft. Broadcasts to find inverse of square
     # matrix in last two dimensions of matrix
     c_fft_inv = np.linalg.inv(c_fft)
-    s = np.sum((c_fft_inv - np.transpose(c_fft_inv, (0, 2, 1))) * c_fft)
+    sdensity = np.sum(np.sum((c_fft_inv - np.transpose(c_fft_inv, (0, 2, 1))) * c_fft, axis=-1), axis=-1) / (2 * T)
 
-    s /= 2 * T
+    # return omega, sdensity
+    s = np.sum(sdensity)
+
+    # s /= (2 * T)n
 
     # Calculate and subtract off bias if wanted
     if subtract_bias and smooth_corr:
@@ -224,9 +230,9 @@ def corr_matrix(data, sample_spacing=1, window='boxcar', nperseg=None,
     for idx in idx_pairs:
         # c[:, idx[0], idx[1]] = _correlate_mean(data[idx[0]], data[idx[1]], sample_spacing,
         #                                        mode, method, norm, return_fft)
-        c[:, idx[0], idx[1]] = _direct_csd(data[idx[0]], data[idx[1]], sample_spacing,
-                                           window, nperseg, noverlap, nfft, detrend,
-                                           padded, return_fft)
+        c[:, idx[0], idx[1]] = csd(data[idx[0]], data[idx[1]], sample_spacing,
+                                   window, nperseg, noverlap, nfft, detrend,
+                                   padded, return_fft)
 
     if not return_fft:
         c = c.real
@@ -238,11 +244,11 @@ def corr_matrix(data, sample_spacing=1, window='boxcar', nperseg=None,
         return c, freqs
 
 
-def _direct_csd(x, y, sample_spacing=1.0, window='boxcar', nperseg=None,
-                noverlap=None, nfft=None, detrend='constant', padded=False,
-                return_fft=True):
+def csd(x, y, sample_spacing=1.0, window='boxcar', nperseg=None,
+        noverlap=None, nfft=None, detrend='constant', padded=False,
+        return_fft=True):
     '''
-    Estimate the direct cross power spectral density using Welch's method.
+    Estimate the cross power spectral density using Welch's method.
     Basically just copying scipy.signal.csd with some default differences.
 
     Parameters

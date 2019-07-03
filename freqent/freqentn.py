@@ -140,9 +140,8 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     elif len(sample_spacing) == len(nspace) + 1:
         sample_spacing = np.asarray(sample_spacing)
 
-    TL_fft = sample_spacing * np.asarray(nfft)  # find total time and length signal, including zero padding
-    TL = sample_spacing * np.array([nt, *nspace])  # find total time and length of input signal
-    dk = 2 * np.pi / TL_fft  # find spacing of all frequencies, temporal and spatial
+    TL = sample_spacing * np.asarray(nfft)  # find total time and length signal, including zero padding
+    dk = 2 * np.pi / TL  # find spacing of all frequencies, temporal and spatial
 
     # smooth c if wanted
     if smooth_corr:
@@ -170,14 +169,16 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
 
     # first axis is temporal frequency.
     # flip along that axis to get C^-T(k, -w)
-    s = np.sum((np.flip(c_inv_transpose, axis=0) - c_inv_transpose) * c)
 
-    s /= 2 * TL_fft.prod()
+    sdensity = np.sum(np.sum((np.flip(c_inv_transpose, axis=0) - c_inv_transpose) * c, axis=-1), axis=-1) / (2 * TL.prod())
+
+    s = np.sum(sdensity)
+
 
     # Calculate and subtract off bias if wanted
     if subtract_bias:
         bias = ((1 / nrep) * (nvar * (nvar - 1) / 2) *
-                np.prod([((freqs[n].max() / sigma[n]) / (TL_fft[n] * dk[n] * (np.pi)**0.5)) for n in range(len(TL_fft))]))
+                np.prod([((freqs[n].max() / sigma[n]) / (TL[n] * dk[n] * (np.pi)**0.5)) for n in range(len(TL))]))
         # print(bias)
         s -= bias
 
