@@ -67,14 +67,16 @@ for ind, file in enumerate(files_noncontractile):
         winsize = f['params']['winsize'][()]
         overlap = f['params']['overlap'][()]
         winspace = int(winsize - np.ceil(winsize * overlap))
-        epr_nc.append(fen.entropy(data, [dt, dx * winspace, dx * winspace],
+        s, sdensity = fen.entropy(data, [dt, dx * winspace, dx * winspace],
                                   window=window,
                                   nfft=nfft,
                                   detrend=detrend,
                                   smooth_corr=smooth_corr,
                                   sigma=sigma,
                                   subtract_bias=subtract_bias,
-                                  many_traj=many_traj).real)
+                                  many_traj=many_traj)
+
+        epr_nc.append(s.real)
 
 for ind, file in enumerate(files_thermal):
     with h5py.File(os.path.join(parentDir, 'thermal', file)) as f:
@@ -85,14 +87,16 @@ for ind, file in enumerate(files_thermal):
         winsize = f['params']['winsize'][()]
         overlap = f['params']['overlap'][()]
         winspace = int(winsize - np.ceil(winsize * overlap))
-        epr_thermal.append(fen.entropy(data, [dt, dx * winspace, dx * winspace],
-                                       window=window,
-                                       nfft=nfft,
-                                       detrend=detrend,
-                                       smooth_corr=smooth_corr,
-                                       sigma=sigma,
-                                       subtract_bias=subtract_bias,
-                                       many_traj=many_traj).real)
+        s, sdensity = fen.entropy(data, [dt, dx * winspace, dx * winspace],
+                                  window=window,
+                                  nfft=nfft,
+                                  detrend=detrend,
+                                  smooth_corr=smooth_corr,
+                                  sigma=sigma,
+                                  subtract_bias=subtract_bias,
+                                  many_traj=many_traj)
+
+        epr_thermal.append(s.real)
 
 labels = ['noncontractile'] * len(epr_nc) + ['thermal'] * len(epr_thermal)
 epr = epr_nc + epr_thermal
@@ -118,14 +122,14 @@ paramsattrs = {'window': 'window used in calculating fft of signal',
                'many_traj': 'boolean of whether passing multiple trajectories into freqent.freqentn.entropy()'}
 
 
-with h5py.File(os.path.join(parentDir, datetime.today().strftime('%y%m%d') + '_epr.hdf5'), 'w') as f:
-    datagrp = f.create_group('epr')
-    paramsgrp = f.create_group('params')
+# with h5py.File(os.path.join(parentDir, datetime.today().strftime('%y%m%d') + '_epr.hdf5'), 'w') as f:
+#     datagrp = f.create_group('epr')
+#     paramsgrp = f.create_group('params')
 
-    for ind, file in enumerate(files):
-        d = datagrp.create_dataset(file, data=epr[ind])
-        d.attrs['experiment type'] = labels[ind]
+#     for ind, file in enumerate(files):
+#         d = datagrp.create_dataset(file, data=epr[ind])
+#         d.attrs['experiment type'] = labels[ind]
 
-    for paramname in params.keys():
-        p = paramsgrp.create_dataset(paramname, data=params[paramname])
-        p.attrs['description'] = paramsattrs[paramname]
+#     for paramname in params.keys():
+#         p = paramsgrp.create_dataset(paramname, data=params[paramname])
+#         p.attrs['description'] = paramsattrs[paramname]

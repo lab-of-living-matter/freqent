@@ -182,7 +182,7 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
         # print(bias)
         s -= bias
 
-    return s
+    return s, sdensity
 
 
 def corr_matrix(data, sample_spacing=None, window='boxcar', nperseg=None,
@@ -233,9 +233,9 @@ def corr_matrix(data, sample_spacing=None, window='boxcar', nperseg=None,
 
     Returns
     -------
-    c : 3D array
-        an MxNxN matrix that gives the NxN correlation matrix for the variables
-        contained in the rows of data. Returns fft(c) is return_fft=True
+    c : ND array
+        an ND  matrix that gives the NxN correlation matrix for the variables
+        contained in data. Returns fft(c) is return_fft=True
     tau : array
         2M-1 length array of lag times for correlations. Returns frequencies if
         return_fft=True
@@ -618,12 +618,12 @@ def _azimuthal_average_3D(data, tdim=0, center=None, binsize=1, mask=None,
     data = np.rollaxis(data, tdim)
 
     for frame, spatial_data in enumerate(data):
-        radial_profile, r = azimuthal_average(spatial_data,
-                                              center,
-                                              binsize,
-                                              mask,
-                                              weight,
-                                              dx)
+        radial_profile, r = _azimuthal_average(spatial_data,
+                                               center,
+                                               binsize,
+                                               mask,
+                                               weight,
+                                               dx)
         if frame == 0:
             tr_profile = radial_profile
         else:
