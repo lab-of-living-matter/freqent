@@ -132,7 +132,7 @@ def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
         # print(bias)
         s -= bias
 
-    return s.real
+    return s.real, sdensity
 
 
 def corr_matrix(data, sample_spacing=1, window='boxcar', nperseg=None,
