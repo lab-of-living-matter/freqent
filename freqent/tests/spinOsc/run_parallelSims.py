@@ -91,7 +91,7 @@ for tInd, tFrac in enumerate(t_divisors):
         sdot = fe.entropy(trajs[:, :, args.nsteps // 3:int(args.nsteps // tFrac)],
                           sample_spacing=args.dt,
                           window='boxcar',
-                          npersep=None,
+                          nperseg=None,
                           noverlap=None,
                           nfft=None,
                           detrend='constant',
@@ -113,6 +113,7 @@ if args.save:
               'nsteps': args.nsteps,
               'alpha': args.alpha,
               'nsim': args.nsim,
+              'ndim': args.ndim,
               't_divisors': t_divisors,
               't_epr': t_epr,
               'scales': scales,
@@ -122,6 +123,7 @@ if args.save:
                    'nsteps': 'number of simulation steps',
                    'alpha': 'strength of non-equilibrium force',
                    'nsim': 'number of simulations',
+                   'ndim': 'number of dimensions in simulations',
                    't_divisors': 'used to calculate epr for times between T/3 and T/t_divisor',
                    't_epr': 'total time used for each calculation of epr',
                    'scales': 'widths of Gaussians used to smooth correlation functions',
@@ -133,9 +135,9 @@ if args.save:
 
     dataattrs = {'trajs': 'all trajectories',
                  't': 'time array for trajectories',
-                 'sdot_array': 'entropy production rate array in shape [len(t_divisors), len(scales)]'}
+                 'sdot_array': 'entropy production rate array in shape [len(t_epr), len(scales)]'}
 
-    filename = 'alpha{a}_nSim{n}_T{t}.h5py'.format(a=args.alpha, n=args.nsim, t=T)
+    filename = 'alpha{a}_nSim{n}_dim{d}_T{t}.h5py'.format(a=args.alpha, n=args.nsim, d=args.ndim, t=T)
     with h5py.File(os.path.join(fullpath, filename), 'w') as f:
         datagrp = f.create_group('data')
         paramsgrp = f.create_group('params')
