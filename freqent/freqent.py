@@ -8,7 +8,7 @@ from astropy.convolution import Gaussian1DKernel, convolve
 
 def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
             noverlap=None, nfft=None, detrend='constant', padded=False,
-            smooth_corr=True, sigma=1, subtract_bias=True):
+            smooth_corr=True, sigma=1, subtract_bias=True, return_density=False):
     '''
     Calculate the entropy using the frequency space measure:
 
@@ -66,6 +66,9 @@ def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
     subtract_bias : bool, optional
         option to subtract systematic bias from entropy estimate or not.
         Bias given by N(N-1) / (2 sqrt(pi)) * omega_max / (J * T_max * sigma)
+    return_density : bool, optional
+        option to return entropy production rate and its density (i.e. the
+        quantity summed over to give the epr). Defaults to False
 
     Returns
     -------
@@ -132,7 +135,10 @@ def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
         # print(bias)
         s -= bias
 
-    return s.real, sdensity
+    if return_density:
+        return s.real, sdensity
+    else:
+        return s.real
 
 
 def corr_matrix(data, sample_spacing=1, window='boxcar', nperseg=None,

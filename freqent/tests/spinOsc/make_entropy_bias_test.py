@@ -1,4 +1,4 @@
-∞import numpy as np
+import numpy as np
 import matplotlib.pyplot as plt
 from spinOscSimulation import spinOscLangevin
 import freqent.freqent as fe

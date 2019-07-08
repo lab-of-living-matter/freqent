@@ -8,7 +8,7 @@ import pdb
 
 def entropy(data, sample_spacing, window='boxcar', nperseg=None,
             noverlap=None, nfft=None, detrend='constant', smooth_corr=True,
-            sigma=1, subtract_bias=True, many_traj=True):
+            sigma=1, subtract_bias=True, many_traj=True, return_density=False):
     '''
     Calculate the entropy using the frequency space measure:
 
@@ -67,6 +67,9 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     many_traj : bool, optional
         option to say whether input data has many trajectories. If so, each trajectory
         should be indexed by the first dimension of data
+    return_density : bool, optional
+        option to return entropy production rate and its density (i.e. the
+        quantity summed over to give the epr). Defaults to False
 
     Returns
     -------
@@ -182,7 +185,10 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
         # print(bias)
         s -= bias
 
-    return s, sdensity
+    if return_density:
+        return s.real, sdensity
+    else:
+        return s.real
 
 
 def corr_matrix(data, sample_spacing=None, window='boxcar', nperseg=None,
