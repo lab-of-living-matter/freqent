@@ -82,7 +82,7 @@ print('Done.')
 trajs = np.asarray(result)
 
 t_divisors = np.linspace(1, 2, 5)
-T = (args.nsteps + 1) * args.dt
+T = args.nsteps * args.dt
 t_epr = (t_divisors**-1 - 1 / 3) * T  # the total amount of time used to calculate the epr
 sdot_array = np.zeros((len(t_divisors), len(scales)))
 
@@ -137,7 +137,7 @@ if args.save:
                  't': 'time array for trajectories',
                  'sdot_array': 'entropy production rate array in shape [len(t_epr), len(scales)]'}
 
-    filename = 'alpha{a}_nSim{n}_dim{d}_T{t}.h5py'.format(a=args.alpha, n=args.nsim, d=args.ndim, t=T)
+    filename = 'alpha{a}_nSim{n}_dim{d}_nsteps{nt}.hdf5'.format(a=args.alpha, n=args.nsim, d=args.ndim, nt=args.nsteps)
     with h5py.File(os.path.join(fullpath, filename), 'w') as f:
         datagrp = f.create_group('data')
         paramsgrp = f.create_group('params')
