@@ -52,12 +52,12 @@ class spinOscLangevin():
             D is diffusion constant, D = kB*T/gamma
     '''
 
-    def __init__(self, dt, r0, nsteps=1e6, kT=4e-9, gamma=2e-8):
+    def __init__(self, dt, r0, nsteps=1e6):
 
-        self.dt = dt  # time step in seconds
+        self.dt = dt  # time step in simulation time
         self.nsteps = int(nsteps)  # total number of steps
-        self.gamma = gamma  # drag on particle in kg / s
-        self.kT = kT  # in kg * um^2 / s^2
+        # self.gamma = gamma  # drag on particle in kg / s
+        # self.kT = kT  # in kg * um^2 / s^2
         self.r0 = r0
         self.ndim = len(r0)  # number of dimensions in simulation
         if self.ndim < 2:
@@ -65,7 +65,7 @@ class spinOscLangevin():
                              '{0}'.format(self.ndim))
 
         # derived quantities
-        self.D = self.kT / self.gamma
+        # self.D = self.kT / self.gamma
 
         # data
         self.t = np.linspace(0, self.nsteps * self.dt, self.nsteps + 1)
@@ -75,8 +75,8 @@ class spinOscLangevin():
     def reset(self):
         self.__init__(self.dt, self.r0, self.nsteps, self.kT, self.gamma)
 
-    def deterministicForce(self, r, k, alpha):
-        spring = np.diag(-k * np.ones(self.ndim))  # spring force along diagonal
+    def deterministicForce(self, r, alpha):
+        spring = np.diag(-1 * np.ones(self.ndim))  # spring force along diagonal
         rotate = np.zeros((self.ndim, self.ndim))  # construct rotational force matrix
         rotate[(1, 0), (0, 1)] = (alpha, -alpha)  # fill in appropriate elements
 
@@ -86,11 +86,11 @@ class spinOscLangevin():
         '''
         Gaussian white noise
         '''
-        return np.sqrt(2 * self.D * self.gamma**2 / self.dt) * np.random.randn(self.ndim)
+        return np.sqrt(2 / self.dt) * np.random.randn(self.ndim)
 
-    def runSimulation(self, k, alpha):
+    def runSimulation(self, alpha):
         # self.reset()
         for index, time in enumerate(self.t[1:]):
             pos_old = self.pos[:, index]
-            pos_new = pos_old + (self.deterministicForce(pos_old, k, alpha) + self.noise()) * self.dt / self.gamma
+            pos_new = pos_old + (self.deterministicForce(pos_old, alpha) + self.noise()) * self.dt
             self.pos[:, index + 1] = pos_new

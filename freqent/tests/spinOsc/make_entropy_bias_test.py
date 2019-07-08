@@ -26,13 +26,13 @@ parser.add_argument('--filename', type=str, default='',
                     help='Name of image file to save at savepath')
 
 # simulation parameters
-parser.add_argument('--gamma', type=float, default=2e-8,
+parser.add_argument('--gamma', type=float, default=1,
                     help='drag on 1um particle in water in kg/s')
 parser.add_argument('--dt', type=float, default=1e-3,
                     help='time step of simulation in seconds')
 parser.add_argument('--nsteps', type=int, default=int(1e4),
                     help='number of simulation steps')
-parser.add_argument('--kT', type=float, default=4e-9,
+parser.add_argument('--kT', type=float, default=0.2,
                     help='thermal energy in kg um^2 / s^2')
 parser.add_argument('--nsim', type=int, default=128,
                     help='number of simulations to run. Make a power of 2')
@@ -77,9 +77,9 @@ def runSim(seed):
     '''
     np.random.seed(seed)
     # create object
-    r = spinOscLangevin(dt=args.dt, nsteps=args.nsteps, kT=args.kT, gamma=args.gamma,
+    r = spinOscLangevin(dt=args.dt, nsteps=args.nsteps,
                         r0=np.random.randn(args.ndim))
-    r.runSimulation(k=k, alpha=alpha)
+    r.runSimulation(alpha=alpha)
     return r.pos
 
 
@@ -145,7 +145,7 @@ for tInd, tFrac in enumerate(tDivisors):
 
 ax.set_title(r'$\alpha = {0}$'.format(args.alpha_multiple))
 ax.plot([args.nsim * t[-1], args.nsim * t[0]],
-        [2 * args.alpha_multiple**2 / args.k_multiple] * 2,
+        [2 * args.alpha_multiple**2] * 2,
         '--k')
 
 
