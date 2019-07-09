@@ -129,22 +129,35 @@ idx_pairs = list(product(range(args.ndim), repeat=2))
 
 tDivisors = np.linspace(1, 2, 5)
 t = (tDivisors**-1 - 1 / 3) * T
-sdotArray = np.zeros((len(tDivisors), len(scales)))
+
+ns = [4, 8, 16, 32, 64]
+sdotArray = np.zeros((len(ns), len(scales)))
 biasArray = np.zeros(sdotArray.shape)
 
-for tInd, tFrac in enumerate(tDivisors):
+# for tInd, tFrac in enumerate(tDivisors):
+#     for scaleInd, scale in enumerate(scales):
+#         bias = (np.pi**-0.5) * (args.ndim * (args.ndim - 1) / 2) * (omega.max() / (args.nsim * t[tInd] * scale * dw))
+#         sdot = fe.entropy(pos_all[:, :, args.nsteps // 3:int(args.nsteps // tDivisors[tInd])],
+#                           sample_spacing=args.dt,
+#                           smooth_corr=True,
+#                           sigma=scale)
+#         sdotArray[tInd, scaleInd] = sdot.real
+#         biasArray[tInd, scaleInd] = bias
+#         ax.semilogx(args.nsim * t[tInd], sdot.real, marker=(args.ndim, 0, 45), markersize=10, linestyle='None', color=colors[scaleInd, :])
+
+for nInd, n in enumerate(ns):
     for scaleInd, scale in enumerate(scales):
-        bias = (np.pi**-0.5) * (args.ndim * (args.ndim - 1) / 2) * (omega.max() / (args.nsim * t[tInd] * scale * dw))
-        sdot = fe.entropy(pos_all[:, :, args.nsteps // 3:int(args.nsteps // tDivisors[tInd])],
+        # bias = (np.pi**-0.5) * (args.ndim * (args.ndim - 1) / 2) * (omega.max() / (args.nsim * t[tInd] * scale * dw))
+        sdot = fe.entropy(pos_all[:n, :, int(10 / args.dt):],
                           sample_spacing=args.dt,
                           smooth_corr=True,
                           sigma=scale)
-        sdotArray[tInd, scaleInd] = sdot.real
-        biasArray[tInd, scaleInd] = bias
-        ax.semilogx(args.nsim * t[tInd], sdot.real, marker=(args.ndim, 0, 45), markersize=10, linestyle='None', color=colors[scaleInd, :])
+        sdotArray[nInd, scaleInd] = sdot.real
+        # biasArray[tInd, scaleInd] = bias
+        ax.semilogx(n * (T - 10), sdot.real, marker=(args.ndim, 0, 45), markersize=10, linestyle='None', color=colors[scaleInd, :])
 
 ax.set_title(r'$\alpha = {0}$'.format(args.alpha_multiple))
-ax.plot([args.nsim * t[-1], args.nsim * t[0]],
+ax.plot([ns[0] * T, ns[-1] * T],
         [2 * args.alpha_multiple**2] * 2,
         '--k')
 
