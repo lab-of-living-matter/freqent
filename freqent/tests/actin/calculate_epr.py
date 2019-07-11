@@ -7,9 +7,9 @@ import pandas as pd
 import sys
 
 if sys.platform == 'darwin':
-  parentDir = '/Users/Danny/Dropbox/LLM_Danny/freqent/actin/'
+    parentDir = '/Users/Danny/Dropbox/LLM_Danny/freqent/actin/'
 if sys.platform == 'linux':
-  parentDir = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/actin/'
+    parentDir = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/actin/'
 
 noncontractile_exps = os.listdir(os.path.join(parentDir, 'noncontractile'))
 thermal_exps = os.listdir(os.path.join(parentDir, 'thermal'))
@@ -38,7 +38,7 @@ files_thermal = ['112916_2_imaging.hdf5',
                  '121516_3_imaging.hdf5',
                  '111116_3_imaging.hdf5',
                  '111116_2_imaging.hdf5',
-                 # '120216_2_imaging.hdf5',
+                 '120216_2_imaging.hdf5',
                  '120916_1_imaging.hdf5',
                  '112916_3_imaging.hdf5',
                  '121516_2_imaging.hdf5',
@@ -47,54 +47,54 @@ files_thermal = ['112916_2_imaging.hdf5',
                  '120216_3_imaging.hdf5']
 
 
-epr_nc = []  #np.zeros(len(files_noncontractile))
-epr_thermal = []  #np.zeros(len(files_thermal))
+epr_nc = []  # np.zeros(len(files_noncontractile))
+epr_thermal = []  # np.zeros(len(files_thermal))
 
 window = 'boxcar'
-nfft = [2**8, 2**6, 2**6]
+nfft = None
 detrend = 'linear'
 smooth_corr = True
-sigma = [10, 5, 5]
-subtract_bias = True
+sigma = [5, 2, 2]
+subtract_bias = False
 many_traj = False
 
 for ind, file in enumerate(files_noncontractile):
     with h5py.File(os.path.join(parentDir, 'noncontractile', file)) as f:
         data = np.stack((f['data']['ordermat'][:, 2:-2, 2:-2], np.transpose(f['data']['cgim'][:, 2:-2, 2:-2], axes=[0, 2, 1])))
-        # data = np.stack((f['data']['cgim'], np.transpose(f['data']['anglemat'], axes=[0, 2, 1])))
         dx = f['params']['dx'][()]
         dt = f['params']['dt'][()]
         winsize = f['params']['winsize'][()]
         overlap = f['params']['overlap'][()]
         winspace = int(winsize - np.ceil(winsize * overlap))
-        s, sdensity = fen.entropy(data, [dt, dx * winspace, dx * winspace],
-                                  window=window,
-                                  nfft=nfft,
-                                  detrend=detrend,
-                                  smooth_corr=smooth_corr,
-                                  sigma=sigma,
-                                  subtract_bias=subtract_bias,
-                                  many_traj=many_traj)
+        s = fen.entropy(data, [dt, dx * winspace, dx * winspace],
+                        window=window,
+                        nfft=nfft,
+                        detrend=detrend,
+                        smooth_corr=smooth_corr,
+                        sigma=sigma,
+                        subtract_bias=subtract_bias,
+                        many_traj=many_traj,
+                        return_radial_density=False)
 
         epr_nc.append(s.real)
 
 for ind, file in enumerate(files_thermal):
     with h5py.File(os.path.join(parentDir, 'thermal', file)) as f:
         data = np.stack((f['data']['ordermat'][:, 2:-2, 2:-2], np.transpose(f['data']['cgim'][:, 2:-2, 2:-2], axes=[0, 2, 1])))
-        # data = np.stack((f['data']['cgim'], np.transpose(f['data']['anglemat'], axes=[0, 2, 1])))
         dx = f['params']['dx'][()]
         dt = f['params']['dt'][()]
         winsize = f['params']['winsize'][()]
         overlap = f['params']['overlap'][()]
         winspace = int(winsize - np.ceil(winsize * overlap))
-        s, sdensity = fen.entropy(data, [dt, dx * winspace, dx * winspace],
-                                  window=window,
-                                  nfft=nfft,
-                                  detrend=detrend,
-                                  smooth_corr=smooth_corr,
-                                  sigma=sigma,
-                                  subtract_bias=subtract_bias,
-                                  many_traj=many_traj)
+        s = fen.entropy(data, [dt, dx * winspace, dx * winspace],
+                        window=window,
+                        nfft=nfft,
+                        detrend=detrend,
+                        smooth_corr=smooth_corr,
+                        sigma=sigma,
+                        subtract_bias=subtract_bias,
+                        many_traj=many_traj,
+                        return_radial_density=False)
 
         epr_thermal.append(s.real)
 

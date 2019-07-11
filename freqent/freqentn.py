@@ -8,7 +8,8 @@ import pdb
 
 def entropy(data, sample_spacing, window='boxcar', nperseg=None,
             noverlap=None, nfft=None, detrend='constant', smooth_corr=True,
-            sigma=1, subtract_bias=True, many_traj=True, return_density=False):
+            sigma=1, subtract_bias=True, many_traj=True, return_density=False,
+            azimuthal_average=False):
     '''
     Calculate the entropy using the frequency space measure:
 
@@ -70,6 +71,9 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     return_density : bool, optional
         option to return entropy production rate and its density (i.e. the
         quantity summed over to give the epr). Defaults to False
+    azimuthal_average : bool, optional
+        option to perform an azimuthal average over epr density before calculating
+        epr. **Only works for 3D data (e.g. 2 spatial + 1 temporal dimension)**
 
     Returns
     -------
@@ -98,7 +102,8 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
                 if not all(type(n) is int for n in nfft):
                     raise ValueError('nfft must be a list of integers')
             else:
-                raise ValueError('size of fft taken is either an integer for all dimensions or equal to the number of dimensions as the data')
+                raise ValueError('size of fft taken is either an integer for all dimensions '
+                                 'or equal to the number of dimensions as the data')
 
         c_all = np.zeros((nrep, *nfft, nvar, nvar), dtype=complex)
 
@@ -109,7 +114,8 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
                                                 nperseg,
                                                 noverlap,
                                                 nfft,
-                                                detrend)
+                                                detrend,
+                                                azimuthal_average)
         c = c_all.mean(axis=0)
 
     else:
@@ -128,7 +134,8 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
                 if not all(type(n) is int for n in nfft):
                     raise ValueError('nfft must be a list of integers')
             else:
-                raise ValueError('size of fft taken is either an integer for all dimensions or equal to the number of dimensions as the data')
+                raise ValueError('size of fft taken is either an integer for all dimensions '
+                                 'or equal to the number of dimensions as the data')
 
         c, freqs = corr_matrix(data,
                                sample_spacing,
@@ -136,27 +143,30 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
                                nperseg,
                                noverlap,
                                nfft,
-                               detrend)
+                               detrend,
+                               azimuthal_average)
 
-    if type(sample_spacing) is int:
+    if len(sample_spacing) == 1:
         sample_spacing = np.asarray([sample_spacing] * (len(nspace) + 1))
     elif len(sample_spacing) == len(nspace) + 1:
         sample_spacing = np.asarray(sample_spacing)
 
-    TL = sample_spacing * np.asarray(nfft)  # find total time and length signal, including zero padding
-    dk = 2 * np.pi / TL  # find spacing of all frequencies, temporal and spatial
+    # find total time and length signal, including zero padding and azimuthal averaging
+    TL = sample_spacing * np.array([len(f) for f in freqs])
+    # find spacing of all frequencies, temporal and spatial
+    dk = 2 * np.pi / TL
+
+    # sigma checks
+    if len(np.asarray(sigma)) == 1:
+        sigma = [sigma] * (len(TL))
+    elif len(sigma) == len(TL):
+        sigma = np.asarray(sigma)
+    else:
+        raise ValueError('sigma is either a single value for all dimensions\n'
+                         'or has as many elements as the number of dimensions of the data')
 
     # smooth c if wanted
     if smooth_corr:
-
-        if type(sigma) is int:
-            sigma = [sigma] * (len(TL))
-        elif len(sigma) == len(TL):
-            sigma = np.asarray(sigma)
-        else:
-            raise ValueError('sigma is either a single value for all dimensions\n'
-                             'or has as many elements as the number of dimensions of the data')
-
         c = _nd_gauss_smooth(c, sigma)
 
     # get inverse of each NxN submatrix of c.
@@ -168,12 +178,29 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     axes[-2:] = [axes[-1], axes[-2]]
     c_inv_transpose = np.transpose(c_inv, axes=axes)
 
-    # pdb.set_trace()
+    # first axis is temporal frequency, flip along that axis to get C^-T(k, -w)
+    # Also sum over last two axes to sum over matrix indices, leaving only frequency
+    # indices for integration
+    sdensity = np.sum(np.sum((np.flip(c_inv_transpose, axis=0) - c_inv_transpose) * c, axis=-1),
+                      axis=-1) / (2 * TL.prod())
 
-    # first axis is temporal frequency.
-    # flip along that axis to get C^-T(k, -w)
-
-    sdensity = np.sum(np.sum((np.flip(c_inv_transpose, axis=0) - c_inv_transpose) * c, axis=-1), axis=-1) / (2 * TL.prod())
+    # if azimuthal_average:
+    #     if sdensity.ndim != 3:
+    #         return ValueError('To calculate radial density, need a 2+1 dimensional '
+    #                           'data set. Currently have {n}+1 dimensions'.format(n=sdensity.ndim - 1))
+    #     else:
+    #         if dk[-1] != dk[-2]:
+    #             raise ValueError('To calculate radial density, need spatial sample_spacing to be '
+    #                              'equal. Currently, sample_spacing=[{dx}{dy}]'.format(dx=sample_spacing[-2],
+    #                                                                                   dy=sample_spacing[-1]))
+    #         else:
+    #             sdensity, kr = _azimuthal_average_3D(sdensity,
+    #                                                  tdim=0,
+    #                                                  center=None,
+    #                                                  binsize=1,
+    #                                                  mask=None,
+    #                                                  weight=None,
+    #                                                  dx=dk[-1])
 
     s = np.sum(sdensity)
 
@@ -192,7 +219,8 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
 
 
 def corr_matrix(data, sample_spacing=None, window='boxcar', nperseg=None,
-                noverlap=None, nfft=None, detrend='constant'):
+                noverlap=None, nfft=None, detrend='constant',
+                azimuthal_average=False):
     '''
     Takes time series data of multiple fields and returns a correlation matrix
     for every lag interval.
@@ -236,6 +264,9 @@ def corr_matrix(data, sample_spacing=None, window='boxcar', nperseg=None,
         function. If it is a function, it takes a segment and returns a
         detrended segment. If `detrend` is `False`, no detrending is
         done. Defaults to 'constant'.
+    azimuthal_average : bool, optional
+        Compute azimuthal average of correlation functions? Defaults to False.
+        **Only works for 2+1 dimensional data**
 
     Returns
     -------
@@ -252,8 +283,7 @@ def corr_matrix(data, sample_spacing=None, window='boxcar', nperseg=None,
     # get total number of variables and number of time points and space points
     nvar, *ntspace = data.shape
 
-    ####################################################################
-    # Not sure how to implement Welch's method robustly here
+    ###### Not sure how to implement Welch's method robustly here ######
     # nperseg checks
     # if nperseg is not None:  # if specified by user
     #     nperseg = int(nperseg)
@@ -301,7 +331,10 @@ def corr_matrix(data, sample_spacing=None, window='boxcar', nperseg=None,
                              'or has as many elements as the number of dimensions of the data')
 
     # preallocate correlation matrix
-    c = np.zeros((*nfft, nvar, nvar), dtype=complex)
+    if azimuthal_average:
+        c = np.zeros((*nfft[:-2], nfft[-1] // 2, nvar, nvar), dtype=complex)
+    else:
+        c = np.zeros((*nfft, nvar, nvar), dtype=complex)
 
     # get all pairs of indices
     idx_pairs = list(product(np.arange(nvar), repeat=2))
@@ -311,18 +344,22 @@ def corr_matrix(data, sample_spacing=None, window='boxcar', nperseg=None,
                                       sample_spacing=sample_spacing,
                                       window=window,
                                       detrend=detrend,
-                                      nfft=nfft)
+                                      nfft=nfft,
+                                      azimuthal_average=azimuthal_average)
 
     freqs = []
 
     for dim, Delta in enumerate(sample_spacing):
         freqs.append(2 * np.pi * np.fft.fftshift(np.fft.fftfreq(nfft[dim], sample_spacing[dim])))
 
+    if azimuthal_average:
+        freqs = freqs[:-1]
+
     return c, freqs
 
 
 def csdn(data1, data2, sample_spacing=None, window=None,
-         detrend='constant', nfft=None):
+         detrend='constant', nfft=None, azimuthal_average=False):
     """
     Estimate cross spectral density of n-dimensional data.
 
@@ -348,6 +385,10 @@ def csdn(data1, data2, sample_spacing=None, window=None,
     nfft : array_like, optional
         Length of the FFT used in each dimension, if a zero padded FFT is
         desired. If `None`, the FFT is taken over entire array. Defaults to `None`.
+    azimuthal_average : bool, optional
+        Compute azimuthal average of correlation functions? Defaults to False.
+        **Only works for 2+1 dimensional data**
+
     Returns
     -------
     csd : array_like
@@ -409,7 +450,20 @@ def csdn(data1, data2, sample_spacing=None, window=None,
 
     csd *= scale
 
-    return np.fft.fftshift(csd)
+    csd = np.fft.fftshift(csd)
+
+    if azimuthal_average:
+        if csd.ndim != 3:
+            raise ValueError('Input must be 2+1 dimensional to do azimuthal averaging')
+        else:
+            csd, _ = _azimuthal_average_3D(csd, tdim=0,
+                                           center=None,
+                                           binsize=1,
+                                           mask='circle',
+                                           weight=None,
+                                           dx=1)
+
+    return csd
 
 
 def _nd_window(data, window):
@@ -530,11 +584,8 @@ def _azimuthal_average(data, center=None, binsize=1, mask=None, weight=None,
 
     Based on radialProfile found at:
     http://www.astrobetter.com/wiki/tiki-index.php?page=python_radial_profiles
-
-    To do
-    -----
-    1) Make "circle" option of mask accept non-square inputs
     """
+
     data = np.asarray(data)
     # Get all the indices in x and y direction
     [y, x] = np.indices(data.shape)
@@ -549,7 +600,8 @@ def _azimuthal_average(data, center=None, binsize=1, mask=None, weight=None,
     if mask is None:
         mask = np.ones(data.shape, dtype='bool')
     elif mask is 'circle':
-        radius = (x.max() + 1) / 2
+        max_rad = np.min([x.max(), y.max()])  # pick smaller dimension for non-square input
+        radius = (max_rad + 1) / 2
         mask = (r < radius)
     else:
         mask = np.asarray(mask)
@@ -566,10 +618,10 @@ def _azimuthal_average(data, center=None, binsize=1, mask=None, weight=None,
 
     # Number of data points in each bin. Cut out last point, always 0
     nBinnedData = np.histogram(r, binEdges, weights=mask * weight)[0][:-1]
+
     # Azimuthal average
     radialProfile = (np.histogram(r, binEdges,
-                                  weights=data * mask * weight)[0][:-1] /
-                     nBinnedData)
+                                  weights=data * mask * weight)[0][:-1] / nBinnedData)
 
     return radialProfile, binCenters[:-1] * binsize * dx
 
