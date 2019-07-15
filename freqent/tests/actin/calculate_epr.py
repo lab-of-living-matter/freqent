@@ -49,15 +49,17 @@ files_thermal = ['112916_2_imaging.hdf5',
 
 epr_nc = []
 epr_nc_density = []
+nc_freqs = []
 epr_thermal = []
 epr_thermal_density = []
+thermal_freqs = []
 
 window = 'boxcar'
 nfft = [2**8, 2**6, 2**6]
 detrend = 'linear'
 smooth_corr = True
 sigma = [1, 2]
-subtract_bias = False
+subtract_bias = True
 many_traj = False
 azimuthal_average = True
 
@@ -70,19 +72,20 @@ for ind, file in enumerate(files_noncontractile):
         winsize = f['params']['winsize'][()]
         overlap = f['params']['overlap'][()]
         winspace = int(winsize - np.ceil(winsize * overlap))
-        s, sdensity = fen.entropy(data, [dt, dx * winspace, dx * winspace],
-                                  window=window,
-                                  nfft=nfft,
-                                  detrend=detrend,
-                                  smooth_corr=smooth_corr,
-                                  sigma=sigma,
-                                  subtract_bias=subtract_bias,
-                                  many_traj=many_traj,
-                                  return_density=True,
-                                  azimuthal_average=azimuthal_average)
+        s, sdensity, freqs = fen.entropy(data, [dt, dx * winspace, dx * winspace],
+                                         window=window,
+                                         nfft=nfft,
+                                         detrend=detrend,
+                                         smooth_corr=smooth_corr,
+                                         sigma=sigma,
+                                         subtract_bias=subtract_bias,
+                                         many_traj=many_traj,
+                                         return_density=True,
+                                         azimuthal_average=azimuthal_average)
 
         epr_nc.append(s.real)
         epr_nc_density.append(sdensity.real)
+        nc_freqs.append(freqs)
 
 for ind, file in enumerate(files_thermal):
     with h5py.File(os.path.join(parentDir, 'thermal', file)) as f:
@@ -93,23 +96,25 @@ for ind, file in enumerate(files_thermal):
         winsize = f['params']['winsize'][()]
         overlap = f['params']['overlap'][()]
         winspace = int(winsize - np.ceil(winsize * overlap))
-        s, sdensity = fen.entropy(data, [dt, dx * winspace, dx * winspace],
-                                  window=window,
-                                  nfft=nfft,
-                                  detrend=detrend,
-                                  smooth_corr=smooth_corr,
-                                  sigma=sigma,
-                                  subtract_bias=subtract_bias,
-                                  many_traj=many_traj,
-                                  return_density=True,
-                                  azimuthal_average=azimuthal_average)
+        s, sdensity, freqs = fen.entropy(data, [dt, dx * winspace, dx * winspace],
+                                         window=window,
+                                         nfft=nfft,
+                                         detrend=detrend,
+                                         smooth_corr=smooth_corr,
+                                         sigma=sigma,
+                                         subtract_bias=subtract_bias,
+                                         many_traj=many_traj,
+                                         return_density=True,
+                                         azimuthal_average=azimuthal_average)
 
         epr_thermal.append(s.real)
         epr_thermal_density.append(sdensity.real)
+        thermal_freqs.append(freqs)
 
 labels = ['noncontractile'] * len(epr_nc) + ['thermal'] * len(epr_thermal)
 epr = epr_nc + epr_thermal
 epr_density = epr_nc_density + epr_thermal_density
+freqs = nc_freqs + thermal_freqs
 files = [file.split('.')[0] for file in files_noncontractile + files_thermal]
 
 if nfft is None:
@@ -133,18 +138,24 @@ paramsattrs = {'window': 'window used in calculating fft of signal',
 
 
 with h5py.File(os.path.join(parentDir, datetime.today().strftime('%y%m%d') + '_epr.hdf5'), 'w') as f:
-    eprgrp = f.create_group('epr')
-    eprdensitygrp = f.create_group('epr_density')
+    # eprgrp = f.create_group('epr')
+    # eprdensitygrp = f.create_group('epr_density')
     paramsgrp = f.create_group('params')
 
     for ind, file in enumerate(files):
-        d = eprgrp.create_dataset(file, data=epr[ind])
-        d.attrs['experiment type'] = labels[ind]
+        g = f.create_group(file)
+        g.attrs['experiment type'] = labels[ind]
+        d = g.create_dataset('epr', data=epr[ind])
         d.attrs['description'] = 'entropy production rate'
 
-        d2 = eprdensitygrp.create_dataset(file, data=epr_density[ind])
-        d2.attrs['experiment type'] = labels[ind]
+        d2 = g.create_dataset('epr_density', data=epr_density[ind])
         d2.attrs['description'] = 'entropy production rate density'
+
+        d3 = g.create_dataset('omega', data=freqs[ind][0])
+        d3.attrs['description'] = 'temporal frequency bins for epr_density'
+
+        d4 = g.create_dataset('k', data=freqs[ind][1])
+        d4.attrs['description'] = 'spatial frequency bins for epr_density'
 
     for paramname in params.keys():
         p = paramsgrp.create_dataset(paramname, data=params[paramname])

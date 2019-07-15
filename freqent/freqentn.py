@@ -441,12 +441,13 @@ def csdn(data1, data2, sample_spacing=None, window=None,
         if csd.ndim != 3:
             raise ValueError('Input must be 2+1 dimensional to do azimuthal averaging')
         else:
+            dk = np.diff(freqs[-1])[0]
             csd, fr = _azimuthal_average_3D(csd, tdim=0,
                                             center=None,
                                             binsize=1,
                                             mask='circle',
                                             weight=None,
-                                            dx=1)
+                                            dx=dk)
             freqs = freqs[:-1]
             freqs[-1] = fr
 
