@@ -15,7 +15,7 @@ noncontractile_exps = os.listdir(os.path.join(parentDir, 'noncontractile'))
 thermal_exps = os.listdir(os.path.join(parentDir, 'thermal'))
 
 files_noncontractile = ['051612_skmmII_noncontr.hdf5',
-                        '053112_smmm_noncontr_Fig4.hdf5',
+                        # '053112_smmm_noncontr_Fig4.hdf5',
                         '071813_2.hdf5',
                         '111116_2_NC_spun_skmm.hdf5',
                         '111116_3_NC_spun_skmm.hdf5',
@@ -38,7 +38,7 @@ files_thermal = ['112916_2_imaging.hdf5',
                  '121516_3_imaging.hdf5',
                  '111116_3_imaging.hdf5',
                  '111116_2_imaging.hdf5',
-                 '120216_2_imaging.hdf5',
+                 # '120216_2_imaging.hdf5',
                  '120916_1_imaging.hdf5',
                  '112916_3_imaging.hdf5',
                  '121516_2_imaging.hdf5',
@@ -47,56 +47,65 @@ files_thermal = ['112916_2_imaging.hdf5',
                  '120216_3_imaging.hdf5']
 
 
-epr_nc = []  # np.zeros(len(files_noncontractile))
-epr_thermal = []  # np.zeros(len(files_thermal))
+epr_nc = []
+epr_nc_density = []
+epr_thermal = []
+epr_thermal_density = []
 
 window = 'boxcar'
-nfft = None
+nfft = [2**8, 2**6, 2**6]
 detrend = 'linear'
 smooth_corr = True
-sigma = [5, 2, 2]
+sigma = [1, 2]
 subtract_bias = False
 many_traj = False
+azimuthal_average = True
 
 for ind, file in enumerate(files_noncontractile):
     with h5py.File(os.path.join(parentDir, 'noncontractile', file)) as f:
+        print(file)
         data = np.stack((f['data']['ordermat'][:, 2:-2, 2:-2], np.transpose(f['data']['cgim'][:, 2:-2, 2:-2], axes=[0, 2, 1])))
         dx = f['params']['dx'][()]
         dt = f['params']['dt'][()]
         winsize = f['params']['winsize'][()]
         overlap = f['params']['overlap'][()]
         winspace = int(winsize - np.ceil(winsize * overlap))
-        s = fen.entropy(data, [dt, dx * winspace, dx * winspace],
-                        window=window,
-                        nfft=nfft,
-                        detrend=detrend,
-                        smooth_corr=smooth_corr,
-                        sigma=sigma,
-                        subtract_bias=subtract_bias,
-                        many_traj=many_traj,
-                        return_radial_density=False)
+        s, sdensity = fen.entropy(data, [dt, dx * winspace, dx * winspace],
+                                  window=window,
+                                  nfft=nfft,
+                                  detrend=detrend,
+                                  smooth_corr=smooth_corr,
+                                  sigma=sigma,
+                                  subtract_bias=subtract_bias,
+                                  many_traj=many_traj,
+                                  return_density=True,
+                                  azimuthal_average=azimuthal_average)
 
         epr_nc.append(s.real)
+        epr_nc_density.append(sdensity.real)
 
 for ind, file in enumerate(files_thermal):
     with h5py.File(os.path.join(parentDir, 'thermal', file)) as f:
+        print(file)
         data = np.stack((f['data']['ordermat'][:, 2:-2, 2:-2], np.transpose(f['data']['cgim'][:, 2:-2, 2:-2], axes=[0, 2, 1])))
         dx = f['params']['dx'][()]
         dt = f['params']['dt'][()]
         winsize = f['params']['winsize'][()]
         overlap = f['params']['overlap'][()]
         winspace = int(winsize - np.ceil(winsize * overlap))
-        s = fen.entropy(data, [dt, dx * winspace, dx * winspace],
-                        window=window,
-                        nfft=nfft,
-                        detrend=detrend,
-                        smooth_corr=smooth_corr,
-                        sigma=sigma,
-                        subtract_bias=subtract_bias,
-                        many_traj=many_traj,
-                        return_radial_density=False)
+        s, sdensity = fen.entropy(data, [dt, dx * winspace, dx * winspace],
+                                  window=window,
+                                  nfft=nfft,
+                                  detrend=detrend,
+                                  smooth_corr=smooth_corr,
+                                  sigma=sigma,
+                                  subtract_bias=subtract_bias,
+                                  many_traj=many_traj,
+                                  return_density=True,
+                                  azimuthal_average=azimuthal_average)
 
         epr_thermal.append(s.real)
+        epr_thermal_density.append(sdensity.real)
 
 labels = ['noncontractile'] * len(epr_nc) + ['thermal'] * len(epr_thermal)
 epr = epr_nc + epr_thermal

@@ -146,20 +146,16 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
                                detrend,
                                azimuthal_average)
 
-    if len(sample_spacing) == 1:
-        sample_spacing = np.asarray([sample_spacing] * (len(nspace) + 1))
-    elif len(sample_spacing) == len(nspace) + 1:
-        sample_spacing = np.asarray(sample_spacing)
+    # find spacing of all frequencies, temporal and spatial
+    dk = np.array([np.diff(f)[0] for f in freqs])
 
     # find total time and length signal, including zero padding and azimuthal averaging
-    TL = sample_spacing * np.array([len(f) for f in freqs])
-    # find spacing of all frequencies, temporal and spatial
-    dk = 2 * np.pi / TL
+    TL = 2 * np.pi / dk
 
     # sigma checks
     if len(np.asarray(sigma)) == 1:
-        sigma = [sigma] * (len(TL))
-    elif len(sigma) == len(TL):
+        sigma = [sigma] * (len(dk))
+    elif len(sigma) == len(dk):
         sigma = np.asarray(sigma)
     else:
         raise ValueError('sigma is either a single value for all dimensions\n'
@@ -184,32 +180,14 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     sdensity = np.sum(np.sum((np.flip(c_inv_transpose, axis=0) - c_inv_transpose) * c, axis=-1),
                       axis=-1) / (2 * TL.prod())
 
-    # if azimuthal_average:
-    #     if sdensity.ndim != 3:
-    #         return ValueError('To calculate radial density, need a 2+1 dimensional '
-    #                           'data set. Currently have {n}+1 dimensions'.format(n=sdensity.ndim - 1))
-    #     else:
-    #         if dk[-1] != dk[-2]:
-    #             raise ValueError('To calculate radial density, need spatial sample_spacing to be '
-    #                              'equal. Currently, sample_spacing=[{dx}{dy}]'.format(dx=sample_spacing[-2],
-    #                                                                                   dy=sample_spacing[-1]))
-    #         else:
-    #             sdensity, kr = _azimuthal_average_3D(sdensity,
-    #                                                  tdim=0,
-    #                                                  center=None,
-    #                                                  binsize=1,
-    #                                                  mask=None,
-    #                                                  weight=None,
-    #                                                  dx=dk[-1])
-
     s = np.sum(sdensity)
-
 
     # Calculate and subtract off bias if wanted
     if subtract_bias:
+        print([((freqs[n].max() / sigma[n]) / (TL[n] * dk[n] * (np.pi)**0.5)) for n in range(len(TL))])
         bias = ((1 / nrep) * (nvar * (nvar - 1) / 2) *
                 np.prod([((freqs[n].max() / sigma[n]) / (TL[n] * dk[n] * (np.pi)**0.5)) for n in range(len(TL))]))
-        # print(bias)
+
         s -= bias
 
     if return_density:
@@ -283,23 +261,25 @@ def corr_matrix(data, sample_spacing=None, window='boxcar', nperseg=None,
     # get total number of variables and number of time points and space points
     nvar, *ntspace = data.shape
 
-    ###### Not sure how to implement Welch's method robustly here ######
-    # nperseg checks
-    # if nperseg is not None:  # if specified by user
-    #     nperseg = int(nperseg)
-    #     if nperseg < 1:
-    #         raise ValueError('nperseg must be a positive integer')
-    # else:
-    #     nperseg = npts
-    #
-    # noverlap checks
-    # if noverlap is None:
-    #     noverlap = nperseg // 2
-    # else:
-    #     noverlap = int(noverlap)
-    # if noverlap >= nperseg:
-    #     raise ValueError('noverlap must be less than nperseg.')
-    ####################################################################
+    ''' Not sure how to implement Welch's method robustly here
+
+    nperseg checks
+    if nperseg is not None:  # if specified by user
+        nperseg = int(nperseg)
+        if nperseg < 1:
+            raise ValueError('nperseg must be a positive integer')
+    else:
+        nperseg = npts
+
+    noverlap checks
+    if noverlap is None:
+        noverlap = nperseg // 2
+    else:
+        noverlap = int(noverlap)
+    if noverlap >= nperseg:
+        raise ValueError('noverlap must be less than nperseg.')
+
+    '''
 
     # nfft checks
     if nfft is None:
@@ -340,20 +320,12 @@ def corr_matrix(data, sample_spacing=None, window='boxcar', nperseg=None,
     idx_pairs = list(product(np.arange(nvar), repeat=2))
 
     for idx in idx_pairs:
-        c[..., idx[0], idx[1]] = csdn(data[idx[0]], data[idx[1]],
-                                      sample_spacing=sample_spacing,
-                                      window=window,
-                                      detrend=detrend,
-                                      nfft=nfft,
-                                      azimuthal_average=azimuthal_average)
-
-    freqs = []
-
-    for dim, Delta in enumerate(sample_spacing):
-        freqs.append(2 * np.pi * np.fft.fftshift(np.fft.fftfreq(nfft[dim], sample_spacing[dim])))
-
-    if azimuthal_average:
-        freqs = freqs[:-1]
+        c[..., idx[0], idx[1]], freqs = csdn(data[idx[0]], data[idx[1]],
+                                             sample_spacing=sample_spacing,
+                                             window=window,
+                                             detrend=detrend,
+                                             nfft=nfft,
+                                             azimuthal_average=azimuthal_average)
 
     return c, freqs
 
@@ -393,6 +365,8 @@ def csdn(data1, data2, sample_spacing=None, window=None,
     -------
     csd : array_like
         Cross spectral density data as nd numpy array
+    freqs: list of arrays
+        frequency vectors for each dimension of csd
 
     See also
     --------
@@ -452,18 +426,25 @@ def csdn(data1, data2, sample_spacing=None, window=None,
 
     csd = np.fft.fftshift(csd)
 
+    # get fourier frequencies
+    freqs = []
+    for dim, Delta in enumerate(sample_spacing):
+        freqs.append(2 * np.pi * np.fft.fftshift(np.fft.fftfreq(nfft[dim], Delta)))
+
     if azimuthal_average:
         if csd.ndim != 3:
             raise ValueError('Input must be 2+1 dimensional to do azimuthal averaging')
         else:
-            csd, _ = _azimuthal_average_3D(csd, tdim=0,
-                                           center=None,
-                                           binsize=1,
-                                           mask='circle',
-                                           weight=None,
-                                           dx=1)
+            csd, fr = _azimuthal_average_3D(csd, tdim=0,
+                                            center=None,
+                                            binsize=1,
+                                            mask='circle',
+                                            weight=None,
+                                            dx=1)
+            freqs = freqs[:-1]
+            freqs[-1] = fr
 
-    return csd
+    return csd, freqs
 
 
 def _nd_window(data, window):
