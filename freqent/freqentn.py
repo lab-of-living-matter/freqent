@@ -78,7 +78,12 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     Returns
     -------
     s : float
-        entropy production rate given correlation functions
+        entropy production rate divided by system size
+    s_density : array (optional)
+        entropy production rate density divided by system size. Only returned if
+        return_density=True
+    freqs : list of arrays (optional)
+        frequency bins of s_density. Only returned in return_density=True
     '''
 
     if not sample_spacing:
@@ -151,6 +156,7 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
 
     # find total time and length signal, including zero padding and azimuthal averaging
     TL = 2 * np.pi / dk
+    # TL[-1] *= 2  # multiply length of signal by two to test azimuthal averaging
 
     # sigma checks
     if len(np.asarray(sigma)) == 1:
@@ -191,7 +197,7 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
         s -= bias
 
     if return_density:
-        return s.real, sdensity
+        return s.real, sdensity.real, freqs
     else:
         return s.real
 

@@ -15,7 +15,6 @@ noncontractile_exps = os.listdir(os.path.join(parentDir, 'noncontractile'))
 thermal_exps = os.listdir(os.path.join(parentDir, 'thermal'))
 
 files_noncontractile = ['051612_skmmII_noncontr.hdf5',
-                        # '053112_smmm_noncontr_Fig4.hdf5',
                         '071813_2.hdf5',
                         '111116_2_NC_spun_skmm.hdf5',
                         '111116_3_NC_spun_skmm.hdf5',
@@ -26,13 +25,14 @@ files_noncontractile = ['051612_skmmII_noncontr.hdf5',
                         '120916_3-2_NC_spun_647_skmm_0pt75mMATP.hdf5',
                         '121516_1_NC_unspun_647_skmm.hdf5',
                         '121516_4_NC_unspun_647_skmm.hdf5']
-#                         '052012_sm.hdf5',
-#   These data sets       '053112_2_sm_nocontract.hdf5',
-#   all have dt=30s       '060312_sm_nocontract.hdf5',
-#   so may not see        '060412_2_nmmII_1to300x_noncontr.hdf5',
-#   relevant time-        '071813_2_nmmII.hdf5',
-#   scales                '071913_2_nmmII_Fig4.hdf5',
-#                         '729130_sm_nocontract.hdf5']
+                        # '053112_smmm_noncontr_Fig4.hdf5',        #
+                        # '052012_sm.hdf5',                        #
+                        # '053112_2_sm_nocontract.hdf5',           # These data sets
+                        # '060312_sm_nocontract.hdf5',             # all have dt=30s
+                        # '060412_2_nmmII_1to300x_noncontr.hdf5',  # so may not see
+                        # '071813_2_nmmII.hdf5',                   # relevant time-
+                        # '071913_2_nmmII_Fig4.hdf5',              # scales
+                        # '729130_sm_nocontract.hdf5']             #
 
 files_thermal = ['112916_2_imaging.hdf5',
                  '121516_3_imaging.hdf5',
@@ -109,6 +109,7 @@ for ind, file in enumerate(files_thermal):
 
 labels = ['noncontractile'] * len(epr_nc) + ['thermal'] * len(epr_thermal)
 epr = epr_nc + epr_thermal
+epr_density = epr_nc_density + epr_thermal_density
 files = [file.split('.')[0] for file in files_noncontractile + files_thermal]
 
 if nfft is None:
@@ -131,14 +132,20 @@ paramsattrs = {'window': 'window used in calculating fft of signal',
                'many_traj': 'boolean of whether passing multiple trajectories into freqent.freqentn.entropy()'}
 
 
-# with h5py.File(os.path.join(parentDir, datetime.today().strftime('%y%m%d') + '_epr.hdf5'), 'w') as f:
-#     datagrp = f.create_group('epr')
-#     paramsgrp = f.create_group('params')
+with h5py.File(os.path.join(parentDir, datetime.today().strftime('%y%m%d') + '_epr.hdf5'), 'w') as f:
+    eprgrp = f.create_group('epr')
+    eprdensitygrp = f.create_group('epr_density')
+    paramsgrp = f.create_group('params')
 
-#     for ind, file in enumerate(files):
-#         d = datagrp.create_dataset(file, data=epr[ind])
-#         d.attrs['experiment type'] = labels[ind]
+    for ind, file in enumerate(files):
+        d = eprgrp.create_dataset(file, data=epr[ind])
+        d.attrs['experiment type'] = labels[ind]
+        d.attrs['description'] = 'entropy production rate'
 
-#     for paramname in params.keys():
-#         p = paramsgrp.create_dataset(paramname, data=params[paramname])
-#         p.attrs['description'] = paramsattrs[paramname]
+        d2 = eprdensitygrp.create_dataset(file, data=epr_density[ind])
+        d2.attrs['experiment type'] = labels[ind]
+        d2.attrs['description'] = 'entropy production rate density'
+
+    for paramname in params.keys():
+        p = paramsgrp.create_dataset(paramname, data=params[paramname])
+        p.attrs['description'] = paramsattrs[paramname]
