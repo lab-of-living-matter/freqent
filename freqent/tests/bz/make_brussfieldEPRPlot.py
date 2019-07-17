@@ -6,7 +6,7 @@ import h5py
 import matplotlib as mpl
 mpl.rcParams['pdf.fonttype'] = 42
 
-parentFolder = '/Volumes/Storage/Danny/freqent/brusselatorSims/fieldSims/190509/brussfield'
+parentFolder = '/mnt/llmStorage203/Danny/brusselatorSims/fieldSims/190509/brussfield'
 folders = glob(os.path.join(parentFolder, 'alpha*'))
 alphas = np.asarray([float(a.split(os.path.sep)[-1].split('_')[0][5:]) for a in folders])
 

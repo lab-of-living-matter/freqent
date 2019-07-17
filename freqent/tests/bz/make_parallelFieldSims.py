@@ -164,7 +164,7 @@ epr_blind, _, _, _, _ = stats.linregress(t_points[args.n_t_points // 2:],
 dt = np.diff(t_points)[0]
 dx = args.lCompartment
 # Calculate mean entropy production rate from spectral method
-epr_spectral = (fen.entropy(trajs[: args.n_t_points//2:, :],
+epr_spectral = (fen.entropy(trajs[..., args.n_t_points // 2:, :],
                             sample_spacing=[dt, dx],
                             window='boxcar',
                             nperseg=None,

@@ -159,8 +159,8 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     # TL[-1] *= 2  # multiply length of signal by two to test azimuthal averaging
 
     # sigma checks
-    if len(np.asarray(sigma)) == 1:
-        sigma = [sigma] * (len(dk))
+    if isinstance(sigma, (int, float)) or len(sigma) == 1:
+        sigma = np.repeat(sigma, len(dk))
     elif len(sigma) == len(dk):
         sigma = np.asarray(sigma)
     else:
@@ -193,7 +193,6 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
         print([((freqs[n].max() / sigma[n]) / (TL[n] * dk[n] * (np.pi)**0.5)) for n in range(len(TL))])
         bias = ((1 / nrep) * (nvar * (nvar - 1) / 2) *
                 np.prod([((freqs[n].max() / sigma[n]) / (TL[n] * dk[n] * (np.pi)**0.5)) for n in range(len(TL))]))
-
         s -= bias
 
     if return_density:
