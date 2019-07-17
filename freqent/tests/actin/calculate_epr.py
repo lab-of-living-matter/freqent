@@ -15,7 +15,7 @@ noncontractile_exps = os.listdir(os.path.join(parentDir, 'noncontractile'))
 thermal_exps = os.listdir(os.path.join(parentDir, 'thermal'))
 
 files_noncontractile = ['051612_skmmII_noncontr.hdf5',
-                        '071813_2.hdf5',
+                        # '071813_2.hdf5',   # small muscle myosin, all others skmm
                         '111116_2_NC_spun_skmm.hdf5',
                         '111116_3_NC_spun_skmm.hdf5',
                         '112916_1_NC_spun_647_skmm.hdf5',
@@ -41,7 +41,7 @@ files_thermal = ['112916_2_imaging.hdf5',
                  # '120216_2_imaging.hdf5',
                  '120916_1_imaging.hdf5',
                  '112916_3_imaging.hdf5',
-                 '121516_2_imaging.hdf5',
+                 # '121516_2_imaging.hdf5',
                  '121516_4_imaging.hdf5',
                  '120216_2_noskmm_thermalFactinNetwork.hdf5',
                  '120216_3_imaging.hdf5']
@@ -59,7 +59,7 @@ nfft = [2**8, 2**6, 2**6]
 detrend = 'linear'
 smooth_corr = True
 sigma = [1, 2]
-subtract_bias = True
+subtract_bias = False
 many_traj = False
 azimuthal_average = True
 
