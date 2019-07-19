@@ -402,7 +402,7 @@ def csdn(data1, data2, sample_spacing=None, window=None,
         def detrend_func(d):
             return d - np.mean(d)
     elif detrend == 'linear':
-        return NotImplementedError('Multidimensional linear detrend'
+        raise NotImplementedError('Multidimensional linear detrend '
                                    'not implemented')
     # elif not hasattr(detrend, '__call__'):
     #     def detrend_func(d, ax):
@@ -427,7 +427,7 @@ def csdn(data1, data2, sample_spacing=None, window=None,
 
     if not same_data:
         for ax in range(data2.ndim):
-            data2 = detrend_func(data2, ax)
+            data2 = detrend_func(data2)
         data2, _ = _nd_window(data2, window)
         data2_fft = np.fft.fftn(data2, s=nfft)
         csd = data1_fft * np.conjugate(data2_fft)
