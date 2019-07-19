@@ -110,18 +110,20 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
                 raise ValueError('size of fft taken is either an integer for all dimensions '
                                  'or equal to the number of dimensions as the data')
 
-        c_all = np.zeros((nrep, *nfft, nvar, nvar), dtype=complex)
+        c = np.zeros((*nfft, nvar, nvar), dtype=complex)
 
         for ii in range(nrep):
-            c_all[ii, ...], freqs = corr_matrix(data[ii, ...],
-                                                sample_spacing,
-                                                window,
-                                                nperseg,
-                                                noverlap,
-                                                nfft,
-                                                detrend,
-                                                azimuthal_average)
-        c = c_all.mean(axis=0)
+            c_temp, freqs = corr_matrix(data[ii, ...],
+                                        sample_spacing,
+                                        window,
+                                        nperseg,
+                                        noverlap,
+                                        nfft,
+                                        detrend,
+                                        azimuthal_average)
+            c += c_temp
+
+        c /= nrep
 
     else:
         nrep = 1

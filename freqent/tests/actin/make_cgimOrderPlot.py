@@ -53,10 +53,10 @@ for p, q in zip(f['data']['cgim'][7:8, 2:-2, 2:-2], f['data']['ordermat'][7:8, 2
     order_cbar.ax.set_title(r'$q$', {'fontsize': 15})
     order_cbar.ax.tick_params(direction='in', labelsize='large')
 
-    fig.savefig(os.path.join(savePath, 'frame_{:03d}.pdf'.format(ind)), format='pdf')
+    # fig.savefig(os.path.join(savePath, 'frame_{:03d}.pdf'.format(ind)), format='pdf')
     ind += 1
 
-    # plt.show()
-    plt.close('all')
+    plt.show()
+    # plt.close('all')
 
 

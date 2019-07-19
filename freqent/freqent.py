@@ -136,7 +136,7 @@ def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
         s -= bias
 
     if return_density:
-        return s.real, sdensity
+        return s.real, sdensity.real, omega
     else:
         return s.real
 
