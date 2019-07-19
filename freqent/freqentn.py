@@ -396,17 +396,22 @@ def csdn(data1, data2, sample_spacing=None, window=None,
 
     # Handle detrending and window functions
     if not detrend:
-        def detrend_func(d, ax):
+        def detrend_func(d):
             return d
-    elif not hasattr(detrend, '__call__'):
-        def detrend_func(d, ax):
-            return signal.signaltools.detrend(d, type=detrend, axis=ax)
-    else:
-        detrend_func = detrend
+    elif detrend == 'constant':
+        def detrend_func(d):
+            return d - np.mean(d)
+    elif detrend == 'linear':
+        return NotImplementedError('Multidimensional linear detrend'
+                                   'not implemented')
+    # elif not hasattr(detrend, '__call__'):
+    #     def detrend_func(d, ax):
+    #         return signal.signaltools.detrend(d, type=detrend, axis=ax)
+    # else:
+    #     detrend_func = detrend
 
-    # detrend the data in all dimensions
-    for ax in range(data1.ndim):
-        data1 = detrend_func(data1, ax)
+    # detrend the data
+    data1 = detrend_func(data1)
 
     data1, win = _nd_window(data1, window)
 
