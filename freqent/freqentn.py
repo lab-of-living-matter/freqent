@@ -90,68 +90,43 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
         raise ValueError('sample_spacing must be given as a single value for all dimensions\n'
                          'or as a sequence with as many elements as the number of dimensions of the data')
 
-    if many_traj:
-        # number of replicates, number of variables, number of time and space points
-        nrep, nvar, nt, *nspace = data.shape
+    if not many_traj:
+        # code is written to run over number of replicates, so add extra singleton dimension
+        # to data if there is only one replicate of the data available
+        data = data[np.newaxis, :]
 
-        # nfft checks
-        if nfft is None:
-            nfft = [nt, *nspace]
-        else:
-            if len(nfft) == 1:
-                if type(nfft) is not int:
-                    raise ValueError('nfft must be integer')
-                else:
-                    nfft = np.repeat(np.asarray(int(nfft)), len(ntspace))
-            elif len(nfft) == len(nspace) + 1:
-                if not all(type(n) is int for n in nfft):
-                    raise ValueError('nfft must be a list of integers')
-            else:
-                raise ValueError('size of fft taken is either an integer for all dimensions '
-                                 'or equal to the number of dimensions as the data')
+    # number of replicates, number of variables, number of time and space points
+    nrep, nvar, nt, *nspace = data.shape
 
-        c = np.zeros((*nfft, nvar, nvar), dtype=complex)
-
-        for ii in range(nrep):
-            c_temp, freqs = corr_matrix(data[ii, ...],
-                                        sample_spacing,
-                                        window,
-                                        nperseg,
-                                        noverlap,
-                                        nfft,
-                                        detrend,
-                                        azimuthal_average)
-            c += c_temp
-
-        c /= nrep
-
+    # nfft checks
+    if nfft is None:
+        nfft = [nt, *nspace]
     else:
-        nrep = 1
-        nvar, nt, *nspace = data.shape
-
-        if nfft is None:
-            nfft = [nt, *nspace]
-        else:
-            if len(nfft) == 1:
-                if type(nfft) is not int:
-                    raise ValueError('nfft must be integer')
-                else:
-                    nfft = np.repeat(np.asarray(int(nfft)), len(ntspace))
-            elif len(nfft) == len(nspace) + 1:
-                if not all(type(n) is int for n in nfft):
-                    raise ValueError('nfft must be a list of integers')
+        if len(nfft) == 1:
+            if type(nfft) is not int:
+                raise ValueError('nfft must be integer')
             else:
-                raise ValueError('size of fft taken is either an integer for all dimensions '
-                                 'or equal to the number of dimensions as the data')
+                nfft = np.repeat(np.asarray(int(nfft)), len(ntspace))
+        elif len(nfft) == len(nspace) + 1:
+            if not all(type(n) is int for n in nfft):
+                raise ValueError('nfft must be a list of integers')
+        else:
+            raise ValueError('size of fft taken is either an integer for all dimensions '
+                             'or equal to the number of dimensions as the data')
 
-        c, freqs = corr_matrix(data,
-                               sample_spacing,
-                               window,
-                               nperseg,
-                               noverlap,
-                               nfft,
-                               detrend,
-                               azimuthal_average)
+    c = np.zeros((*nfft, nvar, nvar), dtype=complex)
+
+    for ii in range(nrep):
+        c_temp, freqs = corr_matrix(data[ii, ...],
+                                    sample_spacing,
+                                    window,
+                                    nperseg,
+                                    noverlap,
+                                    nfft,
+                                    detrend,
+                                    azimuthal_average)
+        c += c_temp
+    c /= nrep
 
     # find spacing of all frequencies, temporal and spatial
     dk = np.array([np.diff(f)[0] for f in freqs])
