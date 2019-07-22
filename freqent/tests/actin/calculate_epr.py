@@ -56,12 +56,12 @@ thermal_freqs = []
 
 window = 'boxcar'
 nfft = [2**8, 2**6, 2**6]
-detrend = 'linear'
+detrend = 'constant'
 smooth_corr = True
-sigma = [1, 2]
+sigma = [2, 1, 1]
 subtract_bias = False
 many_traj = False
-azimuthal_average = True
+azimuthal_average = False
 
 for ind, file in enumerate(files_noncontractile):
     with h5py.File(os.path.join(parentDir, 'noncontractile', file)) as f:

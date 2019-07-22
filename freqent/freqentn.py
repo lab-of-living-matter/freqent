@@ -403,7 +403,7 @@ def csdn(data1, data2, sample_spacing=None, window=None,
             return d - np.mean(d)
     elif detrend == 'linear':
         raise NotImplementedError('Multidimensional linear detrend '
-                                   'not implemented')
+                                  'not implemented')
     # elif not hasattr(detrend, '__call__'):
     #     def detrend_func(d, ax):
     #         return signal.signaltools.detrend(d, type=detrend, axis=ax)
