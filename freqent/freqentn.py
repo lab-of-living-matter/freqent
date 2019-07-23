@@ -114,8 +114,7 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
             raise ValueError('size of fft taken is either an integer for all dimensions '
                              'or equal to the number of dimensions as the data')
 
-    c = np.zeros((*nfft, nvar, nvar), dtype=complex)
-
+    # c = np.zeros((*nfft, nvar, nvar), dtype=complex)
     for ii in range(nrep):
         c_temp, freqs = corr_matrix(data[ii, ...],
                                     sample_spacing,
@@ -125,7 +124,10 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
                                     nfft,
                                     detrend,
                                     azimuthal_average)
-        c += c_temp
+        if ii == 0:
+            c = c_temp
+        else:
+            c += c_temp
     c /= nrep
 
     # find spacing of all frequencies, temporal and spatial
