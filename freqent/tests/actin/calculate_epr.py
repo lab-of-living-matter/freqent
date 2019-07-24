@@ -55,7 +55,7 @@ epr_thermal_density = []
 thermal_freqs = []
 
 window = 'boxcar'
-nfft = [2**8, 2**6, 2**6]
+nfft = [2**8 - 1, 2**6 - 1, 2**6 - 1]
 detrend = 'constant'
 smooth_corr = True
 sigma = [2, 1, 1]
