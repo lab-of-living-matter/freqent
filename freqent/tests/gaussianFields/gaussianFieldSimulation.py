@@ -30,12 +30,12 @@ class gaussianFields1D():
 
     In everything below, kT = 1. We non-dimensionalize the system as
 
-    da'/dt' = -(1  - nabla'^2) a' + alpha' * b' + tau/L^(1/2) xi_a
-    db'/dt' = -(1  - nabla'^2) b' - alpha' * a' + tau/L^(1/2) xi_b
+    da'/dt' = -(1  - nabla'^2) a' + alpha' * b' + sqrt(2) xi_a
+    db'/dt' = -(1  - nabla'^2) b' - alpha' * a' + sqrt(2) xi_b
 
-    where the length scale L = 1 / sqrt(r) and time scale T = 1/(D*r)
+    where the length scale L = 1 / sqrt(r) and time scale tau = 1/(D*r)
     are chosen to nondimensionalize the fields a and b (which have units
-    of L^0.5) and rescale space and time. alpha' = T alpha is a dimensionless
+    of L^0.5) and rescale space and time. alpha' = tau * alpha is a dimensionless
     number describing how far the system is driven from equilibrium.
 
     Parameters

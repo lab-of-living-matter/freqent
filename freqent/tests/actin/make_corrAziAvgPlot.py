@@ -6,8 +6,8 @@ import os
 import freqent.freqentn as fen
 mpl.rcParams['pdf.fonttype'] = 42
 
-dataPath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/actin/noncontractile/111116_3_NC_spun_skmm.hdf5'
-savePath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/figures/actin/111116_3_NC_spun_skmm_corrMat'
+dataPath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/actin/thermal/120216_3_imaging.hdf5'
+savePath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/figures/actin/120216_3_imaging_corrMat'
 
 f = h5py.File(dataPath)
 
@@ -18,14 +18,14 @@ c, w = fen.corr_matrix(data,
                        sample_spacing=[f['params']['dt'][()],
                                        f['params']['dx'][()] * 16,
                                        f['params']['dx'][()] * 16],
-                       nfft=[2**8, 2**6, 2**6],
+                       # nfft=[2**8, 2**6, 2**6],
                        azimuthal_average=False)
 
 c_aa, w_aa = fen.corr_matrix(data,
                              sample_spacing=[f['params']['dt'][()],
                                              f['params']['dx'][()] * 16,
                                              f['params']['dx'][()] * 16],
-                             nfft=[2**8, 2**6, 2**6],
+                             # nfft=[2**8, 2**6, 2**6],
                              azimuthal_average=True)
 
 crr_cmap = mpl.cm.get_cmap('Blues')
