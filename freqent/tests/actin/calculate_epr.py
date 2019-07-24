@@ -55,18 +55,27 @@ epr_thermal_density = []
 thermal_freqs = []
 
 window = 'boxcar'
-nfft = [2**8 - 1, 2**6 - 1, 2**6 - 1]
+nfft = [2**8 - 1, 2**7 - 1, 2**7 - 1]
 detrend = 'constant'
 smooth_corr = True
-sigma = [2, 1, 1]
+sigma = [2, 1]
 subtract_bias = False
 many_traj = False
-azimuthal_average = False
+azimuthal_average = True
+tile_data = True
 
 for ind, file in enumerate(files_noncontractile):
     with h5py.File(os.path.join(parentDir, 'noncontractile', file)) as f:
         print(file)
         data = np.stack((f['data']['ordermat'][:, 2:-2, 2:-2], np.transpose(f['data']['cgim'][:, 2:-2, 2:-2], axes=[0, 2, 1])))
+
+        if tile_data:
+            data = np.concatenate((np.flip(data, axis=-1), data), axis=-1)  # flip over positive y-axis to fill upper half-plane
+            data = np.concatenate((np.flip(data, axis=-2), data), axis=-2)  # flip over x-axis to fill all four quadrants
+            print(data.shape)
+            nfft = [int(d - (1 - np.mod(d, 2))) for d in data.shape[1:]]
+            print(nfft)
+
         dx = f['params']['dx'][()]
         dt = f['params']['dt'][()]
         winsize = f['params']['winsize'][()]
@@ -91,6 +100,14 @@ for ind, file in enumerate(files_thermal):
     with h5py.File(os.path.join(parentDir, 'thermal', file)) as f:
         print(file)
         data = np.stack((f['data']['ordermat'][:, 2:-2, 2:-2], np.transpose(f['data']['cgim'][:, 2:-2, 2:-2], axes=[0, 2, 1])))
+
+        if tile_data:
+            data = np.concatenate((np.flip(data, axis=-1), data), axis=-1)  # flip over positive y-axis to fill upper half-plane
+            data = np.concatenate((np.flip(data, axis=-2), data), axis=-2)  # flip over x-axis to fill all four quadrants
+            print(data.shape)
+            nfft = [int(d - (1 - np.mod(d, 2))) for d in data.shape[1:]]
+            print(nfft)
+
         dx = f['params']['dx'][()]
         dt = f['params']['dt'][()]
         winsize = f['params']['winsize'][()]

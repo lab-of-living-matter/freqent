@@ -130,6 +130,11 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
             c += c_temp
     c /= nrep
 
+    '''
+    Here is where I will check the size of nfft in each dimension and make sure the returned correlation function
+    and frequency are odd in order to not mess with the flipping that happens below
+    '''
+
     # find spacing of all frequencies, temporal and spatial
     dk = np.array([np.diff(f)[0] for f in freqs])
 

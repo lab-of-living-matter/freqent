@@ -12,12 +12,12 @@ parentFolder = '/mnt/llmStorage203/Danny/brusselatorSims/fieldSims/190509/brussf
 folders = glob(os.path.join(parentFolder, 'alpha*'))
 alphas = np.asarray([float(f.split(os.path.sep)[-1].split('_')[0][5:]) for f in folders])
 
-for fInd, f in enumerate(folders[1:]):
+for fInd, f in enumerate(folders):
     with h5py.File(os.path.join(f, 'data.hdf5'), 'r+') as d:
         dt = np.diff(d['data']['t_points'][:])[0]
         dx = d['params']['lCompartment'][()]
         nt = d['params']['n_t_points'][()]
-        epr, epr_density, w = fen.entropy(d['data']['trajs'][..., nt // 2:, :],
+        epr, epr_density, w = fen.entropy(d['data']['trajs'][..., nt // 2:, :-1],
                                           sample_spacing=[dt, dx],
                                           window='boxcar',
                                           detrend='constant',
