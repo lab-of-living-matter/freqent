@@ -96,11 +96,11 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
         data = data[np.newaxis, :]
 
     # number of replicates, number of variables, number of time and space points
-    nrep, nvar, nt, *nspace = data.shape
+    nrep, nvar, *ntspace = data.shape
 
     # nfft checks
     if nfft is None:
-        nfft = [nt, *nspace]
+        nfft = [*ntspace]
     else:
         if len(nfft) == 1:
             if type(nfft) is not int:
@@ -134,6 +134,14 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     Here is where I will check the size of nfft in each dimension and make sure the returned correlation function
     and frequency are odd in order to not mess with the flipping that happens below
     '''
+    for ndim, n in enumerate(nfft):
+        inds = [slice(None)] * len(nfft)  # get first elements in the appropriate dimension
+        singletonInds = [slice(None)] * len(nfft)  # use this to expand selected slice for concatenation
+        if n % 2 == 0:
+            inds[ndim] = 0
+            singletonInds[ndim] = np.newaxis
+            c = np.concatenate((c, np.conj(c[tuple(inds)][tuple(singletonInds)])), axis=ndim)
+            freqs[ndim] = np.concatenate((freqs[ndim], -freqs[ndim][0][np.newaxis]))
 
     # find spacing of all frequencies, temporal and spatial
     dk = np.array([np.diff(f)[0] for f in freqs])
