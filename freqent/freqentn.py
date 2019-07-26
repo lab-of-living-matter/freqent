@@ -133,9 +133,10 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     Here is where I will check the size of nfft in each dimension and make sure the returned correlation function
     and frequency are odd in order to not mess with the flipping that happens below
     '''
-    for ndim, n in enumerate(nfft):
-        inds = [slice(None)] * len(nfft)  # get first elements in the appropriate dimension
-        singletonInds = [slice(None)] * len(nfft)  # use this to expand selected slice for concatenation
+    cndim = c.ndim - 2  # get number of frequency dimensions in correlation matrix
+    for ndim, n in enumerate(c.shape[:-2]):
+        inds = [slice(None)] * cndim  # get first elements in the appropriate dimension
+        singletonInds = [slice(None)] * cndim  # use this to expand selected slice for concatenation
         if n % 2 == 0:
             inds[ndim] = 0
             singletonInds[ndim] = np.newaxis
