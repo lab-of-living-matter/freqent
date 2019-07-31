@@ -175,8 +175,8 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     # first axis is temporal frequency, flip along that axis to get C^-T(k, -w)
     # Also sum over last two axes to sum over matrix indices, leaving only frequency
     # indices for integration
-    sdensity = np.sum(np.sum((np.flip(c_inv_transpose, axis=0) - c_inv_transpose) * c, axis=-1),
-                      axis=-1) / (2 * TL.prod())
+    sdensity = (np.log(np.linalg.det(c_inv_transpose) / np.linalg.det(np.flip(c_inv_transpose, axis=0))) +
+                np.sum((np.flip(c_inv_transpose, axis=0) - c_inv_transpose) * c, axis=(-1, -2))) / (2 * TL.prod())
 
     s = np.sum(sdensity)
 
