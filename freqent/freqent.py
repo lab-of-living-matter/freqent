@@ -122,7 +122,8 @@ def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
     # get inverse of each NxN submatrix of c_fft. Broadcasts to find inverse of square
     # matrix in last two dimensions of matrix
     c_fft_inv = np.linalg.inv(c_fft)
-    sdensity = np.sum(np.sum((c_fft_inv - np.transpose(c_fft_inv, (0, 2, 1))) * c_fft, axis=-1), axis=-1) / (2 * T)
+    sdensity = (np.log(np.linalg.det(c_fft_inv) / np.linalg.det(np.transpose(c_fft_inv, (0, 2, 1)))) +
+                np.sum(np.sum((c_fft_inv - np.transpose(c_fft_inv, (0, 2, 1))) * c_fft, axis=-1), axis=-1)) / (2 * T)
 
     # return omega, sdensity
     s = np.sum(sdensity)
