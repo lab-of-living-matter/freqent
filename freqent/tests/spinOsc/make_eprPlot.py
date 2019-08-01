@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 from itertools import product
 
-plt.close('all')
+# plt.close('all')
 mpl.rcParams['pdf.fonttype'] = 42
 fig, ax = plt.subplots(figsize=(8, 6))
 parentDir = '/mnt/llmStorage203/Danny/freqent/spinOsc/190709/'
@@ -110,7 +110,7 @@ ax2.legend(handles=handles, loc='lower right')
 ax2.set(xlabel=r'$\alpha$', ylabel=r'$\dot{\hat{S}}$')
 ax2.tick_params(axis='both', direction='in')
 
-fig.savefig(os.path.join(parentDir, 'alpha{a}_epr_vs_dataSize.pdf'.format(a=alpha)), format='pdf')
-fig2.savefig(os.path.join(parentDir, 'epr_vs_alpha_mostData_leastSmoothing.pdf'), format='pdf')
+# fig.savefig(os.path.join(parentDir, 'alpha{a}_epr_vs_dataSize.pdf'.format(a=alpha)), format='pdf')
+# fig2.savefig(os.path.join(parentDir, 'epr_vs_alpha_mostData_leastSmoothing.pdf'), format='pdf')
 
 plt.show()
