@@ -213,7 +213,12 @@ def nematic_tensor(u, radius=5):
     -------
 
     '''
-    pass
+    u = np.asarray(u)
+
+    # get all spatial indices
+    [y, x] = np.indices(u.shape[:-1])
+
+
 
 
 def scalar_director(Q):

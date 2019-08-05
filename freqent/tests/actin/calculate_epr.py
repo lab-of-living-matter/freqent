@@ -50,19 +50,30 @@ files_thermal = ['112916_2_imaging.hdf5',
 epr_nc = []
 epr_nc_density = []
 nc_freqs = []
+
+epr_nc_noise = []
+# epr_nc_density_noise = []
+# nc_freqs_noise = []
+
 epr_thermal = []
 epr_thermal_density = []
 thermal_freqs = []
 
+epr_thermal_noise = []
+# epr_thermal_density_noise = []
+# thermal_freqs_noise = []
+
 window = 'boxcar'
-nfft = [2**8, 2**7, 2**7]
+nfft = None
 detrend = 'constant'
 smooth_corr = True
-sigma = [2, 1]
+sigma = [1, 1.5, 1.5]
 subtract_bias = False
 many_traj = False
-azimuthal_average = True
-tile_data = True
+azimuthal_average = False
+tile_data = False
+
+noise_reps = 10
 
 for ind, file in enumerate(files_noncontractile):
     with h5py.File(os.path.join(parentDir, 'noncontractile', file)) as f:
@@ -96,6 +107,27 @@ for ind, file in enumerate(files_noncontractile):
         epr_nc_density.append(sdensity.real)
         nc_freqs.append(freqs)
 
+        s_noise_mean = 0
+        for ii in range(noise_reps):
+            noise0 = np.std(data[0]) * np.random.randn(*data[0].shape) + np.mean(data[0])
+            noise1 = np.std(data[1]) * np.random.randn(*data[1].shape) + np.mean(data[1])
+            noise = np.stack((noise0, noise1))
+            s_noise, sdensity_noise, freqs_noise = fen.entropy(noise, [dt, dx * winspace, dx * winspace],
+                                                               window=window,
+                                                               nfft=nfft,
+                                                               detrend=detrend,
+                                                               smooth_corr=smooth_corr,
+                                                               sigma=sigma,
+                                                               subtract_bias=subtract_bias,
+                                                               many_traj=many_traj,
+                                                               return_density=True,
+                                                               azimuthal_average=azimuthal_average)
+            s_noise_mean += s_noise
+
+        epr_nc_noise.append(s_noise_mean.real / noise_reps)
+        # epr_nc_density_noise.append(sdensity_noise.real)
+        # nc_freqs_noise.append(freqs_noise)
+
 for ind, file in enumerate(files_thermal):
     with h5py.File(os.path.join(parentDir, 'thermal', file)) as f:
         print(file)
@@ -113,7 +145,7 @@ for ind, file in enumerate(files_thermal):
         winsize = f['params']['winsize'][()]
         overlap = f['params']['overlap'][()]
         winspace = int(winsize - np.ceil(winsize * overlap))
-        s, sdensity, freqs = fen.entropy(data, [dt, dx * winspace, dx * winspace],
+        s, sdensity, freqs = fen.entropy(noise, [dt, dx * winspace, dx * winspace],
                                          window=window,
                                          nfft=nfft,
                                          detrend=detrend,
@@ -127,6 +159,27 @@ for ind, file in enumerate(files_thermal):
         epr_thermal.append(s.real)
         epr_thermal_density.append(sdensity.real)
         thermal_freqs.append(freqs)
+
+        s_noise_mean = 0
+        for ii in range(noise_reps):
+            noise0 = np.std(data[0]) * np.random.randn(*data[0].shape) + np.mean(data[0])
+            noise1 = np.std(data[1]) * np.random.randn(*data[1].shape) + np.mean(data[1])
+            noise = np.stack((noise0, noise1))
+            s_noise, sdensity_noise, freqs_noise = fen.entropy(noise, [dt, dx * winspace, dx * winspace],
+                                                               window=window,
+                                                               nfft=nfft,
+                                                               detrend=detrend,
+                                                               smooth_corr=smooth_corr,
+                                                               sigma=sigma,
+                                                               subtract_bias=subtract_bias,
+                                                               many_traj=many_traj,
+                                                               return_density=True,
+                                                               azimuthal_average=azimuthal_average)
+            s_noise_mean += s_noise
+
+        epr_thermal_noise.append(s_noise_mean.real / noise_reps)
+        # epr_nc_density_noise.append(sdensity_noise.real)
+        # nc_freqs_noise.append(freqs_noise)
 
 labels = ['noncontractile'] * len(epr_nc) + ['thermal'] * len(epr_thermal)
 epr = epr_nc + epr_thermal

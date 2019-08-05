@@ -290,8 +290,8 @@ def corr_matrix(data, sample_spacing=None, window='boxcar', nperseg=None,
         elif len(nfft) == len(ntspace):
             if not all(type(n) is int for n in nfft):
                 raise ValueError('nfft must be a list of integers')
-            else:
-                nfft = np.asarray(nfft).astype(int)
+            # else:
+            #     nfft = np.asarray(nfft).astype(int)
         else:
             raise ValueError('size of fft taken is either an integer for all dimensions or equal to the number of dimensions as the data')
 
@@ -380,6 +380,36 @@ def csdn(data1, data2, sample_spacing=None, window=None,
     if not same_data:
         if data1.shape != data2.shape:
             raise ValueError('Both inputs must have same size.')
+
+    ntspace = data1.shape
+    # nfft checks
+    if nfft is None:
+        nfft = [*ntspace]
+    else:
+        if len(nfft) == 1:
+            if type(nfft) is not int:
+                raise ValueError('nfft must be integer')
+            else:
+                nfft = np.repeat(np.asarray(int(nfft)), len(ntspace))
+        elif len(nfft) == len(ntspace):
+            if not all(type(n) is int for n in nfft):
+                raise ValueError('nfft must be a list of integers')
+            else:
+                nfft = np.asarray(nfft).astype(int)
+        else:
+            raise ValueError('size of fft taken is either an integer for all dimensions or equal to the number of dimensions as the data')
+
+    # sample_spacing checks
+    if sample_spacing is None:
+        sample_spacing = np.ones(len(ntspace))
+    else:
+        if len(sample_spacing) == 1:
+            sample_spacing = np.repeat(np.asarray(sample_spacing), len(ntspace))
+        elif len(sample_spacing) == len(ntspace):
+            sample_spacing = np.asarray(sample_spacing)
+        else:
+            raise ValueError('sample_spacing is either a single value for all dimensions\n'
+                             'or has as many elements as the number of dimensions of the data')
 
     if window is None:
         window = 'boxcar'
