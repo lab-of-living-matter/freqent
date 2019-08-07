@@ -52,16 +52,14 @@ epr_nc_density = []
 nc_freqs = []
 
 epr_nc_noise = []
-# epr_nc_density_noise = []
-# nc_freqs_noise = []
+epr_nc_shuffle = []
 
 epr_thermal = []
 epr_thermal_density = []
 thermal_freqs = []
 
 epr_thermal_noise = []
-# epr_thermal_density_noise = []
-# thermal_freqs_noise = []
+epr_thermal_shuffle = []
 
 window = 'boxcar'
 nfft = None
@@ -74,6 +72,7 @@ azimuthal_average = False
 tile_data = False
 
 noise_reps = 10
+shuffle_reps = 20
 
 for ind, file in enumerate(files_noncontractile):
     with h5py.File(os.path.join(parentDir, 'noncontractile', file)) as f:
@@ -125,8 +124,28 @@ for ind, file in enumerate(files_noncontractile):
             s_noise_mean += s_noise
 
         epr_nc_noise.append(s_noise_mean.real / noise_reps)
-        # epr_nc_density_noise.append(sdensity_noise.real)
-        # nc_freqs_noise.append(freqs_noise)
+
+        s_shuffle_mean = 0
+        for ii in range(shuffle_reps):
+            tInds1 = np.arange(data.shape[1])
+            tInds2 = np.arange(data.shape[1])
+            np.random.shuffle(tInds1), np.random.shuffle(tInds2)
+
+            shuffled_data = np.stack((data[0, tInds1], data[1, tInds2]))
+            s_shuffle, sdensity_shuffle, freqs_shuffle = fen.entropy(shuffled_data,
+                                                                     [dt, dx * winspace, dx * winspace],
+                                                                     window=window,
+                                                                     nfft=nfft,
+                                                                     detrend=detrend,
+                                                                     smooth_corr=smooth_corr,
+                                                                     sigma=sigma,
+                                                                     subtract_bias=subtract_bias,
+                                                                     many_traj=many_traj,
+                                                                     return_density=True,
+                                                                     azimuthal_average=azimuthal_average)
+            s_shuffle_mean += s_shuffle
+
+        epr_nc_shuffle.append(s_shuffle_mean.real / shuffle_reps)
 
 for ind, file in enumerate(files_thermal):
     with h5py.File(os.path.join(parentDir, 'thermal', file)) as f:
@@ -178,8 +197,29 @@ for ind, file in enumerate(files_thermal):
             s_noise_mean += s_noise
 
         epr_thermal_noise.append(s_noise_mean.real / noise_reps)
-        # epr_nc_density_noise.append(sdensity_noise.real)
-        # nc_freqs_noise.append(freqs_noise)
+
+        s_shuffle_mean = 0
+        for ii in range(shuffle_reps):
+            tInds1 = np.arange(data.shape[1])
+            tInds2 = np.arange(data.shape[1])
+            np.random.shuffle(tInds1), np.random.shuffle(tInds2)
+
+            shuffled_data = np.stack((data[0, tInds1], data[1, tInds2]))
+            s_shuffle, sdensity_shuffle, freqs_shuffle = fen.entropy(shuffled_data,
+                                                                     [dt, dx * winspace, dx * winspace],
+                                                                     window=window,
+                                                                     nfft=nfft,
+                                                                     detrend=detrend,
+                                                                     smooth_corr=smooth_corr,
+                                                                     sigma=sigma,
+                                                                     subtract_bias=subtract_bias,
+                                                                     many_traj=many_traj,
+                                                                     return_density=True,
+                                                                     azimuthal_average=azimuthal_average)
+            s_shuffle_mean += s_shuffle
+
+        epr_thermal_shuffle.append(s_shuffle_mean.real / shuffle_reps)
+
 
 labels = ['noncontractile'] * len(epr_nc) + ['thermal'] * len(epr_thermal)
 epr = epr_nc + epr_thermal
