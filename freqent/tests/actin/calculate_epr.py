@@ -65,14 +65,14 @@ window = 'boxcar'
 nfft = None
 detrend = 'constant'
 smooth_corr = True
-sigma = [1, 1.5, 1.5]
-subtract_bias = False
+sigma = [1, 2, 2]
+subtract_bias = True
 many_traj = False
 azimuthal_average = False
 tile_data = False
 
 noise_reps = 10
-shuffle_reps = 20
+shuffle_reps = 10
 
 for ind, file in enumerate(files_noncontractile):
     with h5py.File(os.path.join(parentDir, 'noncontractile', file)) as f:

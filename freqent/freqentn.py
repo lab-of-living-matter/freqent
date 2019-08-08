@@ -115,14 +115,14 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
                              'or equal to the number of dimensions as the data')
 
     for ii in range(nrep):
-        c_temp, freqs = corr_matrix(data[ii, ...],
-                                    sample_spacing,
-                                    window,
-                                    nperseg,
-                                    noverlap,
-                                    nfft,
-                                    detrend,
-                                    azimuthal_average)
+        c_temp, freqs = corr_matrix(data=data[ii, ...],
+                                    sample_spacing=sample_spacing,
+                                    window=window,
+                                    nperseg=nperseg,
+                                    noverlap=noverlap,
+                                    nfft=nfft,
+                                    detrend=detrend,
+                                    azimuthal_average=azimuthal_average)
         if ii == 0:
             c = c_temp
         else:
@@ -130,8 +130,9 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     c /= nrep
 
     '''
-    Here is where I will check the size of nfft in each dimension and make sure the returned correlation function
-    and frequency are odd in order to not mess with the flipping that happens below
+    Here is where I will check the size of nfft in each dimension and make sure
+    the returned correlation function and frequency are odd in order to
+    not mess with the flipping that happens below
     '''
     cndim = c.ndim - 2  # get number of frequency dimensions in correlation matrix
     for ndim, n in enumerate(c.shape[:-2]):
@@ -605,8 +606,9 @@ def _azimuthal_average(data, center=None, binsize=1, mask=None, weight=None,
     [y, x] = np.indices(data.shape)
 
     # Define the center from which to measure the radius
+    # In this context, the origin always exists at an index, so round this result
     if not center:
-        center = np.array([(x.max() - x.min()) / 2, (y.max() - y.min()) / 2])
+        center = np.array([(x.max() + 1) / 2, (y.max() + 1) / 2])
 
     # Get distance from all points to center
     r = np.hypot(x - center[0], y - center[1])
