@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import pandas as pd
 import seaborn as sns
 import h5py
@@ -12,6 +13,7 @@ if sys.platform == 'linux':
   parentDir = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/actin/'
 
 plt.close('all')
+mpl.rcParams['pdf.fonttype'] = 42
 epr = []
 exptype = []
 
@@ -26,11 +28,15 @@ df = pd.DataFrame({'epr': epr,
 
 fig, ax = plt.subplots(figsize=(6, 6))
 sns.set(style='whitegrid')
-sns.boxplot(y='epr', x='type', data=df, ax=ax, fliersize=0, palette='Set1', whis='range', linewidth=2.5)
-sns.swarmplot(y='epr', x='type', data=df, color='0.2', linewidth=0, size=10)
+sns.stripplot(y='epr', x='type', data=df, color='k',
+             size=10, alpha=0.8)
+sns.pointplot(y='epr', x='type',
+              data=df, ax=ax,
+              palette='Set1', ci='sd',
+              join=False, capsize=0.1)
 
 # ax.set(ylim=[0, 1], yticks=[0, 0.2, 0.4, 0.6, 0.8, 1.0], xlabel='', ylabel=r'$\langle ds/dt \rangle$')
-ax.set(ylim=[-0.0001, 0.0015], yticks=[0, 0.0005, 0.001, 0.0015], xlabel='', ylabel=r'$\langle ds/dt \rangle$')
+ax.set(ylim=[-0.0001, 0.005], yticks=[0, 0.001, 0.002, 0.003, 0.004, 0.005], xlabel='', ylabel=r'$\langle ds/dt \rangle$')
 # ax.yaxis.grid(True)
 sns.despine(trim=True, bottom=True)
 plt.tight_layout()
