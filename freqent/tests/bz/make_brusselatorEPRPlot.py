@@ -19,11 +19,9 @@ def calc_epr_spectral(file):
         dt = np.diff(d['data']['t_points'][:])[0]
         epr = d['data']['epr'][()]
         epr_blind = d['data']['epr_blind'][()]
-        epr_spectral = d['data']['epr_spectral'][()]
-        # epr_spectral = (fe.entropy(d['data']['trajs'][..., t_points > tStart],
-        #                            sample_spacing=dt,
-        #                            sigma=10)).real
-    return [epr, epr_blind, epr_spectral]
+        # epr_spectral = d['data']['epr_spectral'][()]
+        epr_spectral = [(fe.entropy(traj, sample_spacing=dt, sigma=10)).real for traj in d['data']['trajs'][..., t_points > tStart]]
+    return [epr, epr_blind, np.mean(epr_spectral), np.std(epr_spectral)]
 
 
 folder = '/media/daniel/storage11/local_LLM_Danny/freqent/190313/blindBruss'

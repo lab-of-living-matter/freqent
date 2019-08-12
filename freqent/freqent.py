@@ -3,7 +3,6 @@ import scipy.signal as signal
 import warnings
 from itertools import product
 from scipy.ndimage import gaussian_filter
-from astropy.convolution import Gaussian1DKernel, convolve
 
 
 def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,

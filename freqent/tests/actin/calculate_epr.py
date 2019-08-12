@@ -1,3 +1,4 @@
+
 import os
 import numpy as np
 import h5py
@@ -15,7 +16,7 @@ noncontractile_exps = os.listdir(os.path.join(parentDir, 'noncontractile'))
 thermal_exps = os.listdir(os.path.join(parentDir, 'thermal'))
 
 files_noncontractile = ['051612_skmmII_noncontr.hdf5',
-                        # '071813_2.hdf5',   # small muscle myosin, all others skmm
+                        '071813_2.hdf5',   # small muscle myosin, all others skmm
                         '111116_2_NC_spun_skmm.hdf5',
                         '111116_3_NC_spun_skmm.hdf5',
                         '112916_1_NC_spun_647_skmm.hdf5',
@@ -65,7 +66,7 @@ window = 'boxcar'
 nfft = None
 detrend = 'constant'
 smooth_corr = True
-sigma = [1, 1.5]
+sigma = [1, 2]
 subtract_bias = False
 many_traj = False
 azimuthal_average = True
