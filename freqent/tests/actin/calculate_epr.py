@@ -25,15 +25,15 @@ files_noncontractile = ['051612_skmmII_noncontr.hdf5',
                         '120216_3_NC_spun_647_skmm.hdf5',
                         '120916_3-2_NC_spun_647_skmm_0pt75mMATP.hdf5',
                         '121516_1_NC_unspun_647_skmm.hdf5',
-                        '121516_4_NC_unspun_647_skmm.hdf5']
-                        # '053112_smmm_noncontr_Fig4.hdf5',        #
-                        # '052012_sm.hdf5',                        #
-                        # '053112_2_sm_nocontract.hdf5',           # These data sets
-                        # '060312_sm_nocontract.hdf5',             # all have dt=30s
-                        # '060412_2_nmmII_1to300x_noncontr.hdf5',  # so may not see
-                        # '071813_2_nmmII.hdf5',                   # relevant time-
-                        # '071913_2_nmmII_Fig4.hdf5',              # scales
-                        # '729130_sm_nocontract.hdf5']             #
+                        '121516_4_NC_unspun_647_skmm.hdf5',
+                        '053112_smmm_noncontr_Fig4.hdf5',        #
+                        '052012_sm.hdf5',                        #
+                        '053112_2_sm_nocontract.hdf5',           # These data sets
+                        '060312_sm_nocontract.hdf5',             # all have dt=30s
+                        '060412_2_nmmII_1to300x_noncontr.hdf5',  # so may not see
+                        '071813_2_nmmII.hdf5',                   # relevant time-
+                        '071913_2_nmmII_Fig4.hdf5',              # scales
+                        '729130_sm_nocontract.hdf5']             #
 
 files_thermal = ['112916_2_imaging.hdf5',
                  '121516_3_imaging.hdf5',
@@ -51,6 +51,9 @@ files_thermal = ['112916_2_imaging.hdf5',
 epr_nc = []
 epr_nc_density = []
 nc_freqs = []
+dt_nc = []
+dx_nc = []
+winspace_nc = []
 
 epr_nc_noise = []
 epr_nc_shuffle = []
@@ -58,6 +61,9 @@ epr_nc_shuffle = []
 epr_thermal = []
 epr_thermal_density = []
 thermal_freqs = []
+dt_thermal = []
+dx_thermal = []
+winspace_thermal = []
 
 epr_thermal_noise = []
 epr_thermal_shuffle = []
@@ -66,7 +72,7 @@ window = 'boxcar'
 nfft = None
 detrend = 'constant'
 smooth_corr = True
-sigma = [1, 2]
+sigma = [2, 1]
 subtract_bias = False
 many_traj = False
 azimuthal_average = True
@@ -106,6 +112,9 @@ for ind, file in enumerate(files_noncontractile):
         epr_nc.append(s.real)
         epr_nc_density.append(sdensity.real)
         nc_freqs.append(freqs)
+        dt_nc.append(dt)
+        dx_nc.append(dx)
+        winspace_nc.append(winspace)
 
         s_noise_mean = 0
         for ii in range(noise_reps):
@@ -179,6 +188,9 @@ for ind, file in enumerate(files_thermal):
         epr_thermal.append(s.real)
         epr_thermal_density.append(sdensity.real)
         thermal_freqs.append(freqs)
+        dt_thermal.append(dt)
+        dx_thermal.append(dx)
+        winspace_thermal.append(winspace)
 
         s_noise_mean = 0
         for ii in range(noise_reps):
@@ -227,6 +239,7 @@ epr = epr_nc + epr_thermal
 epr_density = epr_nc_density + epr_thermal_density
 freqs = nc_freqs + thermal_freqs
 files = [file.split('.')[0] for file in files_noncontractile + files_thermal]
+dt = dt_nc + dt_thermal
 
 if nfft is None:
     nfft = ''

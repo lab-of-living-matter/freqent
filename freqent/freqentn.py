@@ -608,7 +608,7 @@ def _azimuthal_average(data, center=None, binsize=1, mask=None, weight=None,
     # Define the center from which to measure the radius
     # In this context, the origin always exists at an index, so round this result
     if not center:
-        center = np.array([(x.max() + 1) / 2, (y.max() + 1) / 2])
+        center = np.array([int(np.ceil((x.max() / 2))), int(np.ceil((y.max() / 2)))])
 
     # Get distance from all points to center
     r = np.hypot(x - center[0], y - center[1])
