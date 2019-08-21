@@ -51,7 +51,7 @@ class spinOscLangevin():
         <xi_i (t) xi_j (t')> = 2*D*gamma^2 * delta_ij * delta(t - t')
             D is diffusion constant, D = kB*T/gamma
 
-    For simulations, we non-dimensionalize the rest with
+    For simulations, we non-dimensionalize the equations of motion with
     time scale gamma/k and length scale sqrt(D * gamma / k).
 
     a1 and a2 denote the strength of coupling first and second dimension with
