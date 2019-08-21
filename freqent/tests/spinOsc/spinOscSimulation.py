@@ -36,20 +36,26 @@ class spinOscLangevin():
 
     gamma is a drag coefficient
            ---                   ---
-           | -k   -a   0   ...   0 |
-           |  a   -k   0   ...   0 |
-           |  0    0  -k   ...   0 |
-    F(r) = |  .           .        |
-           |  .             .      |
-           |  .               .    |
-           |  0      ...        -k |
-           ---                   ---
+           | -k    -a1   0   ...   0 |
+           |  a2   -k    0   ...   0 |
+           |  0     0   -k   ...   0 |
+    F(r) = |  .             .        |
+           |  .               .      |
+           |  .                 .    |
+           |  0      ...          -k |
+           ---                     ---
         k is spring constant, along diagonals
         alpha is strength of rotational force, only in first two dimensions
     xi is zero mean Gaussian white noise
         <xi> = 0
         <xi_i (t) xi_j (t')> = 2*D*gamma^2 * delta_ij * delta(t - t')
             D is diffusion constant, D = kB*T/gamma
+
+    For simulations, we non-dimensionalize the equations of motion with
+    time scale gamma/k and length scale sqrt(D * gamma / k).
+
+    a1 and a2 denote the strength of coupling first and second dimension with
+    the other, respectively.
     '''
 
     def __init__(self, dt, r0, nsteps=1e6):
@@ -75,10 +81,10 @@ class spinOscLangevin():
     def reset(self):
         self.__init__(self.dt, self.r0, self.nsteps, self.kT, self.gamma)
 
-    def deterministicForce(self, r, alpha):
+    def deterministicForce(self, r, alpha1, alpha2):
         spring = np.diag(-1 * np.ones(self.ndim))  # spring force along diagonal
         rotate = np.zeros((self.ndim, self.ndim))  # construct rotational force matrix
-        rotate[(1, 0), (0, 1)] = (alpha, -alpha)  # fill in appropriate elements
+        rotate[(1, 0), (0, 1)] = (alpha1, -alpha2)  # fill in appropriate elements
 
         return np.matmul(spring + rotate, r)
 
@@ -88,9 +94,12 @@ class spinOscLangevin():
         '''
         return np.sqrt(2 / self.dt) * np.random.randn(self.ndim)
 
-    def runSimulation(self, alpha):
+    def runSimulation(self, alpha1, alpha2=None):
         # self.reset()
+        if alpha2 is None:
+            alpha2 = alpha1
+
         for index, time in enumerate(self.t[1:]):
             pos_old = self.pos[:, index]
-            pos_new = pos_old + (self.deterministicForce(pos_old, alpha) + self.noise()) * self.dt
+            pos_new = pos_old + (self.deterministicForce(pos_old, alpha1, alpha2) + self.noise()) * self.dt
             self.pos[:, index + 1] = pos_new
