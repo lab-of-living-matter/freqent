@@ -22,7 +22,6 @@ try:
     vxt = np.moveaxis(f['vxt'], -1, 0)  # time measured in last dimension, move to first
     vyt = np.moveaxis(f['vyt'], -1, 0)  # time measured in last dimension, move to first
 
-
     # interpolate to replace nans in velocities
     if np.isnan(np.sum(vxt)):
         kernel = Gaussian2DKernel(x_stddev=1)
@@ -30,7 +29,7 @@ try:
         vyt = np.array([interpolate_replace_nans(vy, kernel) for vy in vyt])
 
     vt = np.array([np.sqrt(vx**2 + vy**2) for vx, vy in zip(vxt, vyt)])
-    imgfile = str(f['exp']['filename'][0][0][0])
+    imgfile = str(f['expt']['filename'][0][0][0])
     imdist = int(f['pivspec']['imdist'][0][0][0][0])
     lastim = int(f['pivspec']['lastim'][0][0][0][0])
     winsize = int(f['pivspec']['winsize'][0][0][0][0])
@@ -81,7 +80,7 @@ with h5py.File(args.savepath) as file:
             d.attrs['description'] = datattrs[datname]
         else:
             dset = file['data'][datname]
-            dset = dat[datname]
+            dset[...] = dat[datname]
 
     for paramname in params.keys():
         if '/params/{p}'.format(p=paramname) not in file:
@@ -89,4 +88,4 @@ with h5py.File(args.savepath) as file:
             p.attrs['description'] = paramsattrs[paramname]
         else:
             dset = file['params'][paramname]
-            dset = params[paramname]
+            dset[...] = params[paramname]

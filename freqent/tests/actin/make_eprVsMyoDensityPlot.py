@@ -20,8 +20,10 @@ ax.plot(skmm_myoDensity[np.where(skmm_myoDensity)], skmmEPR[np.where(skmm_myoDen
 ax.errorbar(skmm_myoDensity[np.where(skmm_myoDensity)], skmmEPR_shuffle_mean[np.where(skmm_myoDensity)],
             yerr=skmmEPR_shuffle_std[np.where(skmm_myoDensity)], fmt='o', label='shuffled data', color='C1', capsize=7)
 
-m, b, r_value, p_value, std_err = stats.linregress(skmm_myoDensity[np.where(skmm_myoDensity)], skmmEPR[np.where(skmm_myoDensity)])
-m_shuffle, b_shuffle, r_value_shuffle, p_value_shuffle, std_err_shuffle = stats.linregress(skmm_myoDensity[np.where(skmm_myoDensity)], skmmEPR_shuffle_mean[np.where(skmm_myoDensity)])
+m, b, r_value, p_value, std_err = stats.linregress(skmm_myoDensity[np.where(skmm_myoDensity)],
+                                                   skmmEPR[np.where(skmm_myoDensity)])
+m_shuffle, b_shuffle, r_value_shuffle, p_value_shuffle, std_err_shuffle = stats.linregress(skmm_myoDensity[np.where(skmm_myoDensity)],
+                                                                                           skmmEPR_shuffle_mean[np.where(skmm_myoDensity)])
 
 p_value_shuffle
 ax.set_aspect(np.diff(ax.set_xlim())[0] / np.diff(ax.set_ylim())[0])
@@ -31,7 +33,7 @@ ax.set_aspect(np.diff(ax.set_xlim())[0] / np.diff(ax.set_ylim())[0])
 ax.plot(x, m_shuffle * x + b_shuffle, '--', color='C1')
 ax.legend()
 ax.text(0.08, 0.00075, 'p={p:0.3f}'.format(p=p_value), color='C0')
-ax.text(0.08, 0.00055, 'p={p:0.3f}'.format(p=p_value_shuffle), color='C1')
+ax.text(0.08, 0.00070, 'p={p:0.3f}'.format(p=p_value_shuffle), color='C1')
 ax.set(xlabel=r'myosin density $[\#/\mu m]$', ylabel=r'epr $[s^{-1} \mu m ^{-2}]$')
 
 # fig.savefig('/media/daniel/storage11/Dropbox/LLM_Danny/freqent/actin/myosinData/190819_myo_vs_epr_skmm_real+shuffle.pdf', format='pdf')

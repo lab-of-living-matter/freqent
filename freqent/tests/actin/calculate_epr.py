@@ -73,20 +73,22 @@ window = 'boxcar'
 nfft = None
 detrend = 'constant'
 smooth_corr = True
-sigma = [2, 1]
-subtract_bias = False
+sigma = [2, 1, 1]
+subtract_bias = True
 many_traj = False
-azimuthal_average = True
+azimuthal_average = False
 tile_data = False
 
 noise_reps = 1
-shuffle_reps = 1
+shuffle_reps = 100
 
 for ind, file in enumerate(files_noncontractile):
     with h5py.File(os.path.join(parentDir, 'noncontractile', file)) as f:
         print(file)
         data = np.stack((f['data']['ordermat'][:, 2:-2, 2:-2], np.transpose(f['data']['cgim'][:, 2:-2, 2:-2], axes=[0, 2, 1])))
-        data = np.stack((f['data']['vt'][1:], np.transpose(f['data']['cgim'][:len(f['data']['vt'][1:])], axes=[0, 2, 1])))
+        # data = np.stack((f['data']['vt'][1:, 2:-2, 2:-2],
+        #                  f['data']['ordermat'][1:, 2:-2, 2:-2],
+        #                  np.transpose(f['data']['cgim'][1:, 2:-2, 2:-2], axes=[0, 2, 1])))
 
         if tile_data:
             data = np.concatenate((np.flip(data, axis=-1), data), axis=-1)  # flip over positive y-axis to fill upper half-plane
@@ -164,7 +166,9 @@ for ind, file in enumerate(files_thermal):
     with h5py.File(os.path.join(parentDir, 'thermal', file)) as f:
         print(file)
         data = np.stack((f['data']['ordermat'][:, 2:-2, 2:-2], np.transpose(f['data']['cgim'][:, 2:-2, 2:-2], axes=[0, 2, 1])))
-        data = np.stack((f['data']['vt'][1:], np.transpose(f['data']['cgim'][:len(f['data']['vt'][1:])], axes=[0, 2, 1])))
+        # data = np.stack((f['data']['vt'][1:, 2:-2, 2:-2],
+        #                  f['data']['ordermat'][1:, 2:-2, 2:-2],
+        #                  np.transpose(f['data']['cgim'][1:, 2:-2, 2:-2], axes=[0, 2, 1])))
 
         if tile_data:
             data = np.concatenate((np.flip(data, axis=-1), data), axis=-1)  # flip over positive y-axis to fill upper half-plane
@@ -266,26 +270,26 @@ paramsattrs = {'window': 'window used in calculating fft of signal',
                'many_traj': 'boolean of whether passing multiple trajectories into freqent.freqentn.entropy()'}
 
 
-# with h5py.File(os.path.join(parentDir, datetime.today().strftime('%y%m%d') + '_epr.hdf5'), 'w') as f:
-#     # eprgrp = f.create_group('epr')
-#     # eprdensitygrp = f.create_group('epr_density')
-#     paramsgrp = f.create_group('params')
+with h5py.File(os.path.join(parentDir, datetime.today().strftime('%y%m%d') + '_epr.hdf5'), 'w') as f:
+    # eprgrp = f.create_group('epr')
+    # eprdensitygrp = f.create_group('epr_density')
+    paramsgrp = f.create_group('params')
 
-#     for ind, file in enumerate(files):
-#         g = f.create_group(file)
-#         g.attrs['experiment type'] = labels[ind]
-#         d = g.create_dataset('epr', data=epr[ind])
-#         d.attrs['description'] = 'entropy production rate'
+    for ind, file in enumerate(files):
+        g = f.create_group(file)
+        g.attrs['experiment type'] = labels[ind]
+        d = g.create_dataset('epr', data=epr[ind])
+        d.attrs['description'] = 'entropy production rate'
 
-#         d2 = g.create_dataset('epr_density', data=epr_density[ind])
-#         d2.attrs['description'] = 'entropy production rate density'
+        d2 = g.create_dataset('epr_density', data=epr_density[ind])
+        d2.attrs['description'] = 'entropy production rate density'
 
-#         d3 = g.create_dataset('omega', data=freqs[ind][0])
-#         d3.attrs['description'] = 'temporal frequency bins for epr_density'
+        d3 = g.create_dataset('omega', data=freqs[ind][0])
+        d3.attrs['description'] = 'temporal frequency bins for epr_density'
 
-#         d4 = g.create_dataset('k', data=freqs[ind][1])
-#         d4.attrs['description'] = 'spatial frequency bins for epr_density'
+        d4 = g.create_dataset('k', data=freqs[ind][1])
+        d4.attrs['description'] = 'spatial frequency bins for epr_density'
 
-#     for paramname in params.keys():
-#         p = paramsgrp.create_dataset(paramname, data=params[paramname])
-#         p.attrs['description'] = paramsattrs[paramname]
+    for paramname in params.keys():
+        p = paramsgrp.create_dataset(paramname, data=params[paramname])
+        p.attrs['description'] = paramsattrs[paramname]
