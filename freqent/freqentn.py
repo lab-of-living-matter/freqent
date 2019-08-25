@@ -8,7 +8,7 @@ import pdb
 
 def entropy(data, sample_spacing, window='boxcar', nperseg=None,
             noverlap=None, nfft=None, detrend='constant', smooth_corr=True,
-            sigma=1, subtract_bias=True, many_traj=True, return_density=False,
+            sigma=1, subtract_bias=True, many_traj=False, return_density=False,
             azimuthal_average=False):
     '''
     Calculate the entropy using the frequency space measure:
@@ -25,8 +25,10 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     ----------
     data : array-like
         data is an array that gives spacetime data of N variables.
-        e.g. data[n] returns data of nth variable. data[n] is k+1 dimensional.
-        First dimension is time, last k dimensions are space
+        Each dimension of data should give trajectories, variables, time,
+        and d-spatial dimensions. If only one trajectory of the variables is
+        available, the index over variables should be the first dimension and
+        many_traj=False.
     sample_spacing : float or array-like
         Sampling interval of data. Can either be a sequence with each element
         referring to each dimension of data[n], or a constant if the spacing is
@@ -80,10 +82,10 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     s : float
         entropy production rate divided by system size
     s_density : array (optional)
-        entropy production rate density divided by system size. Only returned if
-        return_density=True
+        numpy array of entropy production rate density divided by system size.
+        Only returned if return_density=True
     freqs : list of arrays (optional)
-        frequency bins of s_density. Only returned in return_density=True
+        frequency bins of s_density. Only returned if return_density=True
     '''
 
     if not sample_spacing:

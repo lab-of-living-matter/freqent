@@ -5,7 +5,7 @@ from itertools import product
 from scipy.ndimage import gaussian_filter
 
 
-def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
+def entropy(data, sample_spacing, window='boxcar', nperseg=None,
             noverlap=None, nfft=None, detrend='constant', padded=False,
             smooth_corr=True, sigma=1, subtract_bias=True, return_density=False):
     '''
@@ -26,7 +26,7 @@ def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
         If 3D, an JxNxM array that gives length M time series of N variables for
         J different replicates. Each replicate's correlation matrix will be
         calculated and averaged together before calculating entropy
-    sample_spacing : float, optional
+    sample_spacing : float
         Sampling interval of the time series. Defaults to 1.0.
     window : str or tuple or array_like, optional
         Desired window to use. If `window` is a string or tuple, it is
@@ -72,7 +72,12 @@ def entropy(data, sample_spacing=1, window='boxcar', nperseg=None,
     Returns
     -------
     s : float
-        entropy production rate given correlation functions
+        entropy production rate
+    s_density : numpy array (optional)
+        numpy array containing entropy production rate density. s_density.sum() = s.
+        Only returned if return_density=True
+    freqs : numpy array (optional)
+        frequency bins of s_density. Only returned if return_density=True
     '''
 
     if data.ndim == 3:
