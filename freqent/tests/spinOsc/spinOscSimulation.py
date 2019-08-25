@@ -51,7 +51,7 @@ class spinOscLangevin():
         <xi_i (t) xi_j (t')> = 2*D*gamma^2 * delta_ij * delta(t - t')
             D is diffusion constant, D = kB*T/gamma
 
-    For simulations, we non-dimensionalize the rest with
+    For simulations, we non-dimensionalize the equations of motion with
     time scale gamma/k and length scale sqrt(D * gamma / k).
 
     a1 and a2 denote the strength of coupling first and second dimension with
@@ -94,8 +94,11 @@ class spinOscLangevin():
         '''
         return np.sqrt(2 / self.dt) * np.random.randn(self.ndim)
 
-    def runSimulation(self, alpha1, alpha2):
+    def runSimulation(self, alpha1, alpha2=None):
         # self.reset()
+        if alpha2 is None:
+            alpha2 = alpha1
+
         for index, time in enumerate(self.t[1:]):
             pos_old = self.pos[:, index]
             pos_new = pos_old + (self.deterministicForce(pos_old, alpha1, alpha2) + self.noise()) * self.dt
