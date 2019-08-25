@@ -1,52 +1,38 @@
-# Dissipation in frequency space
-This repository contains code to calculate entropy production rates from times series using a formulation based on correlation functions in frequency space. The code to actually calculate the entropy is written as a module for easy use and modularity. The module is easily installed using `pip` as follows (this is done in the terminal):
+# Spectral estimate of entropy production rates for random variables and fields
+This repository contains code written in Python to calculate entropy production rates from times series data of random variables and fields.
+
+### Theory
+We solve for the entropy production exhibited by a time series of $N \geq 2$ variables over a time $T$, $\mathbf{x}(t)$, using the information theoretic measure of entropy production introduced in [Kawai, Parrondo, and Van den Broeck, PRL 2007](https://link.aps.org/doi/10.1103/PhysRevLett.98.080602),
+
+$$\langle \dot{S} \rangle = \lim_{T \to \infty} D_{KL}(\mathcal{P}[\mathbf{x}(t)] || \mathcal{P}[\widetilde{\mathbf{x}}(t)]$$
+
+where $D_{KL}$ is the Kullback-Leibler divergence, or relative entropy, between the probability functional of observing a forward path, $\mathcal{P}[\mathbf{x}(t)]$, and the probability functional of observing its reverse path, $\mathcal{P}[\widetilde{\mathbf{x}}(t)]$. We assume $\mathcal{P}[\mathbf{x}(t)]$ to be Gaussian,
+
+$$\mathcal{P}[\mathbf{x}(\omega)] = \dfrac{1}{Z} \exp \left( -\dfrac{1}{2} \int \dfrac{d \omega}{2 \pi} C^{-T}_{ij}(\omega) x^i(\omega) x^j(-\omega) \right)$$
+
+where $C_{ij}(\omega) = \langle x_i(\omega) x_j(-\omega) \rangle$ is the frequency space covariance matrix for the variables $x_i(t)$ and $Z = \exp \left(  \frac{T}{2} \iint \frac{d \omega}{2\pi} \ \ln \left[ \det C (\omega) \right]  \right)$ is a normalization constant. The same is done for the reverse path. Solving for $D_{KL}$ and taking the relevant limit, the entropy production rate is given by
+
+$$\dot{S} =\frac{1}{2} \int \frac{d \omega}{2 \pi} \left[ \ln \left(\frac{\det C^{-T}(\omega)}{\det C^{-T}(-\omega)} \right) + \left(C^{-T} (-\omega) - C^{-T}(\omega) \right)_{ij} C^{ij}(\omega) \right]$$
+
+This expression exists not only for random variables $\mathbf{x}(t)$, but also for random fields, $\boldsymbol{\phi}(\mathbf{r}, t)$, where $\mathbf{r} \in \mathbb{R}^d$. In this case, the expressions given above are virtually unchanged, but have additional integrals over the spatial wavevectors, $\mathbf{k}$.
+
+### Code
+The code to calculate the entropy production rate is written as a module called `freqent` (i.e. **freq**uency **ent**ropy) for easy use and modularity. After cloning the repository, the module is easily installed using `pip`:
 
 ```bash
-cd path/to/this/repo
+cd /path/to/this/repo
 pip install -e .
 ```
 
-The entropy calculation requires that you first have a data set ready in the form of an _NxM_ numpy array. _N_ is the number of variables and _M_ is the length of the time series for each variable. In other words, if the array `x` contains the data, `x[n]` gives the time series of the _nth_ variable.
+There are two submodules, `freqent.freqent` for use with random variables and `freqent.freqentn` for random fields (similar to `numpy.fft.fft` vs. `numpy.fft.fftn`).
 
-There is also a simulation of a Brownian particle in a non-conservative force field to test the entropy calculations with. The following example will get you going on running the simulations and calculating the entropy production rate estimated from the generated trajectories
+Once installed, the methods can be called from within a script, Jupyter notebook, or iPython terminal by importing the relevant module as you would any other one:
 
-Example:
 ```python
-import numpy as np
-import matplotlib.pyplot as plt
-import frequent.frequent as fe
-import os
-
-os.chdir('path/to/this/repo')
-os.chdir('tests/spinOsc')
-from spinOscSimulation import spinOscLangevin
-
-# Simulation environment parameters chosen to keep particle within 1 um of origin
-gamma = 2e-8  # drag on 1um particle in water in kg/s
-dt = 1e-3  # time step of simulation in seconds
-nsteps = 1e4  # number of simulation steps
-kT = 4e-9  # thermal energy in kg um^2 / s^2
-r0 = np.random.rand(2) - 0.5  # starting xy position in um
-
-# create object
-colloid = spinOscLangevin(dt=dt, nsteps=nsteps, kT=kT, gamma=gamma, r0=r0)
-
-# Run a simulation
-k = 2 * r.gamma  # strength of harmonic potential. Scale to size of drag
-alpha = 2 * r.gamma  # strength of rotating force
-colloid.runSimulation(k=k, alpha=alpha)
-
-# colloid.pos is a 2x(nsteps) array with the (x,y) positions of the simulation particle
-fig, ax = plt.subplots()
-ax.plot(colloid.pos[0], colloid.pos[1])
-
-# calculate the frequency space correlation function
-colloid_corrMat = fe.corr_matrix(colloid.pos,
-                                 sample_spacing=colloid.dt,
-                                 mode='full',
-                                 method='auto',
-                                 return_fft=True)
-
-# calculate the entropy production rate
-dsdt = fe.entropy(colloid_corrMat, sample_spacing=colloid.dt)
+import freqent.freqent as fe
+import freqent.freqentn as fen
 ```
+
+The main functions to use are `fe.entropy()` and `fen.entropy()`. See their documentation in `freqent/freqent.py` and `freqent/freqentn.py` respectively.
+
+There are several simulations present in the `freqent/tests/` folder that output data ready for input into the relevant `entropy()` functions. Examples on how to run each simulation is in a `README` file in each of simulation's folder.
