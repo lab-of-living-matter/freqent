@@ -94,12 +94,12 @@ class spinOscLangevin():
         '''
         return np.sqrt(2 / self.dt) * np.random.randn(self.ndim)
 
-    def runSimulation(self, alpha1, alpha2=None):
+    def runSimulation(self, alpha, alpha2=None):
         # self.reset()
         if alpha2 is None:
-            alpha2 = alpha1
+            alpha2 = alpha
 
         for index, time in enumerate(self.t[1:]):
             pos_old = self.pos[:, index]
-            pos_new = pos_old + (self.deterministicForce(pos_old, alpha1, alpha2) + self.noise()) * self.dt
+            pos_new = pos_old + (self.deterministicForce(pos_old, alpha, alpha2) + self.noise()) * self.dt
             self.pos[:, index + 1] = pos_new
