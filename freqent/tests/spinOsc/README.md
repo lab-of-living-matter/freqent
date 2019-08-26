@@ -1,8 +1,8 @@
 # Driven Brownian particle
 
-These are simulations of an $N \geq 2$ dimensional driven Brownian particle. The simulation solves the following system of Langevin equations:
+These are simulations of an $`N \geq 2`$ dimensional driven Brownian particle. The simulation solves the following system of Langevin equations:
 
-$$
+```math
 \begin{aligned}
     \dot{\mathbf{x}} &= F\mathbf{x} + \sqrt{2D} \boldsymbol{\xi}, \\
     F &=
@@ -14,9 +14,9 @@ $$
         &  &  &  & -k
     \end{pmatrix},
 \end{aligned}
-$$
+```
 
-The simulations are non-dimensionalized with time scale $\tau = 1/k$ and length scale $\lambda = \sqrt{D/k}$, so the harmonic potential is always set to strength $k=1$ and the only free parameter to set is the stength of the driving, $\alpha$. See below for an example of how to run a simulation, plot the trajectory, calculate the entropy production rate and epr density of the resulting trajectory and plot it.
+The simulations are non-dimensionalized with time scale $`\tau = 1/k`$ and length scale $`\lambda = \sqrt{D/k}`$, so the harmonic potential is always set to strength $`k=1`$ and the only free parameter to set is the stength of the driving, $`\alpha`$. See below for an example of how to run a simulation, plot the trajectory, calculate the entropy production rate and epr density of the resulting trajectory and plot it.
 
 ```python
 from spinOscSimulation import *
