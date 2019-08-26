@@ -38,20 +38,26 @@ r.runSimulation(alpha=a)
 
 # trajectory information contained in r.pos numpy array
 fig, ax = plt.subplots()
-ax.plot(r.pos[0], r.pos[1], 'k', lw=1)
+ax.plot(r.pos[0], r.pos[1], linewidth=0.1)
 ax.set(xlabel='x', ylabel='y', title=r'Tajectory for $\alpha =${a}'.format(a=a))
 
-# calculate epr and epr density
-s, s_density, freqs = fe.entropy(data=r.pos, sample_spacing=dt, return_density=True)
+# calculate epr and epr density, smoothing the correlation functions with a Gaussian
+# with a standard deviation of sigma = 30 * dk, where dk = 2 * pi / T is the
+# spacing between frequency bins, i.e. dk = np.diff(freqs)[0]
+s, s_density, freqs = fe.entropy(data=r.pos,
+                                 sample_spacing=dt,
+                                 return_density=True,
+                                 sigma=30)
 
 # print epr measured
 print(s)
 
-# plot epr density
+# plot epr density and mark the rotational frequency used to run the simulation
 fig2, ax2 = plt.subplots()
-ax2.plot(freqs, s_density, 'k')
-
-
-
+ax2.plot(freqs, s_density, label='epr density')
+ax2.plot([a, a], [0, 0.01], '--k', label='driving frequency')
+ax2.plot([-a, -a], [0, 0.01], '--k')
+ax2.set(xlabel=r'$\omega', ylabel=r'$\rho_{\dot{s}}$', xlim=[-30, 30])
+ax2.legend()
 
 ```
