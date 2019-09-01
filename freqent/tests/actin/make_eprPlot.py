@@ -17,7 +17,7 @@ mpl.rcParams['pdf.fonttype'] = 42
 epr = []
 exptype = []
 
-with h5py.File(os.path.join(parentDir, datetime.today().strftime('%y%m%d') + '_epr.hdf5')) as f:
+with h5py.File(os.path.join(parentDir, '190830_epr.hdf5')) as f:
     files = list(f.keys())[:-1]
     epr = [f[e + '/epr'][()] for e in files]
     exptype = [f[e].attrs['experiment type'] for e in files]
@@ -28,7 +28,7 @@ df = pd.DataFrame({'epr': epr,
 
 fig, ax = plt.subplots(figsize=(6, 6))
 sns.set(style='whitegrid')
-sns.stripplot(y='epr', x='type', data=df, color='k',
+sns.stripplot(y='epr', x='type', data=df, hue='dt',
              size=10, alpha=0.8)
 sns.pointplot(y='epr', x='type',
               data=df, ax=ax,
@@ -40,6 +40,6 @@ ax.set(ylim=[-0.0001, 0.005], yticks=[0, 0.001, 0.002, 0.003, 0.004, 0.005], xla
 # ax.yaxis.grid(True)
 sns.despine(trim=True, bottom=True)
 plt.tight_layout()
-fig.savefig(os.path.join(parentDir, datetime.today().strftime('%y%m%d') + '_actinEPRPlot.pdf'), format='pdf')
+# fig.savefig(os.path.join(parentDir, datetime.today().strftime('%y%m%d') + '_actinEPRPlot.pdf'), format='pdf')
 
 plt.show()
