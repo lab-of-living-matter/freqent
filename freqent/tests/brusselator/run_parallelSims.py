@@ -148,23 +148,24 @@ epr_blind, intercept, r_value, p_val, std_err = stats.linregress(t_points[args.n
                                                                  ep_blinds.mean(axis=0)[args.n_t_points // 2:])
 
 # Calculate mean entropy production rate from spectral method
-epr_spectral = (fe.entropy(trajs[..., args.n_t_points // 2:],
-                           sample_spacing=dt,
-                           window='boxcar',
-                           nperseg=None,
-                           noverlap=None,
-                           nfft=None,
-                           detrend='constant',
-                           padded=False,
-                           smooth_corr=True,
-                           sigma=args.sigma,
-                           subtract_bias=True)).real
+# epr_spectral, epr_spectral_density, w = (fe.entropy(trajs[..., args.n_t_points // 2:],
+#                                          sample_spacing=dt,
+#                                          window='boxcar',
+#                                          nperseg=None,
+#                                          noverlap=None,
+#                                          nfft=None,
+#                                          detrend='constant',
+#                                          padded=False,
+#                                          smooth_corr=True,
+#                                          sigma=args.sigma,
+#                                          subtract_bias=True,
+#                                          return_density=True)).real
 
 
 # create filename and create folder with that name under savepath
 filename = 'alpha{a}_nSim{n}_sigma{s}'.format(a=alpha, n=args.nSim, s=args.sigma)
-# if not os.path.exists(os.path.join(args.savepath, filename)):
-#     os.makedirs(os.path.join(args.savepath, filename))
+if not os.path.exists(os.path.join(args.savepath, filename)):
+    os.makedirs(os.path.join(args.savepath, filename))
 
 # save parameters
 params = vars(args)
@@ -176,15 +177,10 @@ params['seeds'] = seeds
 params.pop('seed_input')
 params.pop('seed_type')
 
-# with open(os.path.join(args.savepath, filename, 'params.csv'), 'w') as csv_file:
-#     w = csv.DictWriter(csv_file, params.keys())
-#     w.writeheader()
-#     w.writerow(params)
-
 # save figures
-fig_traj.savefig(os.path.join(args.savepath, filename + '_traj.pdf'), format='pdf')
-fig_ep.savefig(os.path.join(args.savepath, filename + '_ep.pdf'), format='pdf')
-fig_ep_blind.savefig(os.path.join(args.savepath, filename + '_ep_blind.pdf'), format='pdf')
+fig_traj.savefig(os.path.join(args.savepath, filename, 'traj.pdf'), format='pdf')
+fig_ep.savefig(os.path.join(args.savepath, filename, 'ep.pdf'), format='pdf')
+fig_ep_blind.savefig(os.path.join(args.savepath, filename, 'ep_blind.pdf'), format='pdf')
 
 dat = {'trajs': trajs,
        'eps': eps,
@@ -192,20 +188,24 @@ dat = {'trajs': trajs,
        't_points': t_points,
        'ns': ns,
        'epr': epr,
-       'epr_blind': epr_blind,
-       'epr_spectral': epr_spectral}
+       'epr_blind': epr_blind}
 
-with h5py.File(os.path.join(args.savepath, filename + '.hdf5'), 'w') as f:
+datattrs = {'trajs': 'trajectory data',
+            'eps': 'entropy produced by each trajectory, used to get epr',
+            'ep_blinds': 'blind entropy produced by each trajectory, used to get epr_blind',
+            't_points': 'time points of outputs',
+            'ns': 'number of total reactions taken in simulation',
+            'epr': 'true entropy production rate',
+            'epr_blind': 'blinded entropy production rate'}
+
+with h5py.File(os.path.join(args.savepath, filename, 'data.hdf5'), 'w') as f:
     # save data and params to hdf5 file
     datagrp = f.create_group('data')
     paramsgrp = f.create_group('params')
 
     for name in dat.keys():
-        datagrp.create_dataset(name, data=dat[name])
+        d = datagrp.create_dataset(name, data=dat[name])
+        d.attrs['description'] = datattrs[name]
 
     for name in params.keys():
         paramsgrp.create_dataset(name, data=params[name])
-
-
-# with open(os.path.join(args.savepath, filename + '_simObjects.pickle'), 'wb') as f:
-#     pickle.dump(result, f, pickle.HIGHEST_PROTOCOL)
