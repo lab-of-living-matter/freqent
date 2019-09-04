@@ -79,7 +79,7 @@ for a in alphas:
 
                     sdot = []
                     for ii in range(f['params']['nsim'][()]):
-                        sdot.append(fe.entropy(f['data']['trajs'][ii],
+                        sdot.append(fe.entropy(f['data']['trajs'][ii, :, int(10 / f['params']['dt'][()]):],
                                                sample_spacing=f['params']['dt'][()],
                                                sigma=int(f['params']['sigma'][-1] / f['params']['dw'][()])))
                     sdot_mean.append(np.mean(sdot))
