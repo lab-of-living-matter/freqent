@@ -291,6 +291,9 @@ with h5py.File(os.path.join(parentDir, datetime.today().strftime('%y%m%d') + '_e
         d6 = file_group.create_dataset('epr_noise', data=epr_noise[ind])
         d6.attrs['description'] = 'epr from noise'
 
+        d7 = file_group.create_dataset('dt', data=dt[ind])
+        d7.attrs['description'] = 'time step between frames in seconds'
+
     for paramname in params.keys():
         p = paramsgrp.create_dataset(paramname, data=params[paramname])
         p.attrs['description'] = paramsattrs[paramname]
