@@ -1,3 +1,8 @@
+import numpy as np
+from datetime import datetime
+import pdb
+from numba import jit, jitclass, int32, float32
+
 spec = [('rates', float32[:]),
         ('V', float32),
         ('t_points', float32[:]),
@@ -201,7 +206,7 @@ class brusselator1DFieldStochSim():
 
         else:
             raise ValueError('reactionType should be between 0 and 9.\n'
-                              'Entered reactionType is {0}'.format(reactionType))
+                             'Entered reactionType is {0}'.format(reactionType))
 
     def update_propensities(self, XY, reaction):
         '''
@@ -323,8 +328,8 @@ class brusselator1DFieldStochSim():
         # do first random draw
         pop = np.asarray(self.XY0).copy()
         reaction, dt, probs = self.gillespie_draw()
-        while i < len(self.t_points): # all time points
-            while t < self.t_points[i_time]: # time points between print outs
+        while i < len(self.t_points):  # all time points
+            while t < self.t_points[i_time]:  # time points between print outs
                 self.n += 1  # add 1 to reactions taken
                 # update population
                 pop_prev = pop.copy()
