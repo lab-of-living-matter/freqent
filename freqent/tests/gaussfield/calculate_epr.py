@@ -26,7 +26,8 @@ def calculate_epr(f):
                                          detrend='constant',
                                          many_traj=False,
                                          return_density=True,
-                                         sigma=6 * int(d['params']['sigma'][()]))
+                                         sigma=[10, 3],
+                                         subtract_bias=True)
                 epr_array[ind] = s
                 rhos_array[ind] = rhos
             except np.linalg.LinAlgError:
@@ -51,19 +52,19 @@ def calculate_epr(f):
             epr_dset.attrs['description'] = 'epr of each trajectory'
 
         if '/data/epr_density' in d:
-            d['data']['epr_density'] = rhos_array
+            d['data']['epr_density'][...] = rhos_array
         else:
             epr_density_dset = d['data'].create_dataset('epr_density', data=rhos_array)
             epr_density_dset.attrs['description'] = 'epr density of each trajectory'
 
         if '/data/omega' in d:
-            d['data']['omega'] = w[0]
+            d['data']['omega'][...] = w[0]
         else:
             omega_dset = d['data'].create_dataset('omega', data=w[0])
             omega_dset.attrs['description'] = 'temporal frequency bins for epr density'
 
         if '/data/k' in d:
-            d['data']['k'] = w[1]
+            d['data']['k'][...] = w[1]
         else:
             k_dset = d['data'].create_dataset('k', data=w[1])
             k_dset.attrs['description'] = 'spatial frequency bins for epr density'
@@ -78,5 +79,5 @@ tFactor = 10
 alphas = np.array([float(f.split('alpha')[1].split('_')[0]) for f in folders])
 epr = np.zeros(len(alphas))
 
-with multiprocessing.Pool(processes=1) as pool:
-    result = pool.map(calculate_epr, folders[14])
+with multiprocessing.Pool(processes=4) as pool:
+    result = pool.map(calculate_epr, folders)

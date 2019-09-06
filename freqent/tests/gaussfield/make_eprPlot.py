@@ -16,10 +16,10 @@ for fInd, f in enumerate(folders):
         eprs[fInd] = d['data']['epr'][()]
 
 fig, ax = plt.subplots()
-ax.errorbar(alphas, np.nanmean(eprs, axis=1), yerr=np.nanstd(eprs, axis=1), color='k', fmt='o', label='data')
+ax.errorbar(alphas, np.nanmean(eprs, axis=1), yerr=np.nanstd(eprs, axis=1), color='k', fmt='o', label='data', capsize=5, alpha=0.5)
 ax.plot(np.sort(alphas), np.sort(alphas)**2, 'r-', label=r'$\alpha^2$')
 ax.set(xlabel=r'$\alpha$', ylabel=r'$\dot{\Sigma}$')
-ax.set_aspect(np.diff(ax.get_xlim())[0] / np.diff(ax.get_ylim())[0])
+# ax.set_aspect(np.diff(ax.get_xlim())[0] / np.diff(ax.get_ylim())[0])
 plt.legend()
 
 plt.tight_layout()

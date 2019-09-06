@@ -30,10 +30,10 @@ for file in os.listdir(parentDir):
                     print(file)
                     s, rhos, w = fe.entropy(f['data']['trajs'][..., nt // 2:], f['params']['dt'][()],
                                             sigma=f['params']['sigma'][0], return_density=True)
-                    ax.plot(w[w != 0], rhos[w != 0],
+                    ax.plot(w[w != 0], rhos[w != 0] / np.diff(w)[0],
                             color=colors[int(alpha)],
                             label=r'$\alpha$ = {a}'.format(a=alpha), alpha=0.5)
-                    sig = (alpha**2 * w**2) / (2 * np.pi * ((1 + 1j * w)**2 + alpha**2) * ((1 - 1j * w)**2 + alpha**2))
+                    sig = (8 * alpha**2 * w**2) / (2 * np.pi * ((1 + 1j * w)**2 + alpha**2) * ((1 - 1j * w)**2 + alpha**2))
                     ax.plot(w, sig, '--', color=colors[int(alpha)])
 
 ax.set(xlabel=r'$\omega$', ylabel='epr density', xlim=[-20, 20])
