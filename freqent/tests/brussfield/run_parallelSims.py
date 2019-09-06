@@ -2,19 +2,16 @@ import numpy as np
 from datetime import datetime
 import time
 import matplotlib as mpl
-mpl.use('Agg')  # use backend that doesn't immediately create figures
-mpl.rcParams['pdf.fonttype'] = 42
 import matplotlib.pyplot as plt
 import multiprocessing
-import csv
-from brusselator_gillespie import brusselator1DFieldStochSim
+from brussfield_gillespie import brusselator1DFieldStochSim
 import argparse
 import os
-import pickle
 from scipy import stats
 import freqent.freqentn as fen
 import h5py
-
+mpl.use('Agg')  # use backend that doesn't immediately create figures
+mpl.rcParams['pdf.fonttype'] = 42
 
 def get_traj(seed):
     '''
@@ -163,19 +160,23 @@ epr_blind, _, _, _, _ = stats.linregress(t_points[args.n_t_points // 2:],
 
 dt = np.diff(t_points)[0]
 dx = args.lCompartment
-# Calculate mean entropy production rate from spectral method
-epr_spectral = (fen.entropy(trajs[..., args.n_t_points // 2:, :],
-                            sample_spacing=[dt, dx],
-                            window='boxcar',
-                            nperseg=None,
-                            noverlap=None,
-                            nfft=None,
-                            detrend='constant',
-                            smooth_corr=True,
-                            sigma=args.sigma,
-                            subtract_bias=True,
-                            many_traj=True)).real
+# Calculate mean entropy production rate for each trajectory from spectral method
+spectral_data = [fen.entropy(t, sample_spacing=[dt, dx],
+                             window='boxcar',
+                             nperseg=None,
+                             noverlap=None,
+                             nfft=None,
+                             detrend='constant',
+                             smooth_corr=True,
+                             sigma=args.sigma,
+                             subtract_bias=True,
+                             many_traj=False,
+                             return_density=True) for t in trajs[..., args.n_t_points // 2:, :]]
 
+s = np.asarray([d[0] for d in spectral_data])
+rhos = np.asarray([d[1] for d in spectral_data])
+omega = spectral_data[0][2][0]
+k = spectral_data[0][2][1]
 
 # create filename and create folder with that name under savepath
 filename = 'alpha{a}_nSim{n}_sigma{s}'.format(a=alpha, n=args.nSim, s=args.sigma)
@@ -206,10 +207,23 @@ dat = {'trajs': trajs,
        'eps': eps,
        'ep_blinds': ep_blinds,
        't_points': t_points,
-       'n': n,
        'epr': epr,
        'epr_blind': epr_blind,
-       'epr_spectral': epr_spectral}
+       's': s,
+       'rhos': rhos,
+       'omega': omega,
+       'k': k}
+
+datattrs = {'trajs': 'trajectory data',
+            'eps': 'true entropy produced by each trajectory',
+            'ep_blinds': 'blind entropy produced by each trajectory',
+            't_points': 'time points',
+            'epr': 'mean true entropy production rate of all trajectories',
+            'epr_blind': 'mean blind entropy production rate of all trajectories',
+            's': 'epr of each trajectory by spectral method',
+            'rhos': 'epr density of each trajectory by spectral method',
+            'omega': 'temporal frequency bins of spectral method epr density',
+            'k': 'spatial frequency bins of spectral method epr density'}
 
 with h5py.File(os.path.join(args.savepath, filename, 'data.hdf5'), 'w') as f:
     # save data and params to hdf5 file
@@ -217,13 +231,9 @@ with h5py.File(os.path.join(args.savepath, filename, 'data.hdf5'), 'w') as f:
     paramsgrp = f.create_group('params')
 
     for name in dat.keys():
-        datagrp.create_dataset(name, data=dat[name])
+        d = datagrp.create_dataset(name, data=dat[name])
+        d.attrs['description'] = datattrs[name]
 
     for name in params.keys():
-        paramsgrp.create_dataset(name, data=params[name])
+        p = paramsgrp.create_dataset(name, data=params[name])
 
-
-plt.show()
-# with open(os.path.join(args.savepath, filename, 'data.pickle'), 'wb') as f:
-#     # Pickle the 'data' dictionary using the highest protocol available.
-#     pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)

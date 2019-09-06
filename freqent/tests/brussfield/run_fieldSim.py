@@ -4,7 +4,7 @@ import time
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import csv
-from brusselator_gillespie import brusselator1DFieldStochSim
+from brussfield_gillespie import brusselator1DFieldStochSim
 import argparse
 import os
 import pickle
@@ -15,7 +15,7 @@ mpl.rcParams['pdf.fonttype'] = 42
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--rates', type=float, nargs=6,
-                    default=[0.5, 0.25, 1, 0.25, 1, 0.25])
+                    default=[1, 0.5, 2, 0.5, 2, 0.5])
 parser.add_argument('--V', '-V', type=float, default=100,
                     help='Volume of each compartment')
 parser.add_argument('--A', '-A', type=int, default=100,

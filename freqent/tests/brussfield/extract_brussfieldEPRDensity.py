@@ -1,4 +1,5 @@
 import os
+import sys
 from glob import glob
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,9 +8,13 @@ import matplotlib as mpl
 import freqent.freqentn as fen
 mpl.rcParams['pdf.fonttype'] = 42
 
-parentFolder = '/mnt/llmStorage203/Danny/brusselatorSims/fieldSims/190509/brussfield'
+if sys.platform == 'darwin':
+    dataFolder = '/Volumes/Storage/Danny/brusselator/fieldSims/190509/brussfield/'
+if sys.platform == 'linux':
+    dataFolder = '/mnt/llmStorage203/Danny/brusselatorSims/fieldSims/190509/brussfield'
+
 # parentFolder = '/home/daniel/Desktop/'
-folders = glob(os.path.join(parentFolder, 'alpha*'))
+folders = glob(os.path.join(dataFolder, 'alpha*'))
 alphas = np.asarray([float(f.split(os.path.sep)[-1].split('_')[0][5:]) for f in folders])
 
 for fInd, f in enumerate(folders):

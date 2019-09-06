@@ -121,6 +121,7 @@ class brusselatorStochSim():
                           k5 * X * (X - 1) * (X - 2) / self.V**2])
         return props
 
+    @jit
     def sample_discrete(self, probs, r):
         '''
         Randomly sample an index with probability given by probs (assumed normalized)
@@ -132,6 +133,7 @@ class brusselatorStochSim():
             n += 1
         return n - 1
 
+    @jit
     def gillespie_draw(self, population):
 
         # get propensities
