@@ -13,10 +13,13 @@ import h5py
 mpl.use('Agg')  # use backend that doesn't immediately create figures
 mpl.rcParams['pdf.fonttype'] = 42
 
+
 def get_traj(seed):
     '''
     function to pass to multiprocessing pool to run parallel simulations
     '''
+    np.random.seed(seed)
+
     [X0, Y0] = (np.random.rand(2, args.nCompartments) * 3 * args.lCompartment).astype(int)
 
     brussfield = brusselator1DFieldStochSim(XY_init=[X0, Y0],
@@ -160,6 +163,7 @@ epr_blind, _, _, _, _ = stats.linregress(t_points[args.n_t_points // 2:],
 
 dt = np.diff(t_points)[0]
 dx = args.lCompartment
+
 # Calculate mean entropy production rate for each trajectory from spectral method
 spectral_data = [fen.entropy(t, sample_spacing=[dt, dx],
                              window='boxcar',
