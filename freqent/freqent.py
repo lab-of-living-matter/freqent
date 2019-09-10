@@ -81,11 +81,11 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     '''
 
     if data.ndim == 3:
-        # print('Assuming data dimensions are nReplicates, nVariables, nTimePoints.\n',
+        # print('Assuming data dimensions are nreplicates, nvariables, ntPoints.\n',
         #       'If not, you are about to get nonsense.')
-        nRep, nVar, nTime = data.shape  # number of replicates, number of variables, number of time points
-        c_fft_all = np.zeros((nRep, nTime, nVar, nVar), dtype=complex)
-        for ii in range(nRep):
+        nrep, nvar, nt = data.shape  # number of replicates, number of variables, number of time points
+        c_fft_all = np.zeros((nrep, nt, nvar, nvar), dtype=complex)
+        for ii in range(nrep):
             c_fft_all[ii, ...], omega = corr_matrix(data[ii, ...],
                                                     sample_spacing,
                                                     window,
@@ -98,8 +98,8 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
         c_fft = c_fft_all.mean(axis=0)
 
     elif data.ndim == 2:
-        nRep = 1
-        nVar, nTime = data.shape
+        nrep = 1
+        nvar, nt = data.shape
         c_fft, omega = corr_matrix(data,
                                    sample_spacing,
                                    window,
@@ -114,7 +114,7 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
                          'Currently is {0}'.format(data.ndim))
 
     if nfft is None:
-        nfft = nTime
+        nfft = nt
 
     T = sample_spacing * nfft  # find total time of simulation
     dw = 2 * np.pi / T  # find spacing of fourier frequencies
@@ -136,7 +136,7 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
 
     # Calculate and subtract off bias if wanted
     if subtract_bias and smooth_corr:
-        bias = (np.pi**-0.5) * (nVar * (nVar - 1) / 2) * (omega.max() / (nRep * T * sigma * dw))
+        bias = (np.pi**-0.5) * (nvar * (nvar - 1) / 2) * (omega.max() / (nrep * T * sigma * dw))
         # print(bias)
         s -= bias
 
