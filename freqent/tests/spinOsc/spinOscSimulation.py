@@ -79,7 +79,7 @@ class spinOscLangevin():
         self.pos[:, 0] = r0
 
     def reset(self):
-        self.__init__(self.dt, self.r0, self.nsteps, self.kT, self.gamma)
+        self.__init__(self.dt, self.r0, self.nsteps)
 
     def deterministicForce(self, r, alpha1, alpha2):
         spring = np.diag(-1 * np.ones(self.ndim))  # spring force along diagonal
