@@ -3,124 +3,93 @@ import matplotlib.pyplot as plt
 import h5py
 import matplotlib as mpl
 import os
-import freqent.freqent as fe
+import sys
+from glob import glob
 from datetime import datetime
 from itertools import product
 
-# plt.close('all')
+plt.close('all')
 mpl.rcParams['pdf.fonttype'] = 42
-fig, ax = plt.subplots(figsize=(8, 6))
-parentDir = '/mnt/llmStorage203/Danny/freqent/spinOsc/190709/'
+mpl.rcParams['font.size'] = 12
+mpl.rcParams['axes.linewidth'] = 2
+mpl.rcParams['xtick.major.width'] = 2
+mpl.rcParams['ytick.major.width'] = 2
 
-# alpha = 2  # pick which value of alpha to plot with
-# sdot_array = []
-# ndim_array = []
-# sdot_thry = 2 * alpha**2
-# for file in os.listdir(parentDir):
-#     if file.endswith('.hdf5'):
-#         with h5py.File(os.path.join(parentDir, file), 'r') as f:
-#             if f['params']['alpha'][()] == alpha:
-#                 ndim_array.append(f['params']['ndim'][()])
-#                 sdot_array.append(f['data']['sdot_array'][:])
+if sys.platform == 'linux':
+    dataPath = '/mnt/llmStorage203/Danny/freqent/spinOsc/190709/'
+    savePath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/spinOsc/'
+elif sys.platform == 'darwin':
+    dataPath = '/Volumes/Storage/Danny/freqent/spinOsc/190709/'
+    savePath = '/Users/Danny/Dropbox/LLM_Danny/freqent/spinOsc/'
 
-#                 t_epr = f['params']['t_epr'][()]
-#                 sigma = f['params']['sigma'][:]
-#                 n_epr = f['params']['n_epr'][:]
+alphas = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+ndims = [2, 3, 4]
+nsim = 64
+s_array = np.zeros((len(ndims), len(alphas), nsim))
 
-# cmap = mpl.cm.get_cmap('viridis')
-# normalize = mpl.colors.Normalize(vmin=min(sigma), vmax=max(sigma))
-# colors = [cmap(normalize(s)) for s in sigma]
+for file in glob(os.path.join(dataPath, '*.hdf5')):
+    with h5py.File(file, 'r') as d:
+        dim = d['params']['ndim'][()]
+        alpha = d['params']['alpha'][()]
+        s_array[ndims.index(dim), alphas.index(alpha)] = d['data']['s'][:]
 
-# ndim_inds = np.argsort(ndim_array)  # get indices of number of dimensions in order
-# xscale_array = [0.9, 1, 1.1]  # scale x-axis for plotting distinguishability
-
-# for dimInd, ind in enumerate(ndim_inds):
-#     sdot = sdot_array[ind]
-#     ndim = ndim_array[ind]
-#     for nInd, n in enumerate(n_epr):
-#         for sInd, s in enumerate(sigma):
-#             ax.semilogx(n * t_epr * xscale_array[dimInd], sdot[nInd, sInd],
-#                         marker=(ndim, 0, 45),
-#                         color=colors[sInd],
-#                         markersize=10)
-
-# ax.plot([n_epr[0] * t_epr, n_epr[-1] * t_epr], [2 * alpha**2, 2 * alpha**2], 'k--')
-
-# handles = [mpl.lines.Line2D([0], [0], color='k', linestyle='', marker=(2, 0, 45), markersize=10, label='2D'),
-#            mpl.lines.Line2D([0], [0], color='k', linestyle='', marker=(3, 0, 45), markersize=10, label='3D'),
-#            mpl.lines.Line2D([0], [0], color='k', linestyle='', marker=(4, 0, 45), markersize=10, label='4D'),
-#            mpl.lines.Line2D([0], [0], color='k', linestyle='--', label=r'$2 \alpha^2/k$')]
-
-# cax, _ = mpl.colorbar.make_axes(ax)
-# cbar = mpl.colorbar.ColorbarBase(cax, cmap=cmap, norm=normalize)
-# cbar.ax.set_title(r'$\sigma$')
+fig2, ax2 = plt.subplots(figsize=(5, 5))
+ax2.errorbar(alphas, np.mean(s_array[0], axis=1), yerr=np.std(s_array[0], axis=1),
+             fmt='ko', capsize=5, lw=2, label='data')
+# ax2.plot(alphas, s_array[0], 'k.')
+ax2.plot(np.arange(0, 10, 0.01), 2 * np.arange(0, 10, 0.01)**2, 'r-',
+         lw=2, label=r'$2 \alpha^2$')
+ax2.tick_params(which='both', direction='in')
+ax2.set(xlabel=r'$\alpha$', ylabel=r'$\dot{S}$', title='2 dimensions', ylim=[-14, 260])
+ax2.set_aspect(np.diff(ax2.set_xlim())[0] / np.diff(ax2.set_ylim())[0])
+ax2.legend()
+plt.tight_layout()
+fig2.savefig(os.path.join(savePath, datetime.now().strftime('%y%m%d') + '_eprPlot_2dim.pdf'), format='pdf')
 
 
-# ax.legend(handles=handles, loc='best')
-# ax.set(xlabel=r'$N_{traj} T$', ylabel=r'$\dot{\hat{S}}$',
-#        xticks=[500, 1000, 5000],
-#        xticklabels=[r'$5 \times 10^2$', r'$10^3$', r'$5 \times 10^3$'])
-# ax.tick_params(axis='both', which='both', direction='in')
+fig3, ax3 = plt.subplots(figsize=(5, 5))
+ax3.errorbar(alphas, np.mean(s_array[1], axis=1), yerr=np.std(s_array[1], axis=1),
+             fmt='k^', capsize=5, lw=2, label='data')
+# ax3.plot(alphas, s_array[1], 'k.')
+ax3.plot(np.arange(0, 10, 0.01), 2 * np.arange(0, 10, 0.01)**2, 'r-',
+         lw=2, label=r'$2 \alpha^2$')
+ax3.tick_params(which='both', direction='in')
+ax3.set(xlabel=r'$\alpha$', ylabel=r'$\dot{S}$', title='3 dimensions', ylim=[-14, 260])
+ax3.set_aspect(np.diff(ax3.set_xlim())[0] / np.diff(ax3.set_ylim())[0])
+ax3.legend()
+plt.tight_layout()
+fig3.savefig(os.path.join(savePath, datetime.now().strftime('%y%m%d') + '_eprPlot_3dim.pdf'), format='pdf')
 
-fig2, ax2 = plt.subplots(figsize=(7, 6))
-alphas = range(0, 11)
-ndim_colors = ['k', 'r', 'b']
+fig4, ax4 = plt.subplots(figsize=(5, 5))
+ax4.errorbar(alphas, np.mean(s_array[2], axis=1), yerr=np.std(s_array[2], axis=1),
+             fmt='ks', capsize=5, lw=2, label='data')
+# ax4.plot(alphas, s_array[2], 'k.')
+ax4.plot(np.arange(0, 10, 0.01), 2 * np.arange(0, 10, 0.01)**2, 'r-',
+         lw=2, label=r'$2 \alpha^2$')
+ax4.tick_params(which='both', direction='in')
+ax4.set(xlabel=r'$\alpha$', ylabel=r'$\dot{S}$', title='4 dimensions', ylim=[-14, 260])
+ax4.set_aspect(np.diff(ax4.set_xlim())[0] / np.diff(ax4.set_ylim())[0])
+ax4.legend()
+plt.tight_layout()
+fig4.savefig(os.path.join(savePath, datetime.now().strftime('%y%m%d') + '_eprPlot_4dim.pdf'), format='pdf')
 
-for a in alphas:
-    sdot_mean = []
-    sdot_std = []
-    ndim_array = []
-    sdot_thry = 2 * a**2
-    for file in os.listdir(parentDir):
-        if file.endswith('.hdf5'):
-            with h5py.File(os.path.join(parentDir, file), 'r') as f:
-                if f['params']['alpha'][()] == a:
-                    ndim_array.append(f['params']['ndim'][()])
+figall, axall = plt.subplots(figsize=(5, 5))
+axall.errorbar(alphas, np.mean(s_array[0], axis=1), yerr=np.std(s_array[2], axis=1),
+               fmt='o', capsize=5, lw=2, alpha=0.5, label='2D')
+# axall.plot(alphas, s_array[2], 'k.')
+axall.errorbar(alphas, np.mean(s_array[1], axis=1), yerr=np.std(s_array[2], axis=1),
+               fmt='^', capsize=5, lw=2, alpha=0.5, label='3D')
+# axall.plot(alphas, s_array[2], 'k.')
+axall.errorbar(alphas, np.mean(s_array[2], axis=1), yerr=np.std(s_array[2], axis=1),
+               fmt='s', capsize=5, lw=2, alpha=0.5, label='4D')
+# axall.plot(alphas, s_array[2], 'k.')
 
-                    sdot = []
-                    for ii in range(f['params']['nsim'][()]):
-                        sdot.append(fe.entropy(f['data']['trajs'][ii, :, int(10 / f['params']['dt'][()]):],
-                                               sample_spacing=f['params']['dt'][()],
-                                               sigma=int(f['params']['sigma'][-1] / f['params']['dw'][()])))
-                    sdot_mean.append(np.mean(sdot))
-                    sdot_std.append(np.std(sdot))
-                    t_epr = f['params']['t_epr'][()]
-                    sigma = f['params']['sigma'][:]
-                    n_epr = f['params']['n_epr'][:]
-
-    cmap = mpl.cm.get_cmap('viridis')
-    normalize = mpl.colors.Normalize(vmin=min(sigma), vmax=max(sigma))
-    colors = [cmap(normalize(s)) for s in sigma]
-
-    ndim_inds = np.argsort(ndim_array)  # get indices of number of dimensions in order
-    xscale_array = [0.9, 1, 1.1]  # scale x-axis for plotting distinguishability
-
-    for dimInd, ind in enumerate(ndim_inds):
-        sdot = sdot_mean[ind]
-        sdoterr = sdot_std[ind]
-        ndim = ndim_array[ind]
-        ax2.errorbar(a, sdot, yerr=sdoterr,
-                     marker=(ndim, 0, 45), capsize=10,
-                     color=ndim_colors[dimInd], alpha=0.5,
-                     markersize=10)
-
-
-ax2.plot(np.linspace(-0.1, 10.1, 100), 2 * np.linspace(-0.1, 10.1, 100)**2, 'r')
-handles = [mpl.lines.Line2D([0], [0], color='k', alpha=0.5, linestyle='', marker=(2, 0, 45), markersize=10, label='2D'),
-           mpl.lines.Line2D([0], [0], color='k', alpha=0.5, linestyle='', marker=(3, 0, 45), markersize=10, label='3D'),
-           mpl.lines.Line2D([0], [0], color='k', alpha=0.5, linestyle='', marker=(4, 0, 45), markersize=10, label='4D'),
-           mpl.lines.Line2D([0], [0], color='r', linestyle='-', label=r'$2 \alpha^2/k$')]
-
-# cax, _ = mpl.colorbar.make_axes(ax2)
-# cbar = mpl.colorbar.ColorbarBase(cax, cmap=cmap, norm=normalize)
-# cbar.ax.set_title(r'$\sigma$')
-
-
-ax2.legend(handles=handles, loc='lower right')
-ax2.set(xlabel=r'$\alpha$', ylabel=r'$\dot{\hat{S}}$')
-ax2.tick_params(axis='both', direction='in')
-
-# fig.savefig(os.path.join(parentDir, 'alpha{a}_epr_vs_dataSize.pdf'.format(a=alpha)), format='pdf')
-# fig2.savefig(os.path.join(parentDir, 'epr_vs_alpha_mostData_leastSmoothing.pdf'), format='pdf')
+axall.plot(np.arange(0, 10, 0.01), 2 * np.arange(0, 10, 0.01)**2, 'r-', lw=2, label=r'$2 \alpha^2$')
+axall.tick_params(which='both', direction='in')
+axall.set(xlabel=r'$\alpha$', ylabel=r'$\dot{S}$', title='2,3,4 dimensions', ylim=[-14, 260])
+axall.set_aspect(np.diff(axall.set_xlim())[0] / np.diff(axall.set_ylim())[0])
+axall.legend()
+plt.tight_layout()
+figall.savefig(os.path.join(savePath, datetime.now().strftime('%y%m%d') + '_eprPlot_alldim.pdf'), format='pdf')
 
 plt.show()

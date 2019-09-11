@@ -1,3 +1,7 @@
+'''
+Use this function to calculate the epr for every trajecotry
+in spinOsc simulations
+'''
 import os
 import sys
 from glob import glob
@@ -11,15 +15,15 @@ def calc_epr_spectral(file):
     '''
     function to pass to multiprocessing pool to calculate epr in parallel
     '''
-    print('Reading {f}'.format(f=file.split(os.path.sep)[-2]))
+    print('Reading {f}'.format(f=file.split(os.path.sep)[-1]))
     with h5py.File(file) as d:
-        t_points = d['data']['t_points'][:]
-        t_epr = np.where(t_points > 10)[0]  # only calculate epr after t = 10
-        dt = np.diff(t_points)[0]
-        nSim = d['params']['nSim'][()]
+        t = d['data']['t'][:]
+        t_epr = np.where(t > 10)[0]  # only calculate epr after t = 10
+        dt = np.diff(t)[0]
+        nsim = d['params']['nsim'][()]
 
-        s = np.zeros(nSim)
-        rhos = np.zeros((nSim, len(t_epr)))
+        s = np.zeros(nsim)
+        rhos = np.zeros((nsim, len(t_epr)))
 
         for ind, traj in enumerate(d['data']['trajs'][..., t_epr]):
             s[ind], rhos[ind], w = fe.entropy(traj, sample_spacing=dt,
@@ -48,11 +52,11 @@ def calc_epr_spectral(file):
 
 
 if sys.platform == 'linux':
-    dataFolder = '/mnt/llmStorage203/Danny/brusselatorSims/reactionsOnly/190904/'
+    dataFolder = '/mnt/llmStorage203/Danny/freqent/spinOsc/190709/'
 if sys.platform == 'darwin':
-    dataFolder = '/Volumes/Storage/Danny/brusselatorSims/reactionsOnly/190904/'
+    dataFolder = '/Volumes/Storage/Danny/freqent/spinOsc/190709/'
 
-files = glob(os.path.join(dataFolder, 'alpha*', 'data.hdf5'))
+files = glob(os.path.join(dataFolder, '*.hdf5'))
 sigma = 30
 
 print('Calculating eprs...')
