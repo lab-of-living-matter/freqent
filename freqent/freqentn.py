@@ -187,10 +187,10 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     if subtract_bias:
         bias = ((1 / nrep) * (nvar * (nvar - 1) / 2) *
                 np.prod([((freqs[n].max() / sigma[n]) / (TL[n] * dk[n] * (np.pi)**0.5)) for n in range(len(TL))]))
-        print(s)
-        print(bias)
+        # print(s)
+        # print(bias)
         s -= bias
-        print(s)
+        # print(s)
 
     if return_density:
         return s.real, sdensity.real, freqs
