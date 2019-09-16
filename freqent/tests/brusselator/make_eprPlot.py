@@ -6,8 +6,15 @@ import matplotlib.pyplot as plt
 import h5py
 import matplotlib as mpl
 from datetime import datetime
+
+# plt.close('all')
 mpl.rcParams['pdf.fonttype'] = 42
-plt.close('all')
+mpl.rcParams['font.size'] = 12
+mpl.rcParams['axes.linewidth'] = 2
+mpl.rcParams['xtick.major.width'] = 2
+mpl.rcParams['xtick.minor.width'] = 2
+mpl.rcParams['ytick.major.width'] = 2
+mpl.rcParams['ytick.minor.width'] = 2
 
 if sys.platform == 'linux':
     parentFolder = '/mnt/llmStorage203/Danny/brusselatorSims/reactionsOnly/190904/'
@@ -29,7 +36,7 @@ for fInd, f in enumerate(folders):
         epr_blind[fInd] = d['data']['epr_blind'][()]
         epr_spectral[fInd] = d['data']['s'][:]
 
-fig, ax = plt.subplots(figsize=(8, 7))
+fig, ax = plt.subplots(figsize=(5.5, 5))
 ax.plot(alphas, epr, 'o', label='epr')
 ax.plot(alphas, epr_blind, 'o', label='epr_blind')
 ax.errorbar(alphas, np.mean(epr_spectral, axis=1), yerr=np.std(epr_spectral, axis=1), fmt='ko', label='epr_spectral', capsize=5)
@@ -39,8 +46,7 @@ ax.set(xlabel=r'$\alpha$', ylabel=r'$\dot{S}$')
 # ax.set_aspect(np.diff(ax.get_xlim())[0] / np.diff(ax.get_ylim())[0])
 ax.set(yscale='log', xscale='log')
 ax.tick_params(which='both', direction='in')
-plt.legend()
-
+ax.legend()
 plt.tight_layout()
 
 fig.savefig(os.path.join(saveFolder, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')

@@ -14,7 +14,7 @@ def calc_epr_spectral(file):
     print('Reading {f}'.format(f=file.split(os.path.sep)[-2]))
     with h5py.File(file) as d:
         t_points = d['data']['t_points'][:]
-        t_epr = np.where(t_points > 10)[0]  # only calculate epr after t = 10
+        t_epr = np.where(t_points > 10)[0]  # only calculate epr after t = 1000
         dt = np.diff(t_points)[0]
         nSim = d['params']['nSim'][()]
 
@@ -26,24 +26,20 @@ def calc_epr_spectral(file):
                                               sigma=sigma, return_density=True)
 
         if '/data/s' in d:
-            d['data']['s'][...] = s
-        else:
-            d['data'].create_dataset('s', data=s)
+            del d['data']['s']
+        d['data'].create_dataset('s', data=s)
 
         if '/data/s_density' in d:
-            d['data']['s_density'][...] = rhos
-        else:
-            d['data'].create_dataset('s_density', data=rhos)
+            del d['data']['s_density']
+        d['data'].create_dataset('s_density', data=rhos)
 
         if '/data/omega' in d:
-            d['data']['omega'][...] = w
-        else:
-            d['data'].create_dataset('omega', data=w)
+            del d['data']['omega']
+        d['data'].create_dataset('omega', data=w)
 
         if '/params/sigma' in d:
-            d['params']['sigma'][...] = sigma
-        else:
-            d['params'].create_dataset('sigma', data=sigma)
+            del d['params']['sigma']
+        d['params'].create_dataset('sigma', data=sigma)
     return s, rhos, w
 
 
@@ -53,7 +49,7 @@ if sys.platform == 'darwin':
     dataFolder = '/Volumes/Storage/Danny/brusselatorSims/reactionsOnly/190904/'
 
 files = glob(os.path.join(dataFolder, 'alpha*', 'data.hdf5'))
-sigma = 30
+sigma = 1000
 
 print('Calculating eprs...')
 with multiprocessing.Pool(processes=4) as pool:
