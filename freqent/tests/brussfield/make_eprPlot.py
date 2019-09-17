@@ -21,7 +21,7 @@ if sys.platform == 'linux':
     saveFolder = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/brussfield/'
 elif sys.platform == 'darwin':
     parentFolder = '/Volumes/Storage/Danny/brusselatorSims/fieldSims/190910/'
-    saveFolder = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/brussfield/'
+    saveFolder = '/Users/Danny/Dropbox/LLM_Danny/freqent/brussfield/'
 
 folders = glob(os.path.join(parentFolder, 'alpha*'))
 alphas = np.asarray([float(a.split(os.path.sep)[-1].split('_')[0][5:]) for a in folders])
@@ -56,7 +56,7 @@ bias = (1 / nrep) * (nvar * (nvar - 1) / 2) * (w_max / (T * sigma_w * np.sqrt(np
 fig, ax = plt.subplots(figsize=(5.5, 5))
 ax.plot(alphas, epr / V, 'o', label='epr')
 ax.plot(alphas, epr_blind / V, 'o', label='epr_blind')
-ax.errorbar(alphas, np.mean(epr_spectral, axis=1), yerr=np.std(epr_spectral, axis=1), fmt='ko', label='epr_spectral', capsize=5)
+ax.errorbar(alphas, np.mean(epr_spectral, axis=1) - bias, yerr=np.std(epr_spectral, axis=1), fmt='ko', label='epr_spectral', capsize=5)
 # ax.plot(np.log(np.repeat(np.sort(alphas), 10)), np.ravel(epr_spectral[np.argsort(alphas), :]), 'k.')
 
 ax.set(xlabel=r'$\alpha$', ylabel=r'$\dot{S}$', xlim=(0.027, 35))
@@ -66,5 +66,5 @@ ax.set(yscale='log', xscale='log')
 ax.legend()
 plt.tight_layout()
 
-fig.savefig(os.path.join(saveFolder, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')
+fig.savefig(os.path.join(saveFolder, datetime.now().strftime('%y%m%d') + '_eprPlot_doubleBias.pdf'), format='pdf')
 plt.show()

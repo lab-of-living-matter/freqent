@@ -18,10 +18,10 @@ mpl.rcParams['ytick.minor.width'] = 2
 
 if sys.platform == 'linux':
     parentFolder = '/mnt/llmStorage203/Danny/freqent/gaussfield'
-    saveFolder = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/brussfield/'
+    saveFolder = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/gaussfield/'
 elif sys.platform == 'darwin':
     parentFolder = '/Volumes/Storage/Danny/freqent/gaussfield'
-    saveFolder = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/brussfield/'
+    saveFolder = '/Users/Danny/Dropbox/LLM_Danny/freqent/gaussfield/'
 
 folders = glob(os.path.join(parentFolder, 'alpha*'))
 alphas = np.asarray([float(a.split(os.path.sep)[-1].split('_')[0][5:]) for a in folders])
@@ -47,7 +47,7 @@ sigma_k = sigma[1] * dk
 bias = (1 / nrep) * (nvar * (nvar - 1) / 2) * (w_max / (T * sigma_w * np.sqrt(np.pi))) * (k_max / (L * sigma_k * np.sqrt(np.pi)))
 
 fig, ax = plt.subplots(figsize=(5, 5))
-ax.errorbar(alphas, np.nanmean(eprs, axis=1) - bias, yerr=np.nanstd(eprs, axis=1), color='k', fmt='o', label='data', capsize=5, alpha=0.5)
+ax.errorbar(alphas, np.nanmean(eprs, axis=1), yerr=np.nanstd(eprs, axis=1), color='k', fmt='o', label='data', capsize=5, alpha=0.5)
 ax.plot(np.sort(alphas), np.sort(alphas)**2, 'r-', label=r'$\alpha^2$')
 ax.set(xlabel=r'$\alpha$', ylabel=r'$\dot{S}$')
 ax.tick_params(which='both', direction='in')
