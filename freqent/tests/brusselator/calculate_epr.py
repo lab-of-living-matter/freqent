@@ -19,10 +19,10 @@ def calc_epr_spectral(file):
         nSim = d['params']['nSim'][()]
 
         s = np.zeros(nSim)
-        rhos = np.zeros((nSim, len(t_epr)))
+        rhos = np.zeros((nSim, len(t_epr[::t_factor])))
 
-        for ind, traj in enumerate(d['data']['trajs'][..., t_epr]):
-            s[ind], rhos[ind], w = fe.entropy(traj, sample_spacing=dt,
+        for ind, traj in enumerate(d['data']['trajs'][..., t_epr[::t_factor]]):
+            s[ind], rhos[ind], w = fe.entropy(traj, sample_spacing=dt * t_factor,
                                               sigma=sigma, return_density=True)
 
         if '/data/s' in d:
@@ -40,6 +40,10 @@ def calc_epr_spectral(file):
         if '/params/sigma' in d:
             del d['params']['sigma']
         d['params'].create_dataset('sigma', data=sigma)
+
+        if '/params/t_factor' in d:
+            del d['params']['t_factor']
+        d['params'].create_dataset('t_factor', data=t_factor)
     return s, rhos, w
 
 
@@ -49,6 +53,7 @@ if sys.platform == 'darwin':
     dataFolder = '/Volumes/Storage/Danny/brusselatorSims/reactionsOnly/190904/'
 
 files = glob(os.path.join(dataFolder, 'alpha*', 'data.hdf5'))
+t_factor = 10
 sigma = 1000
 
 print('Calculating eprs...')
