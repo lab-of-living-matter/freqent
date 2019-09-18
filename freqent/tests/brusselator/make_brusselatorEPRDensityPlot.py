@@ -3,12 +3,18 @@ import matplotlib.pyplot as plt
 import h5py
 import matplotlib as mpl
 import os
+import sys
 import freqent.freqent as fe
 from datetime import datetime
 mpl.rcParams['pdf.fonttype'] = 42
 
-parentFolder = '/mnt/llmStorage203/Danny/brusselatorSims/reactionsOnly/190313/blindBruss'
-savePath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/figures/brusselator/'
+
+if sys.platform == 'linux':
+    dataFolder = '/mnt/llmStorage203/Danny/brusselatorSims/reactionsOnly/190904/'
+    saveFolder = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/figures/brusselator/'
+if sys.platform == 'darwin':
+    dataFolder = '/Volumes/Storage/Danny/brusselatorSims/reactionsOnly/190904/'
+    saveFolder = '/Users/Danny/Dropbox/LLM_Danny/freqent/figures/brusselator/'
 
 fig, ax = plt.subplots(1, 2)
 for file in os.listdir(parentFolder):
