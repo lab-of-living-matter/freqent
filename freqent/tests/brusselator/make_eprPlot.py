@@ -7,7 +7,7 @@ import h5py
 import matplotlib as mpl
 from datetime import datetime
 
-# plt.close('all')
+plt.close('all')
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['font.size'] = 12
 mpl.rcParams['axes.linewidth'] = 2
@@ -37,17 +37,19 @@ for fInd, f in enumerate(folders):
         epr_spectral[fInd] = d['data']['s'][:]
 
 fig, ax = plt.subplots(figsize=(5.5, 5))
-ax.plot(alphas, epr, 'o', label='epr')
-ax.plot(alphas, epr_blind, 'o', label='epr_blind')
-ax.errorbar(alphas, np.mean(epr_spectral, axis=1), yerr=np.std(epr_spectral, axis=1), fmt='ko', label='epr_spectral', capsize=5)
+ax.plot(alphas[alphas < 30], epr[alphas < 30], 'o', label='epr')
+ax.plot(alphas[alphas < 30], epr_blind[alphas < 30], 'o', label='epr_blind')
+ax.errorbar(alphas[alphas < 30], np.mean(epr_spectral, axis=1)[alphas < 30],
+            yerr=np.std(epr_spectral, axis=1)[alphas < 30], fmt='ko',
+            label='epr_spectral', capsize=5)
 # ax.plot(np.repeat(np.sort(alphas), 50), np.ravel(epr_spectral[np.argsort(alphas), :]), 'k.', alpha=0.5)
 
-ax.set(xlabel=r'$\alpha$', ylabel=r'$\dot{S}$')
+ax.set(xlabel=r'$\alpha$', ylabel=r'$\dot{S}$', xlim=(0.027, 35))
 # ax.set_aspect(np.diff(ax.get_xlim())[0] / np.diff(ax.get_ylim())[0])
 ax.set(yscale='log', xscale='log')
 ax.tick_params(which='both', direction='in')
 ax.legend()
 plt.tight_layout()
 
-# fig.savefig(os.path.join(saveFolder, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')
+fig.savefig(os.path.join(saveFolder, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')
 plt.show()
