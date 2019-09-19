@@ -170,16 +170,16 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     # Broadcasts to find inverse of square matrix in last two dimensions of matrix
     c_inv = np.linalg.inv(c)
 
-    # transpose last two indices
-    axes = list(range(c.ndim))
-    axes[-2:] = [axes[-1], axes[-2]]
-    c_inv_transpose = np.transpose(c_inv, axes=axes)
+    # # transpose last two indices
+    # axes = list(range(c.ndim))
+    # axes[-2:] = [axes[-1], axes[-2]]
+    # c_inv = np.transpose(c_inv, axes=axes)
 
     # first axis is temporal frequency, flip along that axis to get C^-T(k, -w)
     # Also sum over last two axes to sum over matrix indices, leaving only frequency
     # indices for integration
-    sdensity = (np.log(np.linalg.det(c_inv_transpose) / np.linalg.det(np.flip(c_inv_transpose, axis=0))) +
-                np.sum((np.flip(c_inv_transpose, axis=0) - c_inv_transpose) * c, axis=(-1, -2))) / (2 * TL.prod())
+    sdensity = (np.log(np.linalg.det(np.flip(c, axis=0)) / np.linalg.det(c)) +
+                np.sum((-np.flip(c_inv, axis=0) + c_inv) * c, axis=(-1, -2))) / (2 * TL.prod())
 
     s = np.sum(sdensity)
 
@@ -455,9 +455,9 @@ def csdn(data1, data2, sample_spacing=None, window=None,
             data2 = detrend_func(data2)
         data2, _ = _nd_window(data2, window)
         data2_fft = np.fft.fftn(data2, s=nfft)
-        csd = data1_fft * np.conjugate(data2_fft)
+        csd = np.conjugate(data2_fft) * data1_fft
     else:
-        csd = data1_fft * np.conjugate(data1_fft)
+        csd = np.conjugate(data1_fft) * data1_fft
 
     csd *= scale
 
