@@ -127,7 +127,7 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     # matrix in last two dimensions of matrix
     c_fft_inv = np.linalg.inv(c_fft)
     sdensity = (np.log(np.linalg.det(np.transpose(c_fft, (0, 2, 1))) / np.linalg.det(c_fft)) +
-                np.sum((-np.transpose(c_fft_inv, (0, 2, 1)) + c_fft_inv) * c_fft, axis=(-1, -2))) / (2 * T)
+                np.sum((np.transpose(c_fft_inv, (0, 2, 1)) - c_fft_inv) * np.transpose(c_fft, (0, 2, 1)), axis=(-1, -2))) / (2 * T)
 
     # return omega, sdensity
     s = np.sum(sdensity)
@@ -362,9 +362,9 @@ def csd(x, y, sample_spacing=1.0, window='boxcar', nperseg=None,
         y_reshaped = detrend_func(y_reshaped)
         y_reshaped = win * y_reshaped
         y_fft = np.fft.fft(y_reshaped, n=nfft)
-        csd = np.conjugate(x_fft) * y_fft
+        csd = x_fft * np.conjugate(y_fft)
     else:
-        csd = np.conjugate(x_fft) * x_fft
+        csd = x_fft * np.conjugate(x_fft)
 
     csd *= scale
 
