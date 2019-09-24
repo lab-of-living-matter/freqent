@@ -13,7 +13,7 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     '''
     Calculate the entropy using the frequency space measure:
 
-    dS/dt = (sum_(n,m) (C^-T(k_m, -f_n) - C^-T(k_m, f_n))_ij C_ij(k_m, f_n)) / 2T
+    dS/dt = (sum_(n,m) (C^-1(k_m, -f_n) - C^-1(k_m, f_n))_ij C_ji(k_m, f_n)) / 2T
 
     where T is the total time of the signal, C_ij(k_m, f_n) is the (i,j)th component
     of the correlation matrix evaluated at the temporal frequency f_n and spatial
@@ -171,15 +171,16 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     c_inv = np.linalg.inv(c)
 
     # # transpose last two indices
-    # axes = list(range(c.ndim))
-    # axes[-2:] = [axes[-1], axes[-2]]
+    axes = list(range(c.ndim))
+    axes[-2:] = [axes[-1], axes[-2]]
     # c_inv = np.transpose(c_inv, axes=axes)
 
     # first axis is temporal frequency, flip along that axis to get C^-T(k, -w)
     # Also sum over last two axes to sum over matrix indices, leaving only frequency
     # indices for integration
     sdensity = (np.log(np.linalg.det(np.flip(c, axis=0)) / np.linalg.det(c)) +
-                np.sum((-np.flip(c_inv, axis=0) + c_inv) * c, axis=(-1, -2))) / (2 * TL.prod())
+                np.sum((np.flip(c_inv, axis=0) - c_inv) * np.transpose(c, axes=axes),
+                       axis=(-1, -2))) / (2 * TL.prod())
 
     s = np.sum(sdensity)
 
@@ -455,9 +456,9 @@ def csdn(data1, data2, sample_spacing=None, window=None,
             data2 = detrend_func(data2)
         data2, _ = _nd_window(data2, window)
         data2_fft = np.fft.fftn(data2, s=nfft)
-        csd = np.conjugate(data2_fft) * data1_fft
+        csd = data1_fft * np.conjugate(data2_fft)
     else:
-        csd = np.conjugate(data1_fft) * data1_fft
+        csd = data1_fft * np.conjugate(data1_fft)
 
     csd *= scale
 

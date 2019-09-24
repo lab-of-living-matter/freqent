@@ -11,7 +11,7 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     '''
     Calculate the entropy using the frequency space measure:
 
-    dS/dt = (sum_n ((C^-1)^T_ij (f_n) - C^-1_ij(f_n)) C_ij(f_n)) / 2T
+    dS/dt = (sum_n (C^-1 (-f_n) - C^-1(f_n))_ij C_ji(f_n)) / 2T
 
     where T is the total time of the signal, C_ij(w_n) is the (i,j)th component
     of the correlation matrix evaluated at the frequency f_n, where f_n = n/T,

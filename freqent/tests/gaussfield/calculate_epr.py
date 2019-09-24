@@ -82,7 +82,7 @@ def calculate_epr(f):
 parentDir = '/mnt/llmStorage203/Danny/freqent/gaussfield/'
 folders = glob.glob(os.path.join(parentDir, 'alpha*'))
 t_factor = 10
-sigma = 5
+sigma = [10, 3]
 
 alphas = np.array([float(f.split('alpha')[1].split('_')[0]) for f in folders])
 epr = np.zeros(len(alphas))
