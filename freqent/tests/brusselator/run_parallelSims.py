@@ -2,18 +2,17 @@ import numpy as np
 from datetime import datetime
 import time
 import matplotlib as mpl
-mpl.use('Agg')  # use backend that doesn't immediately create figures
-mpl.rcParams['pdf.fonttype'] = 42
 import matplotlib.pyplot as plt
 import multiprocessing
-import csv
 from brusselator_gillespie import brusselatorStochSim
 import argparse
 import os
-import pickle
 from scipy import stats
 import freqent.freqent as fe
 import h5py
+
+mpl.use('Agg')  # use backend that doesn't immediately create figures
+mpl.rcParams['pdf.fonttype'] = 42
 
 
 def get_traj(seed):

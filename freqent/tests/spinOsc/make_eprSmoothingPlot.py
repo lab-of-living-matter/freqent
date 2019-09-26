@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import h5py
 import matplotlib as mpl
 import os
+import sys
 from datetime import datetime
-from itertools import product
 
 plt.close('all')
 mpl.rcParams['pdf.fonttype'] = 42
@@ -21,9 +21,9 @@ alpha = 2  # pick which value of alpha to plot with
 sdot_array = []
 ndim_array = []
 sdot_thry = 2 * alpha**2
-for file in os.listdir(parentDir):
+for file in os.listdir(dataPath):
     if file.endswith('.hdf5'):
-        with h5py.File(os.path.join(parentDir, file), 'r') as f:
+        with h5py.File(os.path.join(dataPath, file), 'r') as f:
             if f['params']['alpha'][()] == alpha:
                 ndim_array.append(f['params']['ndim'][()])
                 sdot_array.append(f['data']['sdot_array'][:])
@@ -67,4 +67,4 @@ ax.set(xlabel=r'$N_{traj} T$', ylabel=r'$\dot{\hat{S}}$',
        xticklabels=[r'$5 \times 10^2$', r'$10^3$', r'$5 \times 10^3$'])
 ax.tick_params(axis='both', which='both', direction='in')
 
-fig.savefig(os.path.join(parentDir, 'alpha{a}_epr_vs_dataSize.pdf'.format(a=alpha)), format='pdf')
+fig.savefig(os.path.join(savePath, datetime.now().strftime('%y%m%d') + '_alpha{a}_epr_vs_dataSize.pdf'.format(a=alpha)), format='pdf')

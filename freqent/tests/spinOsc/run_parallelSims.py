@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from spinOscSimulation import spinOscLangevin
 import freqent.freqent as fe
 import matplotlib as mpl
@@ -7,7 +6,6 @@ import os
 import argparse
 import multiprocessing
 from datetime import datetime
-from itertools import product
 import h5py
 # import scipy.signal as signal
 
@@ -55,6 +53,7 @@ scales = np.linspace(args.scale_array[0], args.scale_array[1], int(args.scale_ar
 T = args.nsteps * args.dt
 if T < 10:
     raise ValueError('Total time of simulation is less than 10. Use longer to assure steady state')
+
 
 def runSim(seed):
     '''

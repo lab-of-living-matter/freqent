@@ -6,7 +6,6 @@ import os
 import sys
 from glob import glob
 from datetime import datetime
-from itertools import product
 
 plt.close('all')
 mpl.rcParams['pdf.fonttype'] = 42

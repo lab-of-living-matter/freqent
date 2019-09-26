@@ -1,21 +1,6 @@
 import numpy as np
-from datetime import datetime
 import pdb
-from numba import jit, jitclass, int32, float32
-
-spec = [('rates', float32[:]),
-        ('V', float32),
-        ('t_points', float32[:]),
-        ('D', float32[:]),
-        ('h', float32),
-        ('K', int32),
-        ('XY0', int32[:, :]),
-        ('ABC', int32[:]),
-        ('ep', float32[:]),
-        ('seed', int32),
-        ('props', float32[:]),
-        ('update', float32[:, :]),
-        ('population', float32[:, :, :])]
+from numba import jit
 
 
 # @jitclass(spec)
