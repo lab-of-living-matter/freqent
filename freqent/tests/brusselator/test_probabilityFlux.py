@@ -21,7 +21,7 @@ dx, dy = [np.diff(edges[0])[0], np.diff(edges[1])[0]]
 
 plt.close('all')
 fig, ax = plt.subplots()
-ax.pcolormesh(edges[0], edges[1], prob_map)
+ax.pcolormesh(edges[0][:-1], edges[1][:-1], prob_map.T)
 
 ax.quiver(edges[0][:-1] + dx / 2, edges[1][:-1] + dy / 2, -flux_field[1], -flux_field[0], color='w')
 
