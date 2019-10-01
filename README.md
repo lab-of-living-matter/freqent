@@ -11,13 +11,13 @@ We solve for the entropy production exhibited by a time series of $`N \geq 2`$ v
 where $`D_{KL}`$ is the Kullback-Leibler divergence, or relative entropy, between the probability functional of observing a forward path, $\mathcal{P}[\mathbf{x}(t)]$, and the probability functional of observing its reverse path, $`\mathcal{P}[\widetilde{\mathbf{x}}(t)]`$. We assume $`\mathcal{P}[\mathbf{x}(t)]`$ to be Gaussian,
 
 ```math
-\mathcal{P}[\mathbf{x}(\omega)] = \dfrac{1}{Z} \exp \left( -\dfrac{1}{2} \int \dfrac{d \omega}{2 \pi} C^{-T}_{ij}(\omega) x^i(\omega) x^j(-\omega) \right)
+\mathcal{P}[\mathbf{x}(\omega)] = \dfrac{1}{Z} \exp \left( -\dfrac{1}{2} \int \dfrac{d \omega}{2 \pi} \mathbf{x}^\dagger C^{-1} \mathbf{x} \right)
 ```
 
-where $`C_{ij}(\omega) = \langle x_i(\omega) x_j(-\omega) \rangle`$ is the frequency space covariance matrix for the variables $`x_i(t)`$ and $`Z = \exp \left(  \frac{T}{2} \iint \frac{d \omega}{2\pi} \ \ln \left[ \det C (\omega) \right]  \right)`$ is a normalization constant. The same is done for the reverse path. Solving for $`D_{KL}`$ and taking the relevant limit, the entropy production rate is given by
+where $`C_{ij}(\omega) = \langle x_i(\omega) x_j(-\omega) \rangle`$ is the frequency space covariance matrix for the variables $`x_i(t)`$ and $`Z = \exp \left(  \frac{T}{2} \int \frac{d \omega}{2\pi} \ \ln \left[ \det C (\omega) \right]  \right)`$ is a normalization constant. The same is done for the reverse path. Solving for $`D_{KL}`$ and taking the relevant limit, the entropy production rate is given by
 
 ```math
-\dot{S} =\frac{1}{2} \int \frac{d \omega}{2 \pi} \left[ \ln \left(\frac{\det C^{-T}(\omega)}{\det C^{-T}(-\omega)} \right) + \left(C^{-T} (-\omega) - C^{-T}(\omega) \right)_{ij} C^{ij}(\omega) \right]
+\dot{S} =\frac{1}{2} \int \frac{d \omega}{2 \pi} \left[ \ln \left(\frac{\det C(-\omega)}{\det C(\omega)} \right) + \left(C^{-1} (-\omega) - C^{-1}(\omega) \right)_{ij} C^{ji}(\omega) \right]
 ```
 
 This expression exists not only for random variables $`\mathbf{x}(t)`$, but also for random fields, $`\boldsymbol{\phi}(\mathbf{r}, t)`$, where $`\mathbf{r} \in \mathbb{R}^d`$. In this case, the expressions given above are virtually unchanged, but have additional integrals over the spatial wavevectors, $`\mathbf{k}`$.
