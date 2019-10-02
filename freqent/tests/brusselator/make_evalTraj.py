@@ -11,22 +11,22 @@ plt.close('all')
 # mpl.rcParams['ytick.major.width'] = 2
 # mpl.rcParams['ytick.minor.width'] = 2
 
-rates = [1, 0.5, 2, 0.5, 2, 0.5]
+k1plus, k1minus, k2plus, k2minus, k3plus, k3minus = [1, 0.5, 2, 0.5, 2, 0.5]
 V = 100
 a = 100 / V
 c = 400 / V
 b = np.unique(np.logspace(0, 11, 135, base=2).astype(int)) / V
 # b = np.linspace(2, 2048, 2049) / V
 
-alphas = b * rates[2] * rates[4] / (c * rates[3] * rates[5])
+alphas = b * k2plus * k3plus / (c * k2minus * k3minus)
 
-xss = a * rates[0] / rates[1]
-yss = (rates[2] * b * xss + rates[5] * xss**3) / (rates[3] * c + rates[4] * xss**2)
+xss = a * k1plus / k1minus
+yss = (k2plus * b * xss + k3minus * xss**3) / (k2minus * c + k3plus * xss**2)
 
-j11 = -(rates[1] + b * rates[2]) + 2 * xss * yss * rates[4] - 3 * rates[5] * xss**2
-j12 = (c * rates[3] + xss**2 * rates[4])
-j21 = b * rates[2] - 2 * xss * yss * rates[4] + 3 * rates[5] * xss**2
-j22 = -(c * rates[3] + xss**2 * rates[4])
+j11 = -(k1minus + b * k2plus) + 2 * xss * yss * k3plus - 3 * k3minus * xss**2
+j12 = (c * k2minus + xss**2 * k3plus)
+j21 = b * k2plus - 2 * xss * yss * k3plus + 3 * k3minus * xss**2
+j22 = -(c * k2minus + xss**2 * k3plus)
 
 tr = j11 + j22
 det = j11 * j22 - j12 * j21
