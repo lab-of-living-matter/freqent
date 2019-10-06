@@ -17,13 +17,13 @@ mpl.rcParams['ytick.major.width'] = 2
 mpl.rcParams['ytick.minor.width'] = 2
 
 if sys.platform == 'linux':
-    parentFolder = '/mnt/llmStorage203/Danny/freqent/gaussfield'
-    saveFolder = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/gaussfield/'
+    datapath = '/mnt/llmStorage203/Danny/freqent/gaussfield'
+    savepath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/gaussfield/'
 elif sys.platform == 'darwin':
-    parentFolder = '/Volumes/Storage/Danny/freqent/gaussfield'
-    saveFolder = '/Users/Danny/Dropbox/LLM_Danny/freqent/gaussfield/'
+    datapath = '/Volumes/Storage/Danny/freqent/gaussfield'
+    savepath = '/Users/Danny/Dropbox/LLM_Danny/freqent/gaussfield/'
 
-folders = glob(os.path.join(parentFolder, 'alpha*'))
+folders = glob(os.path.join(datapath, 'alpha*'))
 alphas = np.asarray([float(a.split(os.path.sep)[-1].split('_')[0][5:]) for a in folders])
 
 eprs = np.zeros((len(alphas), 10))
@@ -46,13 +46,14 @@ sigma_w = 5 * dw
 sigma_k = 5 * dk
 bias = (1 / nrep) * (nvar * (nvar - 1) / 2) * (w_max / (T * sigma_w * np.sqrt(np.pi))) * (k_max / (L * sigma_k * np.sqrt(np.pi)))
 
-fig, ax = plt.subplots(figsize=(7, 7))
+fig, ax = plt.subplots(figsize=(5, 5))
 #ax.errorbar(alphas, np.nanmean(eprs, axis=1), yerr=np.nanstd(eprs, axis=1), color='k', fmt='o', label='data', capsize=5, alpha=0.5)
 
-ax.plot(np.sort(alphas)[::4], np.nanmean(eprs, axis=1)[np.argsort(alphas)][::4] - bias, 'ko', label=r'$\dot{S}_{spectral}$')
-ax.fill_between(np.sort(alphas)[::4],
-                np.nanmean(eprs, axis=1)[np.argsort(alphas)][::4] - bias + np.nanstd(eprs, axis=1)[np.argsort(alphas)][::4],
-                np.nanmean(eprs, axis=1)[np.argsort(alphas)][::4] - bias - np.nanstd(eprs, axis=1)[np.argsort(alphas)][::4],
+inds = [np.where(np.sort(alphas) == n)[0][0] for n in range(26)]
+ax.plot(np.sort(alphas)[inds], np.nanmean(eprs, axis=1)[np.argsort(alphas)][inds] - bias, 'ko', label=r'$\dot{S}_{spectral}$')
+ax.fill_between(np.sort(alphas)[inds],
+                np.nanmean(eprs, axis=1)[np.argsort(alphas)][inds] - bias + np.nanstd(eprs, axis=1)[np.argsort(alphas)][inds],
+                np.nanmean(eprs, axis=1)[np.argsort(alphas)][inds] - bias - np.nanstd(eprs, axis=1)[np.argsort(alphas)][inds],
                 color='k', alpha=0.5)
 ax.plot(np.sort(alphas), np.sort(alphas)**2, 'r', lw=3, label=r'$\dot{S}_{thry} = \alpha^2$')
 ax.set(xlabel=r'$\alpha$', ylabel=r'$\dot{S}$')
@@ -62,5 +63,5 @@ plt.legend()
 
 plt.tight_layout()
 
-#fig.savefig(os.path.join(saveFolder, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')
+fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_eprPlot_shaded.pdf'), format='pdf')
 plt.show()
