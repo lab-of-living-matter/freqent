@@ -38,17 +38,23 @@ for fInd, f in enumerate(folders):
             dk = np.diff(d['data']['k'][:])[0]
             k_max = d['data']['k'][:].max()
             w_max = d['data']['omega'][:].max()
-            sigma = [5, 5]
+            sigma = d['params']['sigma'][()]
 
 nrep = 1
 nvar = 2
-sigma_w = sigma[0] * dw
-sigma_k = sigma[1] * dk
+sigma_w = 5 * dw
+sigma_k = 5 * dk
 bias = (1 / nrep) * (nvar * (nvar - 1) / 2) * (w_max / (T * sigma_w * np.sqrt(np.pi))) * (k_max / (L * sigma_k * np.sqrt(np.pi)))
 
-fig, ax = plt.subplots(figsize=(5, 5))
-ax.errorbar(alphas, np.nanmean(eprs, axis=1), yerr=np.nanstd(eprs, axis=1), color='k', fmt='o', label='data', capsize=5, alpha=0.5)
-ax.plot(np.sort(alphas), np.sort(alphas)**2, 'r-', label=r'$\alpha^2$')
+fig, ax = plt.subplots(figsize=(7, 7))
+#ax.errorbar(alphas, np.nanmean(eprs, axis=1), yerr=np.nanstd(eprs, axis=1), color='k', fmt='o', label='data', capsize=5, alpha=0.5)
+
+ax.plot(np.sort(alphas)[::4], np.nanmean(eprs, axis=1)[np.argsort(alphas)][::4] - bias, 'ko', label=r'$\dot{S}_{spectral}$')
+ax.fill_between(np.sort(alphas)[::4],
+                np.nanmean(eprs, axis=1)[np.argsort(alphas)][::4] - bias + np.nanstd(eprs, axis=1)[np.argsort(alphas)][::4],
+                np.nanmean(eprs, axis=1)[np.argsort(alphas)][::4] - bias - np.nanstd(eprs, axis=1)[np.argsort(alphas)][::4],
+                color='k', alpha=0.5)
+ax.plot(np.sort(alphas), np.sort(alphas)**2, 'r', lw=3, label=r'$\dot{S}_{thry} = \alpha^2$')
 ax.set(xlabel=r'$\alpha$', ylabel=r'$\dot{S}$')
 ax.tick_params(which='both', direction='in')
 ax.set_aspect(np.diff(ax.get_xlim())[0] / np.diff(ax.get_ylim())[0])
@@ -56,5 +62,5 @@ plt.legend()
 
 plt.tight_layout()
 
-fig.savefig(os.path.join(saveFolder, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')
+#fig.savefig(os.path.join(saveFolder, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')
 plt.show()
