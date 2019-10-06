@@ -14,19 +14,12 @@ xi is Gaussian white noise with strength sqrt(2*gamma^2*D), D is the diffusion c
 which is given by the Einstein-relation D = kB*T/gamma
 '''
 
-
 import numpy as np
 import matplotlib.pyplot as plt
 # import matplotlib as mpl
 import matplotlib.animation as animation
 
-gamma = 2e-8  # drag on particle in kg / s
-kT = 4e-9  # energy in kg * um^2 / s^2
-# kT = 4e-21  # energy in Joules at room temp
-D = kT / gamma
 dt = 1e-3  # time step
-
-k = 2 * gamma  # spring constant of harmonic potential
 alpha = 1 * gamma  # strength of rotational force
 zhat = np.array([0, 0, 1])
 nframes = int(2e3)

@@ -3,14 +3,19 @@ import matplotlib.pyplot as plt
 import h5py
 import matplotlib as mpl
 import os
+import sys
 import freqent.freqent as fe
 from datetime import datetime
 
 plt.close('all')
 mpl.rcParams['pdf.fonttype'] = 42
 # fig, ax = plt.subplots(figsize=(8, 6))
-dataPath = '/mnt/llmStorage203/Danny/freqent/spinOsc/190709/'
-savePath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/figures/spinOsc/'
+if sys.platform == 'linux':
+    dataPath = '/mnt/llmStorage203/Danny/freqent/spinOsc/190709/'
+    savePath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/figures/spinOsc/'
+elif sys.platform == 'darwin':
+    dataPath = '/Volumes/Storage/Danny/freqent/spinOsc/190709/'
+    savePath = '/Users/Danny/Dropbox/LLM_Danny/freqent/figures/spinOsc/'
 
 cmap = mpl.cm.get_cmap('tab10')
 normalize = mpl.colors.Normalize(vmin=0, vmax=10)
@@ -40,10 +45,10 @@ for file in os.listdir(dataPath):
 ax.set(xlabel=r'$\omega$', ylabel='epr density', xlim=[-20, 20])
 # ax.set_aspect(np.diff(ax.set_xlim())[0] / np.diff(ax.set_ylim())[0])
 ax.tick_params(which='both', direction='in')
-
-cax, _ = mpl.colorbar.make_axes(ax)
-cbar = mpl.colorbar.ColorbarBase(cax, cmap=cmap, norm=normalize)
-cbar.ax.set_title(r'$\alpha$')
+ax.legend()
+# cax, _ = mpl.colorbar.make_axes(ax)
+# cbar = mpl.colorbar.ColorbarBase(cax, cmap=cmap, norm=normalize)
+# cbar.ax.set_title(r'$\alpha$')
 
 # fig.savefig(os.path.join(savePath, datetime.now().strftime('%y%m%d') + '_eprDensity_vs_alpha.pdf'), format='pdf')
 
