@@ -51,6 +51,6 @@ cbar = mpl.colorbar.ColorbarBase(cax, cmap=cmap, norm=normalize)
 cbar.ax.tick_params(which='both', direction='in')
 cbar.set_ticks([-1, -0.5, 0, 0.5, 1])
 
-fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%d%m') + data + '_traj.pdf'), format='pdf')
+fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_' + data + '_traj.pdf'), format='pdf')
 
 plt.show()
