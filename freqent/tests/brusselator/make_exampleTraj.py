@@ -23,7 +23,7 @@ elif sys.platform == 'darwin':
     datapath = '/Volumes/Storage/Danny/brusselatorSims/reactionsOnly/190904/'
     savepath = '/Users/Danny/Dropbox/LLM_Danny/freqent/brusselator/stochastic_simulations'
 
-datafile = os.path.join(datapath, 'alpha1.0_nSim50', 'data.hdf5')
+datafile = os.path.join(datapath, 'alpha55.0_nSim50', 'data.hdf5')
 
 
 with h5py.File(datafile) as d:
@@ -52,10 +52,14 @@ ax.plot(traj[0, inds], traj[1, inds], 'k', alpha=0.7)
 ax.plot(traj[0, np.where(inds)[0][-1]], traj[1, np.where(inds)[0][-1]],
         'o', markersize=15, markeredgecolor='k', color=(0.9, 0.9, 0.9))
 
+cax2, _ = mpl.colorbar.make_axes(ax)
+cbar2 = mpl.colorbar.ColorbarBase(cax2, cmap=cmap_prob, norm=normalize_prob)
+cbar2.ax.set_title(r'$p(X, Y)$')
+
 ax.set_aspect('equal')
 ax.set(xlabel='X', ylabel='Y', title=r'$\alpha = {a}$'.format(a=alpha))
 ax.tick_params(which='both', direction='in')
-plt.tight_layout()
+
 
 # fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_traj_alpha{a}.pdf'.format(a=alpha)), format='pdf')
 
