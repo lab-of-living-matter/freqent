@@ -8,13 +8,13 @@ import matplotlib as mpl
 from datetime import datetime
 
 plt.close('all')
-# mpl.rcParams['pdf.fonttype'] = 42
-# mpl.rcParams['font.size'] = 12
-# mpl.rcParams['axes.linewidth'] = 2
-# mpl.rcParams['xtick.major.width'] = 2
-# mpl.rcParams['xtick.minor.width'] = 2
-# mpl.rcParams['ytick.major.width'] = 2
-# mpl.rcParams['ytick.minor.width'] = 2
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['font.size'] = 12
+mpl.rcParams['axes.linewidth'] = 2
+mpl.rcParams['xtick.major.width'] = 2
+mpl.rcParams['xtick.minor.width'] = 2
+mpl.rcParams['ytick.major.width'] = 2
+mpl.rcParams['ytick.minor.width'] = 2
 
 if sys.platform == 'linux':
     parentFolder = '/mnt/llmStorage203/Danny/brusselatorSims/reactionsOnly/190904/'
