@@ -52,8 +52,8 @@ def probabilityFlux(data, dt=1, bins=10):
 
     for tInd, (prior_state, current_state) in enumerate(zip(data[:-1], data[1:])):
         # print('\r tInd={tInd}'.format(tInd=tInd))
-        prior_bin_index = np.array([[np.digitize(s, e) for s, e in zip(prior_state, edges)]])
-        current_bin_index = np.array([[np.digitize(s, e) for s, e in zip(current_state, edges)]])
+        prior_bin_index = np.array([[np.digitize(s, e) - 1 for s, e in zip(prior_state, edges)]])
+        current_bin_index = np.array([[np.digitize(s, e) - 1 for s, e in zip(current_state, edges)]])
 
         same_bin = prior_bin_index is current_bin_index
 

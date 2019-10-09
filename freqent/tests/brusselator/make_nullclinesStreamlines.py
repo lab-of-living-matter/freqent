@@ -25,7 +25,7 @@ for ind, B in enumerate(b[(inds)]):
     fig, ax = plt.subplots()
     ax.plot(x, y_xdot0, lw=2, label=r'$\dot{x} = 0$')
     ax.plot(x, y_ydot0, lw=2, label=r'$\dot{y} = 0$')
-    ax.streamplot(xx, yy, xdot, ydot, color=np.sqrt(xdot**2 + ydot**2), cmap='Greys')
+    ax.streamplot(xx, yy, xdot, ydot, color=np.sqrt(xdot**2 + ydot**2), cmap='Greys_r', density=3)
     # ax.plot([xss, v[inds[ind]][0, 0]], [yss[inds[ind]], v[inds[ind]][1,0]], 'r')
     # ax.plot([xss, v[inds[ind]][0, 1]], [yss[inds[ind]], v[inds[ind]][1,1]], 'r')
     ax.set(title=r'$\alpha = {a}$'.format(a=alphas[inds[ind]]))
