@@ -8,7 +8,13 @@ from datetime import datetime
 
 plt.close('all')
 mpl.rcParams['pdf.fonttype'] = 42
-fig, ax = plt.subplots(figsize=(8, 6))
+mpl.rcParams['font.size'] = 12
+mpl.rcParams['axes.linewidth'] = 1
+mpl.rcParams['xtick.major.width'] = 1
+mpl.rcParams['ytick.major.width'] = 1
+mpl.rcParams['xtick.minor.width'] = 1
+
+fig, ax = plt.subplots(figsize=(6, 5))
 
 if sys.platform == 'linux':
     dataPath = '/mnt/llmStorage203/Danny/freqent/spinOsc/190709/'
@@ -29,7 +35,7 @@ for file in os.listdir(dataPath):
                 sdot_array.append(f['data']['sdot_array'][:])
 
                 t_epr = f['params']['t_epr'][()]
-                sigma = f['params']['sigma'][:]
+                sigma = f['params']['sigma_array'][:]
                 n_epr = f['params']['n_epr'][:]
 
 cmap = mpl.cm.get_cmap('viridis')
@@ -67,4 +73,6 @@ ax.set(xlabel=r'$N_{traj} T$', ylabel=r'$\dot{\hat{S}}$',
        xticklabels=[r'$5 \times 10^2$', r'$10^3$', r'$5 \times 10^3$'])
 ax.tick_params(axis='both', which='both', direction='in')
 
-fig.savefig(os.path.join(savePath, datetime.now().strftime('%y%m%d') + '_alpha{a}_epr_vs_dataSize.pdf'.format(a=alpha)), format='pdf')
+# fig.savefig(os.path.join(savePath, datetime.now().strftime('%y%m%d') + '_alpha{a}_epr_vs_dataSize.pdf'.format(a=alpha)), format='pdf')
+
+plt.show()
