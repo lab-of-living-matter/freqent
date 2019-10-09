@@ -17,19 +17,19 @@ mpl.rcParams['xtick.minor.width'] = 1
 fig, ax = plt.subplots(figsize=(6, 5))
 
 if sys.platform == 'linux':
-    dataPath = '/mnt/llmStorage203/Danny/freqent/spinOsc/190709/'
-    savePath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/spinOsc/'
+    datapath = '/mnt/llmStorage203/Danny/freqent/spinOsc/190709/'
+    savepath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/spinOsc/'
 elif sys.platform == 'darwin':
-    dataPath = '/Volumes/Storage/Danny/freqent/spinOsc/190709/'
-    savePath = '/Users/Danny/Dropbox/LLM_Danny/freqent/spinOsc/'
+    datapath = '/Volumes/Storage/Danny/freqent/spinOsc/190709/'
+    savepath = '/Users/Danny/Dropbox/LLM_Danny/freqent/spinOsc/'
 
 alpha = 2  # pick which value of alpha to plot with
 sdot_array = []
 ndim_array = []
 sdot_thry = 2 * alpha**2
-for file in os.listdir(dataPath):
+for file in os.listdir(datapath):
     if file.endswith('.hdf5'):
-        with h5py.File(os.path.join(dataPath, file), 'r') as f:
+        with h5py.File(os.path.join(datapath, file), 'r') as f:
             if f['params']['alpha'][()] == alpha:
                 ndim_array.append(f['params']['ndim'][()])
                 sdot_array.append(f['data']['sdot_array'][:])
@@ -55,12 +55,12 @@ for dimInd, ind in enumerate(ndim_inds):
                         color=colors[sInd],
                         markersize=10)
 
-ax.plot([n_epr[0] * t_epr, n_epr[-1] * t_epr], [2 * alpha**2, 2 * alpha**2], 'k--')
+ax.plot([n_epr[0] * t_epr, n_epr[-1] * t_epr], [2 * alpha**2, 2 * alpha**2], 'k--', lw=2)
 
 handles = [mpl.lines.Line2D([0], [0], color='k', linestyle='', marker=(2, 0, 45), markersize=10, label='2D'),
            mpl.lines.Line2D([0], [0], color='k', linestyle='', marker=(3, 0, 45), markersize=10, label='3D'),
            mpl.lines.Line2D([0], [0], color='k', linestyle='', marker=(4, 0, 45), markersize=10, label='4D'),
-           mpl.lines.Line2D([0], [0], color='k', linestyle='--', label=r'$2 \alpha^2/k$')]
+           mpl.lines.Line2D([0], [0], color='k', linestyle='--', label=r'$\dot{S}_{thry} = 8$')]
 
 cax, _ = mpl.colorbar.make_axes(ax)
 cbar = mpl.colorbar.ColorbarBase(cax, cmap=cmap, norm=normalize)
@@ -73,6 +73,6 @@ ax.set(xlabel=r'$N_{traj} T$', ylabel=r'$\dot{\hat{S}}$',
        xticklabels=[r'$5 \times 10^2$', r'$10^3$', r'$5 \times 10^3$'])
 ax.tick_params(axis='both', which='both', direction='in')
 
-# fig.savefig(os.path.join(savePath, datetime.now().strftime('%y%m%d') + '_alpha{a}_epr_vs_dataSize.pdf'.format(a=alpha)), format='pdf')
+fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_alpha{a}_epr_vs_dataSize.pdf'.format(a=alpha)), format='pdf')
 
 plt.show()
