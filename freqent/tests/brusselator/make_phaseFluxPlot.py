@@ -32,15 +32,17 @@ for file in files:
     yrange = edges_y[-1] - edges_y[0]
 
     plt.close('all')
-    fig, ax = plt.subplots(figsize=(7, 10))
-    ax.pcolormesh(edges_x, edges_y, prob_map.T, rasterized=True, cmap='Blues')
+    fig, ax = plt.subplots()
+    a = ax.pcolormesh(edges_x, edges_y, prob_map.T / prob_map.sum(), rasterized=True, cmap='Blues')
     ax.quiver(xx[::2, ::2] + dx / 2, yy[::2, ::2] + dy / 2, flux_field[0][::2, ::2].T, flux_field[1][::2, ::2].T,
-              color='k', alpha=0.5, scale=1)
-
+              color='k', alpha=0.75, scale=1)
     ax.set_aspect('equal')
-    ax.set(xlabel='X', ylabel='Y', title=r'$\alpha = {a}$'.format(a=alpha), xlim=[0, 800], ylim=[0, 1100])
+    ax.set(xlabel='X', ylabel='Y', title=r'$\alpha = {a}$'.format(a=alpha))
     ax.tick_params(which='both', direction='in')
+    cbar = fig.colorbar(a)
+    cbar.ax.set_title(r'$p(X,Y)$')
+    cbar.ax.tick_params(which='both', direction='in')
     plt.tight_layout()
 
-    fig.savefig(os.path.join(args.savepath, 'phaseFluxPlot_alpha{a}.png'.format(a=alpha)), format='png')
+    fig.savefig(os.path.join(args.savepath, 'phaseFluxPlot_alpha{a:0.2f}.pdf'.format(a=alpha)), format='pdf')
 
