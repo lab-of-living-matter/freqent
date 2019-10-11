@@ -1,31 +1,48 @@
 import os
+import sys
 from glob import glob
 import numpy as np
 import matplotlib.pyplot as plt
 import h5py
 import matplotlib as mpl
-# import freqent.freqentn as fen
+from datetime import datetime
 mpl.rcParams['pdf.fonttype'] = 42
 
-parentFolder = '/mnt/llmStorage203/Danny/brusselatorSims/fieldSims/190509/brussfield'
-savePath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/figures/brussfield/eprDensity_traj/'
-folders = glob(os.path.join(parentFolder, 'alpha*'))
-alphas = np.asarray([float(f.split(os.path.sep)[-1].split('_')[0][5:]) for f in folders])
+if sys.platform == 'linux':
+    datapath = '/mnt/llmStorage203/Danny/brusselatorSims/fieldSims/190910'
+    savepath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/figures/brussfield/eprDensity_traj/'
+elif sys.platform == 'darwin':
+    datapath = '/Volumes/Storage/Danny/brusselatorSims/fieldSims/190910'
+    savepath = '/Users/Danny/Dropbox/LLM_Danny/freqent/figures/brussfield/eprDensity_traj/'
 
-for ind in np.argsort(alphas[1:]):
-    f = folders[1:][ind]
+files = glob(os.path.join(datapath, 'alpha*', 'data.hdf5'))
+alphas = np.zeros(len(files))
+
+for file in files[:2]:
+    with h5py.File(file, 'r') as d:
+        epr_density = np.mean(d['data']['rhos'][:], axis=0)
+        alpha = (d['params']['B'][()] * d['params']['rates'][2] * d['params']['rates'][4] /
+                 (d['params']['C'][()] * d['params']['rates'][3] * d['params']['rates'][5]))
+        t = d['data']['t_points'][:]
+        nCompartments = d['params']['nCompartments'][()]
+        traj = d['data']['trajs'][0, 0]
+        k = d['data']['k'][:] * 100
+        w = d['data']['omega'][:]
+
     fig, ax = plt.subplots(1, 2, figsize=(12, 5))
-    with h5py.File(os.path.join(f, 'data.hdf5'), 'r') as d:
-        ax[0].cla(), ax[1].cla()
-        ax[0].pcolormesh(np.arange(d['params']['nCompartments'][()]), d['data']['t_points'][:], d['data']['trajs'][0, 0], cmap='Reds')
-        ax[0].set(xlabel=r'$r$', ylabel=r'$t$', title=r'$X(r,t)$')
-        a = ax[1].pcolormesh(d['data']['k'][:], d['data']['omega'], d['data']['epr_density'],
-                             vmin=0, vmax=4 * 10**-5, rasterized=True)
+    ax[0].cla(), ax[1].cla()
+    ax[0].pcolormesh(np.arange(nCompartments), t, traj, cmap='cividis')
+    ax[0].set(xlabel=r'$r$', ylabel=r'$t$', title=r'$X(r,t)$')
 
-    ax[1].set(xlabel=r'$k$', ylabel=r'$\omega$', title='EPR density')
-    ax[1].text(0.01, 50, r'$\alpha = {a}$'.format(a=alphas[1:][ind]), color='w', size=12)
-    fig.colorbar(a, ax=ax[1], extend='max')
+    a = ax[1].pcolormesh(k, w, epr_density, rasterized=True)
+    ax[1].set(xlabel=r'$k$', ylabel=r'$\omega$', title=r'$\rho_{\dot{s}}$')
+    # ax[1].text(0.01, 50, r'$\alpha = {a}$'.format(a=alpha), color='w', size=12)
+
+    fig.colorbar(a, ax=ax[1])
     ax[1].set_aspect(np.diff(ax[1].get_xlim())[0] / np.diff(ax[1].get_ylim())[0])
-    fig.savefig(os.path.join(savePath, 'alpha{a}.png'.format(a=alphas[1:][ind])), format='png')
+    fig.suptitle(r'$\alpha = {a}$'.format(a=alpha))
+    # fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_alpha{a:0.2f}.png'.format(a=alpha)), format='png')
 
-    plt.close('all')
+    # plt.close('all')
+
+plt.show()
