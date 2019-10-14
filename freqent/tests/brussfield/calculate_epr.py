@@ -62,7 +62,7 @@ if sys.platform == 'linux':
     dataFolder = '/mnt/llmStorage203/Danny/brusselatorSims/fieldSims/190910'
 
 files = glob(os.path.join(dataFolder, 'alpha*', 'data.hdf5'))
-sigma = [100, 5]
+sigma = [75, 5]
 
 print('Calculating eprs...')
 with multiprocessing.Pool(processes=4) as pool:

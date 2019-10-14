@@ -29,20 +29,21 @@ for file in files[:2]:
         k = d['data']['k'][:] * 100
         w = d['data']['omega'][:]
 
-    fig, ax = plt.subplots(1, 2, figsize=(12, 5))
+    fig, ax = plt.subplots()
     ax[0].cla(), ax[1].cla()
     ax[0].pcolormesh(np.arange(nCompartments), t, traj, cmap='cividis')
     ax[0].set(xlabel=r'$r$', ylabel=r'$t$', title=r'$X(r,t)$')
 
-    a = ax[1].pcolormesh(k, w, epr_density, rasterized=True)
+    a = ax[1].pcolormesh(k, w, epr_density, rasterized=True,
+                         vmin=0, vmax=1e-6)
     ax[1].set(xlabel=r'$k$', ylabel=r'$\omega$', title=r'$\rho_{\dot{s}}$')
     # ax[1].text(0.01, 50, r'$\alpha = {a}$'.format(a=alpha), color='w', size=12)
-
-    fig.colorbar(a, ax=ax[1])
+    plt.tight_layout()
+    fig.colorbar(a, ax=ax[1], extend='max')
     ax[1].set_aspect(np.diff(ax[1].get_xlim())[0] / np.diff(ax[1].get_ylim())[0])
     fig.suptitle(r'$\alpha = {a}$'.format(a=alpha))
-    # fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_alpha{a:0.2f}.png'.format(a=alpha)), format='png')
+    fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_alpha{a:0.2f}.png'.format(a=alpha)), format='png')
 
-    # plt.close('all')
+    plt.close('all')
 
 plt.show()

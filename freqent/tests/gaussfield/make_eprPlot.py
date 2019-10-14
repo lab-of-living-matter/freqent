@@ -63,5 +63,5 @@ plt.legend()
 
 plt.tight_layout()
 
-fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_eprPlot_shaded.pdf'), format='pdf')
+# fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_eprPlot_shaded.pdf'), format='pdf')
 plt.show()
