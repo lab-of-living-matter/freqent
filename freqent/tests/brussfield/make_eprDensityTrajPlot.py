@@ -18,7 +18,7 @@ elif sys.platform == 'darwin':
 files = glob(os.path.join(datapath, 'alpha*', 'data.hdf5'))
 alphas = np.zeros(len(files))
 
-for file in files[:2]:
+for file in files:
     with h5py.File(file, 'r') as d:
         epr_density = np.mean(d['data']['rhos'][:], axis=0)
         alpha = (d['params']['B'][()] * d['params']['rates'][2] * d['params']['rates'][4] /
