@@ -21,7 +21,7 @@ with h5py.File(files[4]) as d:
     traj = d['data']['trajs'][0]
     t = d['data']['t_points'][:]
 
-sigma = [10, 1]
+sigma = [10, 2]
 t_epr = t > 10
 mode = 'reflect'
 dt = np.diff(t)[0]
@@ -43,16 +43,16 @@ for ndim, n in enumerate(c.shape[:-2]):
 # plot raw covariance matrix
 fig, ax = plt.subplots(2, 2)
 
-ax[0, 0].pcolormesh(freqs[1], freqs[0][freqs[0] != 0],c[freqs[0] != 0, :, 0, 0].real)
+ax[0, 0].pcolorfast(freqs[1], freqs[0], c[..., 0, 0].real, rasterized=True)
 ax[0, 0].set(ylabel=r'$\omega$', title=r'$Re [C_{00}]$', ylim=[-20, 20])
 
-ax[0, 1].pcolormesh(freqs[1], freqs[0], c[..., 0, 1].real)
+ax[0, 1].pcolorfast(freqs[1], freqs[0], c[..., 0, 1].real, rasterized=True)
 ax[0, 1].set(title=r'$Re [C_{01}]$', ylim=[-20, 20])
 
-ax[1, 0].pcolormesh(freqs[1], freqs[0], c[..., 0, 0].imag, cmap='RdBu_r')
+ax[1, 0].pcolorfast(freqs[1], freqs[0], c[..., 0, 0].imag, cmap='RdBu_r', rasterized=True)
 ax[1, 0].set(xlabel=r'$k$', ylabel=r'$\omega$', title=r'$Im [C_{00}]$', ylim=[-20, 20])
 
-ax[1, 1].pcolormesh(freqs[1], freqs[0], c[..., 0, 1].imag, cmap='RdBu_r')
+ax[1, 1].pcolorfast(freqs[1], freqs[0], c[..., 0, 1].imag, cmap='RdBu_r', rasterized=True)
 ax[1, 1].set(xlabel=r'$k$', title=r'$Im [C_{01}])$', ylim=[-20, 20])
 
 fig.suptitle('Raw covariance matrix')
@@ -64,16 +64,16 @@ c_smooth = fen._nd_gauss_smooth(c, stddev=sigma, mode=mode)
 # plot smoothed covariance matrix
 fig_smooth, ax_smooth = plt.subplots(2, 2)
 
-ax_smooth[0, 0].pcolormesh(freqs[1], freqs[0][freqs[0] != 0], c_smooth[freqs[0] != 0, :, 0, 0].real)
+ax_smooth[0, 0].pcolorfast(freqs[1], freqs[0], c_smooth[..., 0, 0].real, rasterized=True)
 ax_smooth[0, 0].set(ylabel=r'$\omega$', title=r'$ Re [C_{00}]$', ylim=[-20, 20])
 
-ax_smooth[0, 1].pcolormesh(freqs[1], freqs[0], c_smooth[..., 0, 1].real)
+ax_smooth[0, 1].pcolorfast(freqs[1], freqs[0], c_smooth[..., 0, 1].real, rasterized=True)
 ax_smooth[0, 1].set(title=r'$Re [C_{01}]$', ylim=[-20, 20])
 
-ax_smooth[1, 0].pcolormesh(freqs[1], freqs[0], c_smooth[..., 0, 0].imag, cmap='RdBu_r')
+ax_smooth[1, 0].pcolorfast(freqs[1], freqs[0], c_smooth[..., 0, 0].imag, cmap='RdBu_r', rasterized=True)
 ax_smooth[1, 0].set(xlabel=r'$k$', ylabel=r'$\omega$', title=r'$Im [C_{00}]$', ylim=[-20, 20])
 
-ax_smooth[1, 1].pcolormesh(freqs[1], freqs[0], c_smooth[..., 0, 1].imag, cmap='RdBu_r')
+ax_smooth[1, 1].pcolorfast(freqs[1], freqs[0], c_smooth[..., 0, 1].imag, cmap='RdBu_r', rasterized=True)
 ax_smooth[1, 1].set(xlabel=r'$k$', title=r'$Im [C_{01}])$', ylim=[-20, 20])
 
 fig_smooth.suptitle(r'Smoothed covariance matrix, $\sigma = ({w}, {k})$'.format(w=sigma[0], k=sigma[1]))
@@ -107,25 +107,37 @@ c_smooth_inv = np.linalg.inv(c_smooth)
 axes = list(range(c.ndim))
 axes[-2:] = [axes[-1], axes[-2]]
 # z_ratio = np.log(np.linalg.det(np.flip(c_smooth, axis=0)) / np.linalg.det(c_smooth))
-sdensity_matrix = (np.flip(c_smooth_inv, axis=0) - c_smooth_inv) * np.transpose(c_smooth, axes=axes)
-# sdensity_matrix = np.matmul((np.flip(c_smooth_inv, axis=0) - c_smooth_inv), c_smooth)
+# sdensity_matrix = (np.flip(c_smooth_inv, axis=0) - c_smooth_inv) * np.transpose(c_smooth, axes=axes)
+sdensity_matrix = np.matmul((np.flip(c_smooth_inv, axis=0) - c_smooth_inv), c_smooth)
 
 # plot inverted smoothed covariance matrix
-fig_sdensity, ax_sdensity = plt.subplots(2, 2)
+fig_sdensity_matrix, ax_sdensity_matrix = plt.subplots(2, 2)
 
-ax_sdensity[0, 0].pcolorfast(freqs[1], freqs[0], sdensity_matrix[..., 0, 0].real)
-ax_sdensity[0, 0].set(ylabel=r'$\omega$', title=r'$Re [C_{00}]$', ylim=[-50, 50])
+ax_sdensity_matrix[0, 0].pcolorfast(freqs[1], freqs[0], sdensity_matrix[..., 0, 0].real, rasterized=True)
+ax_sdensity_matrix[0, 0].set(ylabel=r'$\omega$', title=r'$Re [C_{00}]$', ylim=[-50, 50])
 
-ax_sdensity[0, 1].pcolorfast(freqs[1], freqs[0], sdensity_matrix[..., 0, 1].real)
-ax_sdensity[0, 1].set(title=r'$Re [C_{01}]$', ylim=[-50, 50])
+ax_sdensity_matrix[0, 1].pcolorfast(freqs[1], freqs[0], sdensity_matrix[..., 0, 1].real, rasterized=True)
+ax_sdensity_matrix[0, 1].set(title=r'$Re [C_{01}]$', ylim=[-50, 50])
 
-ax_sdensity[1, 0].pcolorfast(freqs[1], freqs[0], sdensity_matrix[..., 0, 0].imag, cmap='RdBu_r')
-ax_sdensity[1, 0].set(xlabel=r'$k$', ylabel=r'$\omega$', title=r'$Im [C_{00}]$', ylim=[-50, 50])
+ax_sdensity_matrix[1, 0].pcolorfast(freqs[1], freqs[0], sdensity_matrix[..., 0, 0].imag, cmap='RdBu_r', rasterized=True)
+ax_sdensity_matrix[1, 0].set(xlabel=r'$k$', ylabel=r'$\omega$', title=r'$Im [C_{00}]$', ylim=[-50, 50])
 
-ax_sdensity[1, 1].pcolorfast(freqs[1], freqs[0], sdensity_matrix[..., 0, 1].imag, cmap='RdBu_r')
-ax_sdensity[1, 1].set(xlabel=r'$k$', title=r'$Im [C_{01}]$', ylim=[-50, 50])
+ax_sdensity_matrix[1, 1].pcolorfast(freqs[1], freqs[0], sdensity_matrix[..., 0, 1].imag, cmap='RdBu_r', rasterized=True)
+ax_sdensity_matrix[1, 1].set(xlabel=r'$k$', title=r'$Im [C_{01}]$', ylim=[-50, 50])
 
-fig_sdensity.suptitle(r'$(C^{-1}_{k, -\omega} - C^{-1}_{k, \omega})C_{k, \omega}$')
+fig_sdensity_matrix.suptitle(r'$(C^{-1}_{k, -\omega} - C^{-1}_{k, \omega})C_{k, \omega}$')
 # plt.tight_layout()
+
+# plot epr density
+dk = np.array([np.diff(f)[0] for f in freqs])
+TL = 2 * np.pi / dk
+
+sdensity = np.trace(np.matmul((np.flip(c_smooth_inv, axis=0) - c_smooth_inv), c_smooth), axis1=-2, axis2=-1).real / (2 * TL.prod())
+
+fig_sdensity, ax_sdensity = plt.subplots()
+
+ax_sdensity.pcolorfast(freqs[1], freqs[0], sdensity, rasterized=True)
+ax_sdensity.set(ylabel=r'$\omega$', xlabel=r'$k$', title=r'$\rho_{\dot{s}}$', ylim=[-50, 50])
+plt.tight_layout()
 
 plt.show()
