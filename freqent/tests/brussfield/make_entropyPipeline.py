@@ -21,11 +21,11 @@ with h5py.File(files[4]) as d:
     traj = d['data']['trajs'][0]
     t = d['data']['t_points'][:]
 
-sigma = [10, 2]
+sigma = [10, 3]
 t_epr = t > 10
 mode = 'reflect'
 dt = np.diff(t)[0]
-dx = 1
+dx = 100
 
 c, freqs = fen.corr_matrix(traj[:, t_epr, :], sample_spacing=[dt, dx])
 
@@ -33,12 +33,18 @@ c, freqs = fen.corr_matrix(traj[:, t_epr, :], sample_spacing=[dt, dx])
 cndim = c.ndim - 2  # get number of frequency dimensions in correlation matrix
 for ndim, n in enumerate(c.shape[:-2]):
     inds = [slice(None)] * cndim  # get first elements in the appropriate dimension
-    singletonInds = [slice(None)] * cndim  # use this to expand selected slice for
+    # singletonInds = [slice(None)] * cndim  # use this to expand selected slice for
     if n % 2 == 0:
-        inds[ndim] = 0
-        singletonInds[ndim] = np.newaxis
-        c = np.concatenate((c, np.conj(c[tuple(inds)][tuple(singletonInds)])), axis=ndim)
-        freqs[ndim] = np.concatenate((freqs[ndim], -freqs[ndim][0][np.newaxis]))
+        inds[ndim] = range(1, n)
+        # inds[ndim] = 0
+        # singletonInds[ndim] = np.newaxis
+        # c = np.concatenate((c, np.conj(c[tuple(inds)][tuple(singletonInds)])), axis=ndim)
+        c = c[tuple(inds)]
+        freqs[ndim] = freqs[ndim][tuple(inds)[ndim]]
+        # freqs[ndim] = np.concatenate((freqs[ndim], -freqs[ndim][0][np.newaxis]))
+
+# c = c[1:, 1:]
+# freqs = [f[1:] for f in freqs]
 
 # plot raw covariance matrix
 fig, ax = plt.subplots(2, 2)
@@ -106,7 +112,7 @@ c_smooth_inv = np.linalg.inv(c_smooth)
 # calculate the matrix that will be summed over to get the epr density
 axes = list(range(c.ndim))
 axes[-2:] = [axes[-1], axes[-2]]
-# z_ratio = np.log(np.linalg.det(np.flip(c_smooth, axis=0)) / np.linalg.det(c_smooth))
+z_ratio = np.log(np.linalg.det(np.flip(c_smooth, axis=0)) / np.linalg.det(c_smooth))
 # sdensity_matrix = (np.flip(c_smooth_inv, axis=0) - c_smooth_inv) * np.transpose(c_smooth, axes=axes)
 sdensity_matrix = np.matmul((np.flip(c_smooth_inv, axis=0) - c_smooth_inv), c_smooth)
 
@@ -132,6 +138,7 @@ fig_sdensity_matrix.suptitle(r'$(C^{-1}_{k, -\omega} - C^{-1}_{k, \omega})C_{k, 
 dk = np.array([np.diff(f)[0] for f in freqs])
 TL = 2 * np.pi / dk
 
+# sdensity = (z_ratio + np.sum(sdensity_matrix, axis=(-1, -2))).real / (2 * TL.prod())
 sdensity = np.trace(np.matmul((np.flip(c_smooth_inv, axis=0) - c_smooth_inv), c_smooth), axis1=-2, axis2=-1).real / (2 * TL.prod())
 
 fig_sdensity, ax_sdensity = plt.subplots()

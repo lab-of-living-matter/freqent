@@ -139,12 +139,10 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     cndim = c.ndim - 2  # get number of frequency dimensions in correlation matrix
     for ndim, n in enumerate(c.shape[:-2]):
         inds = [slice(None)] * cndim  # get first elements in the appropriate dimension
-        singletonInds = [slice(None)] * cndim  # use this to expand selected slice for concatenation
         if n % 2 == 0:
-            inds[ndim] = 0
-            singletonInds[ndim] = np.newaxis
-            c = np.concatenate((c, np.conj(c[tuple(inds)][tuple(singletonInds)])), axis=ndim)
-            freqs[ndim] = np.concatenate((freqs[ndim], -freqs[ndim][0][np.newaxis]))
+            inds[ndim] = range(1, n)
+            c = c[tuple(inds)]
+            freqs[ndim] = freqs[ndim][tuple(inds)[ndim]]
 
     # find spacing of all frequencies, temporal and spatial
     dk = np.array([np.diff(f)[0] for f in freqs])
