@@ -22,7 +22,7 @@ def calc_epr_spectral(file):
 
         s = np.zeros(nSim)
         nt, nx = d['data']['trajs'][0, 0, t_epr, :].shape
-        rhos = np.zeros((nSim, nt + (nt + 1) % 2, nx + (nx + 1) % 2))
+        rhos = np.zeros((nSim, nt - (nt + 1) % 2, nx - (nx + 1) % 2))
 
         for ind, traj in enumerate(d['data']['trajs'][..., t_epr, :]):
             s[ind], rhos[ind], w = fen.entropy(traj, sample_spacing=[dt, dx],

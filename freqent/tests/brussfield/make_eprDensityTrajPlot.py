@@ -29,7 +29,7 @@ for file in files:
         k = d['data']['k'][:] * 100
         w = d['data']['omega'][:]
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(1, 2, figsize=(12, 5))
     ax[0].cla(), ax[1].cla()
     ax[0].pcolormesh(np.arange(nCompartments), t, traj, cmap='cividis')
     ax[0].set(xlabel=r'$r$', ylabel=r'$t$', title=r'$X(r,t)$')
