@@ -52,17 +52,17 @@ nrep = 1
 nvar = 2
 sigma_w = sigma[0] * dw
 sigma_k = sigma[1] * dk
-bias = (1 / nrep) * (nvar * (nvar - 1) / 2) * (w_max / (T * sigma_w * np.sqrt(np.pi))) * (k_max / (V * sigma_k * np.sqrt(np.pi)))
+bias = (1 / nrep) * ((nvar * (nvar - 1) / 2) + (3 * nvar / 8)) * (w_max / (T * sigma_w * np.sqrt(np.pi))) * (k_max / (V * sigma_k * np.sqrt(np.pi)))
 
 fig, ax = plt.subplots(figsize=(5.5, 5))
 ax.plot(alphas, epr / V, 'o', label=r'$\dot{S}_{true}$')
 ax.plot(alphas, epr_blind / V, 'o', label=r'$\dot{S}_{blind}$')
 # ax.errorbar(alphas, np.mean(epr_spectral, axis=1) - bias, yerr=np.std(epr_spectral, axis=1), fmt='ko', label='epr_spectral', capsize=5)
 
-ax.plot(alphas, np.mean(epr_spectral, axis=1) - bias, 'ko', label=r'$\hat{\dot{S}}$')
+ax.plot(alphas, np.mean(epr_spectral, axis=1), 'ko', label=r'$\hat{\dot{S}}$')
 ax.fill_between(alphas[np.argsort(alphas)],
-                np.mean(epr_spectral, axis=1)[np.argsort(alphas)] - bias + np.std(epr_spectral, axis=1)[np.argsort(alphas)],
-                np.mean(epr_spectral, axis=1)[np.argsort(alphas)] - bias - np.std(epr_spectral, axis=1)[np.argsort(alphas)],
+                np.mean(epr_spectral, axis=1)[np.argsort(alphas)] + np.std(epr_spectral, axis=1)[np.argsort(alphas)],
+                np.mean(epr_spectral, axis=1)[np.argsort(alphas)] - np.std(epr_spectral, axis=1)[np.argsort(alphas)],
                 color='k', alpha=0.5)
 # ax.plot(alphas[np.argsort(alphas)] , epr_blind[np.argsort(alphas)] / V, 'r', lw=3, label=r'$\dot{S}_{thry}$')
 
@@ -75,5 +75,5 @@ ax.set(yscale='log', xscale='log')
 ax.legend(loc='lower right')
 plt.tight_layout()
 
-fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_eprPlot_doubleBias.pdf'), format='pdf')
+fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')
 plt.show()
