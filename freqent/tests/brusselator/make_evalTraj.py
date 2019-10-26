@@ -13,9 +13,18 @@ plt.close('all')
 
 k1plus, k1minus, k2plus, k2minus, k3plus, k3minus = [1, 0.5, 2, 0.5, 2, 0.5]
 V = 100
+const = 100
+# mu = np.linspace(0, 20, 101)
+mu = np.concatenate((np.arange(-2, 8, 0.1), np.arange(8, 9.01, 0.05)))
+# mu = np.concatenate((-np.flip(mu[1:]), mu))
 a = 100 / V
-c = 400 / V
-b = np.unique(np.logspace(0, 11, 135, base=2).astype(int)) / V
+B = np.sqrt(k2minus * k3minus / (k2plus * k3plus)) * np.exp(mu / 2) * const
+C = (const**2 / B)
+b = B / V
+c = C / V
+
+# c = 400 / V
+# b = np.unique(np.logspace(0, 11, 135, base=2).astype(int)) / V
 # b = np.linspace(2, 2048, 2049) / V
 
 alphas = b * k2plus * k3plus / (c * k2minus * k3minus)
@@ -34,17 +43,17 @@ det = j11 * j22 - j12 * j21
 lambda_plus = (tr / 2) + np.sqrt((tr / 2)**2 - det + 0j)
 lambda_minus = (tr / 2) - np.sqrt((tr / 2)**2 - det + 0j)
 
-normalize = mpl.colors.Normalize(vmin=alphas[0], vmax=alphas[-1])
+normalize = mpl.colors.Normalize(vmin=mu[0], vmax=mu[-1])
 cmap1 = mpl.cm.get_cmap('Greys')
-colors1 = [cmap1(normalize(value)) for value in alphas]
+colors1 = [cmap1(normalize(value)) for value in mu]
 cmap2 = mpl.cm.get_cmap('Blues')
-colors2 = [cmap2(normalize(value)) for value in alphas]
+colors2 = [cmap2(normalize(value)) for value in mu]
 
 
 fig, ax = plt.subplots(figsize=(20, 5))
 
-a1 = ax.scatter(lambda_plus.real, lambda_plus.imag, s=70, c=alphas, cmap='Reds_r', edgecolors='k', alpha=0.5, label=r'$\lambda_+$')
-a2 = ax.scatter(lambda_minus.real, lambda_minus.imag, s=70, c=alphas, cmap='Blues_r', edgecolors='k', alpha=0.5, label=r'$\lambda_-$')
+a1 = ax.scatter(lambda_plus.real, lambda_plus.imag, s=70, c=mu, cmap='Reds_r', edgecolors='k', alpha=0.5, label=r'$\lambda_+$')
+a2 = ax.scatter(lambda_minus.real, lambda_minus.imag, s=70, c=mu, cmap='Blues_r', edgecolors='k', alpha=0.5, label=r'$\lambda_-$')
 
 
 # ax.scatter(lambda_plus.real[np.logical_and(alpha > 1, alpha < 30)], lambda_plus.imag[np.logical_and(alpha > 1, alpha < 30)], c='r')

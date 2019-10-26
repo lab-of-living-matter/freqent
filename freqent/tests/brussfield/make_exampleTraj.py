@@ -15,7 +15,7 @@ mpl.rcParams['xtick.minor.width'] = 1
 mpl.rcParams['ytick.major.width'] = 1
 mpl.rcParams['ytick.minor.width'] = 1
 
-data = 'alpha65.24_nSim10'
+data = 'alpha55.0_nSim10'
 
 if sys.platform == 'linux':
     datapath = '/mnt/llmStorage203/Danny/brusselatorSims/fieldSims/190910'

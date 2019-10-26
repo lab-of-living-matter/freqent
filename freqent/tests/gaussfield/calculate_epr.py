@@ -17,7 +17,7 @@ def calculate_epr(f):
         epr_array = np.zeros(nSim)
         rhos_array = np.zeros((nSim,
                                int((d['params']['nsteps'][()] - steady_state_start + 1) / t_factor) + 1,
-                               d['params']['nsites'][()] + 1))
+                               d['params']['nsites'][()] - 1))
 
         for ind, traj in enumerate(d['data']['trajs'][..., steady_state_start::t_factor, :]):
             try:
@@ -88,4 +88,4 @@ alphas = np.array([float(f.split('alpha')[1].split('_')[0]) for f in folders])
 epr = np.zeros(len(alphas))
 
 with multiprocessing.Pool(processes=4) as pool:
-    result = pool.map(calculate_epr, folders)
+    result = pool.map(calculate_epr, folders[:4])
