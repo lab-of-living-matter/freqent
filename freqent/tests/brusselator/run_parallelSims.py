@@ -32,11 +32,11 @@ parser.add_argument('--rates', type=float, nargs=6,
                     default=[0.5, 0.25, 1, 0.25, 1, 0.25])
 parser.add_argument('--V', type=float, default=100,
                     help='Volume of solution')
-parser.add_argument('--A', type=int, default=100,
+parser.add_argument('--A', type=float, default=100,
                     help='Number of A molecules in solution')
-parser.add_argument('--B', type=int, default=100 * 7,
+parser.add_argument('--B', type=float, default=100 * 7,
                     help='Number of B molecules in solution')
-parser.add_argument('--C', type=int, default=100,
+parser.add_argument('--C', type=float, default=100,
                     help='Number of C molecules in solution')
 parser.add_argument('--t_final', type=float, default=100,
                     help='Final time of simulations in seconds')
