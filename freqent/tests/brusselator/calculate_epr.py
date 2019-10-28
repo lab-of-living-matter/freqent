@@ -48,13 +48,13 @@ def calc_epr_spectral(file):
 
 
 if sys.platform == 'linux':
-    dataFolder = '/mnt/llmStorage203/Danny/brusselatorSims/reactionsOnly/190904/'
+    dataFolder = '/mnt/llmStorage203/Danny/brusselatorSims/reactionsOnly/191026/'
 if sys.platform == 'darwin':
-    dataFolder = '/Volumes/Storage/Danny/brusselatorSims/reactionsOnly/190904/'
+    dataFolder = '/Volumes/Storage/Danny/brusselatorSims/reactionsOnly/191026/'
 
 files = glob(os.path.join(dataFolder, 'alpha*', 'data.hdf5'))
 t_factor = 10
-sigma = 1000
+sigma = 200
 
 print('Calculating eprs...')
 with multiprocessing.Pool(processes=4) as pool:
