@@ -17,10 +17,10 @@ mpl.rcParams['ytick.major.width'] = 2
 mpl.rcParams['ytick.minor.width'] = 2
 
 if sys.platform == 'linux':
-    parentFolder = '/mnt/llmStorage203/Danny/brusselatorSims/reactionsOnly/190904/'
+    parentFolder = '/mnt/llmStorage203/Danny/brusselatorSims/reactionsOnly/191026/'
     saveFolder = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/brusselator/stochastic_simulations/'
 elif sys.platform == 'darwin':
-    parentFolder = '/Volumes/Storage/Danny/brusselatorSims/reactionsOnly/190904/'
+    parentFolder = '/Volumes/Storage/Danny/brusselatorSims/reactionsOnly/191026/'
     saveFolder = '/Users/Danny/Dropbox/LLM_Danny/freqent/brusselator/stochastic_simulations/'
 
 folders = glob(os.path.join(parentFolder, 'alpha*'))
@@ -52,10 +52,10 @@ ax.fill_between(np.log(alphas)[np.argsort(alphas)],
 
 ax.set(xlabel=r'$\Delta \mu$', ylabel=r'$\dot{S}$')
 # ax.set_aspect(np.diff(ax.get_xlim())[0] / np.diff(ax.get_ylim())[0])
-ax.set(yscale='log', xscale='log')
+ax.set(yscale='log', xscale='linear')
 ax.tick_params(which='both', direction='in')
-ax.legend(loc='best')
+ax.legend(loc='lower right')
 plt.tight_layout()
 
-# fig.savefig(os.path.join(saveFolder, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')
+fig.savefig(os.path.join(saveFolder, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')
 plt.show()

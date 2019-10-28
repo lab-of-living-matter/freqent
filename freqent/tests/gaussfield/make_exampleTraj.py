@@ -29,21 +29,22 @@ with h5py.File(os.path.join(datapath, data, 'data.hdf5')) as d:
     L = d['data']['L'][:]
     t = d['data']['t'][::100]
 
-cmap = mpl.cm.get_cmap('RdBu_r')
-vmax = abs(traj[:, t > 10]).max()
+cmap = mpl.cm.get_cmap('coolwarm')
+tinds = np.logical_and(t > 20, t < 30)
+vmax = abs(traj[:, tinds]).max()
 vmin = -vmax
 normalize = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
 # colors = [cmap(normalize(value)) for value in np.ravel(traj)]
 
 fig, ax = plt.subplots(1, 2, sharey=True)
-ax[0].pcolormesh(L, t[np.logical_and(t > 10, t < 30)], traj[0, np.logical_and(t > 10, t < 30)],
-                 cmap='RdBu_r', vmin=vmin, vmax=vmax, rasterized=True)
-ax[1].pcolormesh(L, t[np.logical_and(t > 10, t < 30)], traj[1, np.logical_and(t > 10, t < 30)],
-                 cmap='RdBu_r', vmin=vmin, vmax=vmax, rasterized=True)
+ax[0].pcolormesh(L, t[tinds], traj[0, tinds],
+                 cmap='coolwarm', vmin=vmin, vmax=vmax, rasterized=True)
+ax[1].pcolormesh(L, t[tinds], traj[1, tinds],
+                 cmap='coolwarm', vmin=vmin, vmax=vmax, rasterized=True)
 
-ax[0].set(xlabel=r'$x \ [1/\sqrt{r}]$', title=r'$\phi(x, t)$', ylabel=r'$t \ [1/Dr]$', yticks=[10, 15, 20, 25, 30])
+ax[0].set(xlabel=r'$x \ [1/\sqrt{r}]$', title=r'$\phi(x, t)$', ylabel=r'$t \ [1/Dr]$', yticks=[20, 25, 30])
 ax[0].tick_params(which='both', direction='in')
-ax[1].set(xlabel=r'$x \ [1/\sqrt{r}]$', title=r'$\psi(x, t)$', yticks=[10, 15, 20, 25, 30])
+ax[1].set(xlabel=r'$x \ [1/\sqrt{r}]$', title=r'$\psi(x, t)$', yticks=[20, 25, 30])
 ax[1].tick_params(which='both', direction='in')
 
 cax, _ = mpl.colorbar.make_axes(ax)
@@ -52,5 +53,14 @@ cbar.ax.tick_params(which='both', direction='in')
 cbar.set_ticks([-1, -0.5, 0, 0.5, 1])
 
 fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_' + data + '_traj.pdf'), format='pdf')
+
+fig_trace, ax_trace = plt.subplots()
+ax_trace.plot(L, traj[0, 2550], label=r'$\psi$', lw=2, drawstyle='steps-mid')
+ax_trace.plot(L, traj[1, 2550], label=r'$\phi$', lw=2, drawstyle='steps-mid')
+ax_trace.tick_params(which='both', direction='in')
+ax_trace.set(xlabel=r'$x \ [1/\sqrt{r}]$', ylim=[-1, 1])
+ax_trace.set_aspect(np.diff(ax_trace.set_xlim())[0] / np.diff(ax_trace.set_ylim())[0])
+ax_trace.legend()
+
 
 plt.show()

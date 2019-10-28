@@ -18,10 +18,10 @@ mpl.rcParams['ytick.minor.width'] = 1
 
 
 if sys.platform == 'linux':
-    datapath = '/mnt/llmStorage203/Danny/brusselatorSims/reactionsOnly/190904/'
+    datapath = '/mnt/llmStorage203/Danny/brusselatorSims/reactionsOnly/191026/'
     savepath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/brusselator/stochastic_simulations/'
 elif sys.platform == 'darwin':
-    datapath = '/Volumes/Storage/Danny/brusselatorSims/reactionsOnly/190904/'
+    datapath = '/Volumes/Storage/Danny/brusselatorSims/reactionsOnly/191026/'
     savepath = '/Users/Danny/Dropbox/LLM_Danny/freqent/brusselator/stochastic_simulations/'
 
 files = glob(os.path.join(datapath, 'alpha*', 'data.hdf5'))
@@ -52,7 +52,7 @@ ax.set(xlabel=r'$\alpha$', ylabel=r'arg max$_{\omega} \, \dot{S}$')
 ax.tick_params(which='both', direction='in')
 plt.tight_layout()
 
-fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_argmax_eprDensity_vs_alpha.pdf'), format='pdf')
+# fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_argmax_eprDensity_vs_alpha.pdf'), format='pdf')
 
 fig2, ax2 = plt.subplots(figsize=(6, 5))
 a = ax2.scatter(np.mean(epr_spectral[np.argsort(alphas)], axis=1),
@@ -71,6 +71,6 @@ ax2.tick_params(which='both', direction='in')
 cbar = fig2.colorbar(a)
 cbar.ax.set_title(r'$\alpha$')
 plt.tight_layout()
-fig2.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_argmax_eprDensity_vs_eprSpectral.pdf'), format='pdf')
+# fig2.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_argmax_eprDensity_vs_eprSpectral.pdf'), format='pdf')
 
 plt.show()
