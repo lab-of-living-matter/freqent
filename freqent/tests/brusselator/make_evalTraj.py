@@ -16,11 +16,11 @@ V = 100
 const = 100
 # mu = np.linspace(0, 20, 101)
 # mu = np.concatenate((np.arange(-2, 9.01, 0.1), np.arange(8, 9.01, 0.05)))
-mu = np.arange(-2, 9.01, 0.01)
+mu = np.arange(-2, 9.01, 0.1)
 # mu = np.concatenate((-np.flip(mu[1:]), mu))
 a = 100 / V
 B = np.sqrt(k2minus * k3minus / (k2plus * k3plus)) * np.exp(mu / 2) * const
-C = (const**2 / B)
+C = const**2 / B
 b = B / V
 c = C / V
 

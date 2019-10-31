@@ -57,5 +57,5 @@ ax.tick_params(which='both', direction='in')
 ax.legend(loc='lower right')
 plt.tight_layout()
 
-fig.savefig(os.path.join(saveFolder, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')
+# fig.savefig(os.path.join(saveFolder, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')
 plt.show()
