@@ -57,9 +57,9 @@ def calc_epr_spectral(file):
 
 
 if sys.platform == 'darwin':
-    dataFolder = '/Volumes/Storage/Danny/brusselatorSims/fieldSims/190910'
+    dataFolder = '/Volumes/Storage/Danny/brusselatorSims/fieldSims/191028'
 if sys.platform == 'linux':
-    dataFolder = '/mnt/llmStorage203/Danny/brusselatorSims/fieldSims/190910'
+    dataFolder = '/mnt/llmStorage203/Danny/brusselatorSims/fieldSims/191028'
 
 files = glob(os.path.join(dataFolder, 'alpha*', 'data.hdf5'))
 sigma = [75, 5]

@@ -18,10 +18,10 @@ mpl.rcParams['ytick.major.width'] = 2
 mpl.rcParams['ytick.minor.width'] = 2
 
 if sys.platform == 'linux':
-    datapath = '/mnt/llmStorage203/Danny/brusselatorSims/fieldSims/190910/'
+    datapath = '/mnt/llmStorage203/Danny/brusselatorSims/fieldSims/191028/'
     savepath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/brussfield/'
 elif sys.platform == 'darwin':
-    datapath = '/Volumes/Storage/Danny/brusselatorSims/fieldSims/190910/'
+    datapath = '/Volumes/Storage/Danny/brusselatorSims/fieldSims/191028/'
     savepath = '/Users/Danny/Dropbox/LLM_Danny/freqent/brussfield/'
 
 folders = glob(os.path.join(datapath, 'alpha*'))
@@ -55,12 +55,12 @@ sigma_k = sigma[1] * dk
 bias = (1 / nrep) * ((nvar * (nvar - 1) / 2) + (3 * nvar / 8)) * (w_max / (T * sigma_w * np.sqrt(np.pi))) * (k_max / (V * sigma_k * np.sqrt(np.pi)))
 
 fig, ax = plt.subplots(figsize=(5.5, 5))
-ax.plot(alphas, epr / V, 'o', label=r'$\dot{S}_{true}$')
-ax.plot(alphas, epr_blind / V, 'o', label=r'$\dot{S}_{blind}$')
+ax.plot(np.log(alphas), epr / V, 'o', label=r'$\dot{S}_{true}$')
+ax.plot(np.log(alphas), epr_blind / V, 'o', label=r'$\dot{S}_{blind}$')
 # ax.errorbar(alphas, np.mean(epr_spectral, axis=1) - bias, yerr=np.std(epr_spectral, axis=1), fmt='ko', label='epr_spectral', capsize=5)
 
-ax.plot(alphas, np.mean(epr_spectral, axis=1), 'ko', label=r'$\hat{\dot{S}}$')
-ax.fill_between(alphas[np.argsort(alphas)],
+ax.plot(np.log(alphas), np.mean(epr_spectral, axis=1), 'ko', label=r'$\hat{\dot{S}}$')
+ax.fill_between(np.log(alphas)[np.argsort(alphas)],
                 np.mean(epr_spectral, axis=1)[np.argsort(alphas)] + np.std(epr_spectral, axis=1)[np.argsort(alphas)],
                 np.mean(epr_spectral, axis=1)[np.argsort(alphas)] - np.std(epr_spectral, axis=1)[np.argsort(alphas)],
                 color='k', alpha=0.5)
@@ -68,10 +68,10 @@ ax.fill_between(alphas[np.argsort(alphas)],
 
 # ax.plot(np.log(np.repeat(np.sort(alphas), 10)), np.ravel(epr_spectral[np.argsort(alphas), :]), 'k.')
 
-ax.set(xlabel=r'$\alpha$', ylabel=r'$\dot{S}$')
+ax.set(xlabel=r'$\Delta \mu$', ylabel=r'$\dot{S}$')
 # ax.set_aspect(np.diff(ax.get_xlim())[0] / np.diff(ax.get_ylim())[0])
 ax.tick_params(which='both', direction='in')
-ax.set(yscale='log', xscale='log')
+ax.set(yscale='log')
 ax.legend(loc='lower right')
 plt.tight_layout()
 

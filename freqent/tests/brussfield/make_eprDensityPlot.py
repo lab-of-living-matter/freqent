@@ -19,15 +19,15 @@ mpl.rcParams['ytick.major.width'] = 2
 mpl.rcParams['ytick.minor.width'] = 2
 
 if sys.platform == 'linux':
-    datapath = '/mnt/llmStorage203/Danny/brusselatorSims/fieldSims/190910'
-    savepath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/figures/brussfield/eprDensity'
+    datapath = '/mnt/llmStorage203/Danny/brusselatorSims/fieldSims/191028'
+    savepath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/figures/brussfield/eprDensity_sym'
 elif sys.platform == 'darwin':
-    datapath = '/Volumes/Storage/Danny/brusselatorSims/fieldSims/190910'
-    savepath = '/Users/Danny/Dropbox/LLM_Danny/freqent/figures/brussfield/eprDensity'
+    datapath = '/Volumes/Storage/Danny/brusselatorSims/fieldSims/191028'
+    savepath = '/Users/Danny/Dropbox/LLM_Danny/freqent/figures/brussfield/eprDensity_sym'
 
 # alpha = 65.24
 files = glob(os.path.join(datapath, 'alpha*', 'data.hdf5'))
-sigma = [20, 5]
+sigma = [10, 5]
 
 for file in files:
     with h5py.File(file, 'r') as d:
@@ -56,7 +56,7 @@ for file in files:
     fig, ax = plt.subplots()
     a = ax.pcolormesh(w[1] * 100, w[0], rhos.mean(axis=0), rasterized=True)
     ax.set(xlabel=r'$k$', ylabel=r'$\omega$',
-           ylim=[-20, 20])
+           ylim=[-50, 50])
     ax.tick_params(which='both', direction='in')
 
     cbar = fig.colorbar(a, ax=ax)
@@ -65,7 +65,6 @@ for file in files:
     ax.set_aspect(np.diff(ax.get_xlim())[0] / np.diff(ax.get_ylim())[0])
     plt.tight_layout()
 
-    fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_eprDensity_alpha{a}.pdf'.format(a=alpha)), format='pdf')
+    fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_eprDensity_mu{mu:0.2f}.pdf'.format(mu=np.log(alpha))), format='pdf')
 
     plt.close('all')
-
