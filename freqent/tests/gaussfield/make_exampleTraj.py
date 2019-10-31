@@ -61,6 +61,6 @@ ax_trace.tick_params(which='both', direction='in')
 ax_trace.set(xlabel=r'$x \ [1/\sqrt{r}]$', ylim=[-1, 1])
 ax_trace.set_aspect(np.diff(ax_trace.set_xlim())[0] / np.diff(ax_trace.set_ylim())[0])
 ax_trace.legend()
-
+fig_trace.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_' + data + '_trace_t25.5.pdf'), format='pdf')
 
 plt.show()
