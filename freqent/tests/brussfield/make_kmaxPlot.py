@@ -27,7 +27,7 @@ elif sys.platform == 'darwin':
 
 # alpha = 65.24
 files = glob(os.path.join(datapath, 'alpha*', 'data.hdf5'))
-sigma = [15, 5]
+sigma = [20, 5]
 hopf = 6.16
 
 kmax = np.zeros((len(files), 10))
@@ -37,7 +37,7 @@ for fInd, file in enumerate(files):
     print('reading {f}'.format(f=file.split(os.path.sep)[-2]))
     with h5py.File(file, 'r') as d:
         t_points = d['data']['t_points'][:]
-        t_epr = np.where(t_points > 10)[0]
+        t_epr = np.where(t_points > 50)[0]
         dt = np.diff(t_points)[0]
         dx = d['params']['lCompartment'][()]
         # nCompartments = d['params']['nCompartments'][()]
@@ -45,21 +45,21 @@ for fInd, file in enumerate(files):
         alphas[fInd] = (d['params']['B'][()] * d['params']['rates'][2] * d['params']['rates'][4] /
                         (d['params']['C'][()] * d['params']['rates'][3] * d['params']['rates'][5]))
 
-        # s = np.zeros(nSim)
-        # nt, nx = d['data']['trajs'][0, 0, t_epr, :].shape
-        # rhos = np.zeros((nSim, nt - (nt + 1) % 2, nx - (nx + 1) % 2))
+        s = np.zeros(nSim)
+        nt, nx = d['data']['trajs'][0, 0, t_epr, :].shape
+        rhos = np.zeros((nSim, nt - (nt + 1) % 2, nx - (nx + 1) % 2))
 
-        # for ind, traj in enumerate(d['data']['trajs'][..., t_epr, :]):
-        #     s[ind], rhos[ind], w = fen.entropy(traj, sample_spacing=[dt, dx],
-        #                                        window='boxcar', detrend='constant',
-        #                                        smooth_corr=True, nfft=None,
-        #                                        sigma=sigma,
-        #                                        subtract_bias=True,
-        #                                        many_traj=False,
-        #                                        return_density=True)
-        #     kmax[fInd, ind] = w[1][np.unravel_index(np.argmax(rhos[ind]), rhos[ind].shape)[1]]
-        for ind, rhos in enumerate(d['data']['rhos']):
-            kmax[fInd, ind] = d['data']['k'][np.unravel_index(np.argmax(rhos), rhos.shape)[1]]
+        for ind, traj in enumerate(d['data']['trajs'][..., t_epr, :]):
+            s[ind], rhos[ind], w = fen.entropy(traj, sample_spacing=[dt, dx],
+                                               window='boxcar', detrend='constant',
+                                               smooth_corr=True, nfft=None,
+                                               sigma=sigma,
+                                               subtract_bias=True,
+                                               many_traj=False,
+                                               return_density=True)
+            kmax[fInd, ind] = w[1][np.unravel_index(np.argmax(rhos[ind]), rhos[ind].shape)[1]]
+        # for ind, rhos in enumerate(d['data']['rhos']):
+        #     kmax[fInd, ind] = d['data']['k'][np.unravel_index(np.argmax(rhos), rhos.shape)[1]]
 
 # order kmax
 kmax = kmax[np.argsort(alphas)] * 100
