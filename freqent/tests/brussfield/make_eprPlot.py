@@ -48,21 +48,17 @@ for fInd, f in enumerate(folders):
             sigma = d['params']['sigma'][:]
 
 V = lCompartment * nCompartments
-nrep = 1
-nvar = 2
-sigma_w = sigma[0] * dw
-sigma_k = sigma[1] * dk
-bias = (1 / nrep) * ((nvar * (nvar - 1) / 2) + (3 * nvar / 8)) * (w_max / (T * sigma_w * np.sqrt(np.pi))) * (k_max / (V * sigma_k * np.sqrt(np.pi)))
+mu = np.log(alphas)
 
 fig, ax = plt.subplots(figsize=(5.5, 5))
-ax.plot(np.log(alphas), epr / V, 'o', label=r'$\dot{S}_{true}$')
-ax.plot(np.log(alphas), epr_blind / V, 'o', label=r'$\dot{S}_{blind}$')
+ax.plot(mu[mu <= 8], epr[mu <= 8] / V, 'o', label=r'$\dot{S}_{true}$')
+ax.plot(mu[mu <= 8], epr_blind[mu <= 8] / V, 'o', label=r'$\dot{S}_{blind}$')
 # ax.errorbar(alphas, np.mean(epr_spectral, axis=1) - bias, yerr=np.std(epr_spectral, axis=1), fmt='ko', label='epr_spectral', capsize=5)
 
-ax.plot(np.log(alphas), np.mean(epr_spectral, axis=1), 'ko', label=r'$\hat{\dot{S}}$')
-ax.fill_between(np.log(alphas)[np.argsort(alphas)],
-                np.mean(epr_spectral, axis=1)[np.argsort(alphas)] + np.std(epr_spectral, axis=1)[np.argsort(alphas)],
-                np.mean(epr_spectral, axis=1)[np.argsort(alphas)] - np.std(epr_spectral, axis=1)[np.argsort(alphas)],
+ax.plot(mu[mu <= 8], np.mean(epr_spectral[mu <= 8], axis=1), 'ko', label=r'$\hat{\dot{S}}$')
+ax.fill_between(mu[[mu <= 8]][np.argsort(mu[mu <= 8])],
+                np.mean(epr_spectral, axis=1)[mu <= 8][np.argsort(mu[mu <= 8])] + np.std(epr_spectral[mu <= 8], axis=1)[np.argsort(mu[mu <= 8])],
+                np.mean(epr_spectral[mu <= 8], axis=1)[np.argsort(mu[mu <= 8])] - np.std(epr_spectral[mu <= 8], axis=1)[np.argsort(mu[mu <= 8])],
                 color='k', alpha=0.5)
 # ax.plot(alphas[np.argsort(alphas)] , epr_blind[np.argsort(alphas)] / V, 'r', lw=3, label=r'$\dot{S}_{thry}$')
 

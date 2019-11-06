@@ -20,19 +20,19 @@ mpl.rcParams['ytick.minor.width'] = 2
 
 if sys.platform == 'linux':
     datapath = '/mnt/llmStorage203/Danny/brusselatorSims/fieldSims/191028'
-    savepath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/figures/brussfield/eprDensity_sym'
+    savepath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/figures/brussfield/eprDensity_sym/191105_sigma5,5'
 elif sys.platform == 'darwin':
     datapath = '/Volumes/Storage/Danny/brusselatorSims/fieldSims/191028'
-    savepath = '/Users/Danny/Dropbox/LLM_Danny/freqent/figures/brussfield/eprDensity_sym'
+    savepath = '/Users/Danny/Dropbox/LLM_Danny/freqent/figures/brussfield/eprDensity_sym/191105_sigma5,5'
 
 # alpha = 65.24
 files = glob(os.path.join(datapath, 'alpha*', 'data.hdf5'))
-sigma = [10, 5]
+sigma = [5, 5]
 
 for file in files:
     with h5py.File(file, 'r') as d:
         t_points = d['data']['t_points'][:]
-        t_epr = np.where(t_points > 10)[0]
+        t_epr = np.where(t_points > 20)[0]
         dt = np.diff(t_points)[0]
         dx = d['params']['lCompartment'][()]
         # nCompartments = d['params']['nCompartments'][()]
@@ -45,7 +45,7 @@ for file in files:
         rhos = np.zeros((nSim, nt - (nt + 1) % 2, nx - (nx + 1) % 2))
 
         for ind, traj in enumerate(d['data']['trajs'][..., t_epr, :]):
-            s[ind], rhos[ind], w = fen.entropy(traj, sample_spacing=[dt, dx],
+            s[ind], rhos[ind], w = fen.entropy(traj, sample_spacing=[dt, dx / 100],
                                                window='boxcar', detrend='constant',
                                                smooth_corr=True, nfft=None,
                                                sigma=sigma,
@@ -54,14 +54,14 @@ for file in files:
                                                return_density=True)
 
     fig, ax = plt.subplots()
-    a = ax.pcolormesh(w[1] * 100, w[0], rhos.mean(axis=0), rasterized=True)
+    a = ax.pcolormesh(w[1], w[0], rhos.mean(axis=0), rasterized=True)
     ax.set(xlabel=r'$k$', ylabel=r'$\omega$',
            ylim=[-50, 50])
     ax.tick_params(which='both', direction='in')
 
     cbar = fig.colorbar(a, ax=ax)
     cbar.ax.tick_params(which='both', direction='in')
-    cbar.ax.set(title=r'$\rho_{\dot{s}}$')
+    cbar.ax.set(title=r'$\mathcal{E}_s$')
     ax.set_aspect(np.diff(ax.get_xlim())[0] / np.diff(ax.get_ylim())[0])
     plt.tight_layout()
 
