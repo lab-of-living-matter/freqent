@@ -39,12 +39,12 @@ epr_density_thry = (8 * alpha**2 * ww**2 /
 
 fig, ax = plt.subplots(figsize=(6.5, 5))
 a = ax.pcolormesh(k, w, epr_density,
-                  cmap='Reds', rasterized=True)
-ax.contour(k, w, epr_density_thry * (dk * dw / (16 * np.pi**2)),
-           cmap='Greys_r', levels=[0, 0.0005, 0.002, 0.005, 0.02, 0.04], alpha=0.75)
+                  cmap='inferno', rasterized=True)
+# ax.contour(k, w, epr_density_thry * (dk * dw / (16 * np.pi**2)),
+#            cmap='Greys', levels=[0, 0.0005, 0.002, 0.005, 0.02, 0.04], alpha=0.75)
 
 
-ax.set(xlabel=r'$k$', title=r'$\alpha = {a}$'.format(a=alpha), ylabel=r'$\omega$',
+ax.set(xlabel=r'$q$', title=r'$\alpha = {a}$'.format(a=alpha), ylabel=r'$\omega$',
        ylim=[-10 * np.pi, 10 * np.pi])
 ax.tick_params(which='both', direction='in')
 ax.set_aspect('equal')
@@ -52,8 +52,8 @@ plt.tight_layout()
 
 cbar = fig.colorbar(a)
 cbar.ax.tick_params(which='both', direction='in')
-cbar.ax.set(title=r'$\rho_{\dot{s}}$')
+cbar.ax.set(title=r'$\mathcal{E}$')
 
-fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_' + data + '_eprDensity+thry.pdf'), format='pdf')
+# fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_' + data + '_eprDensity+thry.pdf'), format='pdf')
 
 plt.show()

@@ -28,6 +28,7 @@ colors = [cmap(normalize(value)) for value in np.arange(11)]
 
 ndim = 2
 alphas = [1, 3, 9]
+# alphas = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 # alphas = [1, 5, 9]
 
 fig, ax = plt.subplots(figsize=(5.5, 5))
@@ -41,15 +42,15 @@ for file in os.listdir(dataPath):
                     print(file)
                     s, rhos, w = fe.entropy(f['data']['trajs'][..., nt // 2:], f['params']['dt'][()],
                                             sigma=f['params']['sigma_array'][0], return_density=True)
-                    ax.semilogy(w[w != 0], rhos[w != 0].real / np.diff(w)[0],
-                                color=colors[int(alpha)],
-                                label=r'$\alpha$ = {a}'.format(a=alpha), alpha=0.5)
+                    ax.loglog(w[w > 0] / (1 + alpha**2)**0.5, rhos[w > 0].real / np.diff(w)[0],
+                              color=colors[int(alpha)],
+                              label=r'$\alpha$ = {a}'.format(a=alpha), alpha=0.5)
                     sig = (8 * alpha**2 * w**2) / (2 * np.pi * ((1 + 1j * w)**2 + alpha**2) * ((1 - 1j * w)**2 + alpha**2))
-                    ax.semilogy(w[w != 0], sig[w != 0], '--', color=colors[int(alpha)], lw=2)
+                    ax.loglog(w[w > 0] / (1 + alpha**2)**0.5, sig[w > 0], '--', color=colors[int(alpha)], lw=2)
 
-ax.set(xlabel=r'$\omega$', ylabel='epr density',
-       xlim=[-20, 20], ylim=[1e-5, 1e2],
-       xticks=[-20, -10, 0, 10, 20])
+ax.set(xlabel=r'$\omega / (r^2 + \alpha^2)^{1/2}$', ylabel=r'$\mathcal{E}$',
+       ylim=[1e-5, 1e2], xlim=[1e-1, 1e2])
+       # xticks=[-20, -10, 0, 10, 20])
 # ax.set_aspect(np.diff(ax.set_xlim())[0] / np.diff(ax.set_ylim())[0])
 ax.tick_params(which='both', direction='in')
 ax.legend()
@@ -59,6 +60,6 @@ ax.legend()
 # cbar.ax.set_title(r'$\alpha$')
 # cbar.ax.tick_params(which='both', direction='in')
 
-# fig.savefig(os.path.join(savePath, datetime.now().strftime('%y%m%d') + '_eprDensity_vs_alpha.pdf'), format='pdf')
+# fig.savefig(os.path.join(savePath, datetime.now().strftime('%y%m%d') + '_epf_vs_alpha.pdf'), format='pdf')
 
 plt.show()
