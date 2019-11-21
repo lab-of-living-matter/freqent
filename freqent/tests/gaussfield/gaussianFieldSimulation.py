@@ -47,9 +47,6 @@ class gaussianFields1D():
     ic : array-like
         array with initial conditions for the fields. Shape 2xN,
         where N is the total number of lattice sites
-    D : scalar
-        mobility and noise strength (must be both to obey
-        fluctuation-dissipation in equilibrium)
     nsteps : int
         number of time steps to take in simulation
 
@@ -61,7 +58,6 @@ class gaussianFields1D():
             dx : lattice spacing
             npts : number of lattice sites
             nsteps : number of time steps
-            D : noise strength / mobility
             t : array of all time points
             L : array of all lattice points
             pos : 2 x (nsteps + 1) x npts array of values of
