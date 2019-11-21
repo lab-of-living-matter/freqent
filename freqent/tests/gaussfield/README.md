@@ -20,7 +20,7 @@ from gaussianFieldSimulation import gaussianFields1D
 # time step of simulation
 dt = 0.01
 # number of simulation time steps, here chosen for a final time of 100
-nsteps = 1e4
+nsteps = 10000
 # lattice spacing
 dx = 0.1
 # number of lattice sites
