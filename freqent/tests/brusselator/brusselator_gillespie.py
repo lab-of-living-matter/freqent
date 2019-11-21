@@ -39,6 +39,39 @@ class brusselatorStochSim():
 
     All chemical quantities are given as total number of molecules,
     not concentrations.
+
+    Parameters
+    ----------
+    population_init : array-like
+        2 element array with initial population of X and Y
+    rates : array-like
+        6 element array with reaction rates in format
+        [k1plus, k1minus, k2plus, k2minus, k3plus, k3minus,]
+    V : scalar
+        Reaction volume. sets size of stochastic effects
+    t_points : array-like
+        length N array of time points that simulation should output in.
+
+    Returns
+    -------
+    f : class object
+        class object with the following properties:
+            population : Nx2 array of (X, Y) over time
+            rates : reaction rates
+            V : reaction volume
+            t_points : time points, length N
+            n : total number of simulation time steps
+            reationTypeTracker : fraction of each reaction that occurs
+            ep : entropy produced over time
+            ep_blind : blinded entropy produced over time
+            chemostat : values of (A, B, C) held constant
+
+        and the following methods:
+            reset() : reset to initial conditions
+            runSimulation() : run a simulation
+
+        All other methods only need to be run internally
+
     '''
 
     def __init__(self, population_init, rates, V, t_points, seed=None):
