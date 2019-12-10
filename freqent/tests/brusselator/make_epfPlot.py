@@ -45,16 +45,18 @@ for fInd, file in enumerate(fullfilepath):
         mu = np.log((d['params']['B'][()] * d['params']['rates'][2] * d['params']['rates'][4] /
                     (d['params']['C'][()] * d['params']['rates'][3] * d['params']['rates'][5])))
         s = np.zeros(nSim)
-        rhos = np.zeros((nSim, len(t_epr[::t_factor])))
+        epf = np.zeros((nSim, len(t_epr[::t_factor])))
 
         for ind, traj in enumerate(d['data']['trajs'][..., t_epr[::t_factor]]):
-            s[ind], rhos[ind], w = fe.entropy(traj, sample_spacing=dt * t_factor,
-                                              sigma=sigma, return_density=True)
+            s[ind], epf[ind], w = fe.entropy(traj, sample_spacing=dt * t_factor,
+                                             sigma=sigma, return_density=True)
 
-        ax.plot(w[w > 0], rhos.mean(axis=0)[w > 0], '.', label=r'$\Delta \mu = {m:0.1f}$'.format(m=mu), color=colors[fInd])
+        ax.plot(w[w > 0], epf.mean(axis=0)[w > 0], '.',
+                label=r'$\Delta \mu = {m:0.1f}$'.format(m=mu),
+                color=colors[fInd])
         ax.fill_between(w[w > 0],
-                        rhos.mean(axis=0)[w > 0] - np.std(rhos, axis=0)[w > 0],
-                        rhos.mean(axis=0)[w > 0] + np.std(rhos, axis=0)[w > 0],
+                        epf.mean(axis=0)[w > 0] - np.std(epf, axis=0)[w > 0],
+                        epf.mean(axis=0)[w > 0] + np.std(epf, axis=0)[w > 0],
                         color=colors[fInd], alpha=0.5)
 
 
