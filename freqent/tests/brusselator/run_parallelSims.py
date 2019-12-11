@@ -62,7 +62,7 @@ dt = np.diff(t_points)[0]
 
 # get non-equilibrium parameter
 # if not equal to 1, then system is away from equilibrium
-alpha = args.B * args.rates[2] * args.rates[4] / (args.C * args.rates[3] * args.rates[5])
+mu = np.log((args.B * args.rates[2] * args.rates[4]) / (args.C * args.rates[3] * args.rates[5]))
 
 # handle random seeds
 if str(args.seed_type) == 'time':
@@ -162,7 +162,7 @@ epr_blind, intercept, r_value, p_val, std_err = stats.linregress(t_points[args.n
 
 
 # create filename and create folder with that name under savepath
-filename = 'alpha{a}_nSim{n}_sigma{s}'.format(a=alpha, n=args.nSim, s=args.sigma)
+filename = 'mu{m:0.2f}_nSim{n}'.format(m=mu, n=args.nSim)
 if not os.path.exists(os.path.join(args.savepath, filename)):
     os.makedirs(os.path.join(args.savepath, filename))
 
