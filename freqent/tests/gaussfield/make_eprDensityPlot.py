@@ -15,7 +15,7 @@ mpl.rcParams['xtick.minor.width'] = 2
 mpl.rcParams['ytick.major.width'] = 2
 mpl.rcParams['ytick.minor.width'] = 2
 
-data = 'alpha7.5_nSim10'
+data = 'alpha7.00_nSim10'
 
 if sys.platform == 'linux':
     datapath = '/mnt/llmStorage203/Danny/freqent/gaussfield'
@@ -39,9 +39,9 @@ epr_density_thry = (8 * alpha**2 * ww**2 /
 
 fig, ax = plt.subplots(figsize=(6.5, 5))
 a = ax.pcolormesh(k, w, epr_density,
-                  cmap='inferno', rasterized=True)
-# ax.contour(k, w, epr_density_thry * (dk * dw / (16 * np.pi**2)),
-#            cmap='Greys', levels=[0, 0.0005, 0.002, 0.005, 0.02, 0.04], alpha=0.75)
+                  cmap='Reds', rasterized=True)
+ax.contour(k, w, epr_density_thry * (dk * dw / (16 * np.pi**2)),
+           cmap='Greys_r', levels=[0, 0.0005, 0.002, 0.005, 0.02, 0.04], alpha=0.75)
 
 
 ax.set(xlabel=r'$q$', title=r'$\alpha = {a}$'.format(a=alpha), ylabel=r'$\omega$',

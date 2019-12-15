@@ -46,7 +46,7 @@ def calculate_epr(f):
             del d['data']['epr_spectral']
 
         if '/data/epr' in d:
-            del d['data']['s']
+            del d['data']['epr']
         epr_dset = d['data'].create_dataset('epr', data=epr_array)
         epr_dset.attrs['description'] = 'epr of each trajectory'
 
@@ -88,4 +88,4 @@ alphas = np.array([float(f.split('alpha')[1].split('_')[0]) for f in folders])
 epr = np.zeros(len(alphas))
 
 with multiprocessing.Pool(processes=4) as pool:
-    result = pool.map(calculate_epr, folders[:4])
+    result = pool.map(calculate_epr, folders)
