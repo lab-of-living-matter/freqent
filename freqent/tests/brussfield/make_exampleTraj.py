@@ -15,7 +15,7 @@ mpl.rcParams['xtick.minor.width'] = 1
 mpl.rcParams['ytick.major.width'] = 1
 mpl.rcParams['ytick.minor.width'] = 1
 
-data = 'alpha33.11545195869248_nSim10'
+data = 'alpha330.29955990965095_nSim10'
 
 if sys.platform == 'linux':
     datapath = '/mnt/llmStorage203/Danny/brusselatorSims/fieldSims/191028'
@@ -28,6 +28,8 @@ with h5py.File(os.path.join(datapath, data, 'data.hdf5')) as d:
     traj = d['data']['trajs'][8]
     n_sites = d['params']['nCompartments'][()]
     t = d['data']['t_points'][:]
+    mu = np.log(d['params']['B'][()] * d['params']['rates'][2] * d['params']['rates'][4] /
+                (d['params']['C'][()] * d['params']['rates'][3] * d['params']['rates'][5]))
 
 L = np.arange(n_sites)
 inds = np.logical_and(t > 50, t < 100)
@@ -57,11 +59,11 @@ cbar = mpl.colorbar.ColorbarBase(cax, cmap=cmap, norm=normalize)
 cbar.ax.tick_params(which='both', direction='in')
 # cbar.set_ticks([-1, -0.5, 0, 0.5, 1])
 
-fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_' + data + '_traj.pdf'), format='pdf')
+fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_'  'mu{m:0.1f}_traj.pdf'.format(m=mu)), format='pdf')
 
 
-fig_trace, ax_trace = plt.subplots()
-ax_trace.plot(L, np.squeeze(traj[0, t == 80]), lw=2, label=r'$\psi$')
-ax_trace.plot(L, np.squeeze(traj[1, t == 80]), lw=2, label=r'$\phi$')
+# fig_trace, ax_trace = plt.subplots()
+# ax_trace.plot(L, np.squeeze(traj[0, t == 80]), lw=2, label=r'$\psi$')
+# ax_trace.plot(L, np.squeeze(traj[1, t == 80]), lw=2, label=r'$\phi$')
 
 plt.show()
