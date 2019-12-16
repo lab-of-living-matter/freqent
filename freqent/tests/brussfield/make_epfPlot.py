@@ -57,13 +57,13 @@ for file in files:
     w_inner_inds = np.where(np.logical_and(w[0] > -20, w[0] < 20))[0]
     w_zero = np.where(w[0] == 0)[0][0]
     fig, ax = plt.subplots()
-    a = ax.pcolormesh(w[1], w[0][w_inner_inds], epf.mean(axis=0)[w_inner_inds][w_inner_inds != w_zero],
-                      cmap='plasma', vmin=1e-5, vmax=3e-3, norm=mpl.colors.LogNorm(), rasterized=True)
+    a = ax.pcolormesh(w[1], w[0], epf.mean(axis=0),
+                      cmap='inferno', rasterized=True)#, vmin=1e-5, vmax=3e-3, norm=mpl.colors.LogNorm(), rasterized=True)
     ax.set(xlabel=r'$q$', ylabel=r'$\omega$',
            ylim=[-20, 20])
     ax.tick_params(which='both', direction='in')
 
-    cbar = fig.colorbar(a, ax=ax, extend='both')
+    cbar = fig.colorbar(a, ax=ax)#, extend='both')
     cbar.ax.tick_params(which='both', direction='in')
     cbar.ax.set(title=r'$\hat{\mathcal{E}}$')
     ax.set_aspect(np.diff(ax.get_xlim())[0] / np.diff(ax.get_ylim())[0])

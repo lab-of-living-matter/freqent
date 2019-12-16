@@ -71,5 +71,5 @@ ax.set(yscale='log')
 ax.legend(loc='lower right')
 plt.tight_layout()
 
-fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')
+# fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')
 plt.show()
