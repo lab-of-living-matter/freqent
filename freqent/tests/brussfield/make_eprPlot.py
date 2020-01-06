@@ -39,7 +39,7 @@ for fInd, f in enumerate(folders[list(np.argsort(mu))]):
         delta_mu = np.log((d['params']['B'][()] * d['params']['rates'][2] * d['params']['rates'][4] /
                           (d['params']['C'][()] * d['params']['rates'][3] * d['params']['rates'][5])))
 
-        if delta_mu > 5.65:
+        if delta_mu > 5.65 or abs(delta_mu) < 1:
             if np.isclose(delta_mu, 5.7):
                 sigma = [50, 4]
             elif np.isclose(delta_mu, 5.8):
@@ -56,6 +56,12 @@ for fInd, f in enumerate(folders[list(np.argsort(mu))]):
             #     sigma = [0.5, 0.05]
             elif delta_mu > 6.3:
                 sigma = [0.5, 0.05]
+            elif abs(delta_mu) < 1 and abs(delta_mu) > 0.5:
+                sigma = [100, 10]
+            elif abs(delta_mu) < 0.5:
+                sigma = [200, 20]
+
+
             t_points = d['data']['t_points'][:]
             t_epr = np.where(t_points > 20)[0]
             dt = np.diff(t_points)[0]
@@ -108,5 +114,5 @@ ax.set(yscale='log')
 ax.legend(loc='lower right')
 plt.tight_layout()
 
-# fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')
+fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')
 plt.show()

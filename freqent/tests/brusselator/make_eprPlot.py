@@ -35,20 +35,11 @@ for fInd, f in enumerate(folders):
     with h5py.File(os.path.join(f, 'data.hdf5'), 'r') as d:
         delta_mu = np.log((d['params']['B'][()] * d['params']['rates'][2] * d['params']['rates'][4] /
                     (d['params']['C'][()] * d['params']['rates'][3] * d['params']['rates'][5])))
-        if delta_mu > 5 and delta_mu < 5.8:
-            sigma = 10
-            t_factor = 10
-            t_points = d['data']['t_points'][:]
-            t_epr = np.where(t_points > 10)[0]  # only calculate epr after t = 1000
-            dt = np.diff(t_points)[0]
-            nSim = d['params']['nSim'][()]
-            s = np.zeros(nSim)
-            rhos = np.zeros((nSim, len(t_epr[::t_factor])))
-            for ind, traj in enumerate(d['data']['trajs'][..., t_epr[::t_factor]]):
-                epr_spectral[fInd, ind] = fe.entropy(traj, sample_spacing=dt * t_factor,
-                                                     sigma=sigma, return_density=False)
-        elif delta_mu > 5.8:
-            sigma = 5
+        if delta_mu > 5:
+            if delta_mu > 5 and delta_mu < 5.8:
+                sigma = 10
+            elif delta_mu > 5.8:
+                sigma = 5
             t_factor = 10
             t_points = d['data']['t_points'][:]
             t_epr = np.where(t_points > 10)[0]  # only calculate epr after t = 1000
@@ -77,29 +68,30 @@ ax.plot(mu, epr_blind, 'o', label=r'$\dot{S}_{blind}$')
 #             yerr=np.std(epr_spectral, axis=1), fmt='ko',
 #             label=r'$\dot{S}_{spectral}$', capsize=5)
 
-ax.plot(mu[mu < 5], np.mean(epr_spectral, axis=1)[mu < 5],
-        'o', color='0.0', label=r'$\sigma = {s}$'.format(s=dt * t_factor * 200))
-ax.fill_between(mu[mu < 5],
-                np.mean(epr_spectral, axis=1)[mu < 5] + np.std(epr_spectral, axis=1)[mu < 5],
-                np.mean(epr_spectral, axis=1)[mu < 5] - np.std(epr_spectral, axis=1)[mu < 5],
+ax.plot(mu, np.mean(epr_spectral, axis=1),
+        'o', color='0.0', label=r'$\hat{\dot{S}}$')
+ax.fill_between(mu,
+                np.mean(epr_spectral, axis=1) + np.std(epr_spectral, axis=1),
+                np.mean(epr_spectral, axis=1) - np.std(epr_spectral, axis=1),
                 color='0.0', alpha=0.5)
 
-ax.plot(mu[np.logical_and(mu > 5, mu < 5.8)], np.mean(epr_spectral, axis=1)[np.logical_and(mu > 5, mu < 5.8)],
-        'o', color='0.4', label=r'$\sigma = {s}$'.format(s=dt * t_factor * 10))
-ax.fill_between(mu[np.logical_and(mu > 5, mu < 5.8)],
-                np.mean(epr_spectral, axis=1)[np.logical_and(mu > 5, mu < 5.8)] + np.std(epr_spectral, axis=1)[np.logical_and(mu > 5, mu < 5.8)],
-                np.mean(epr_spectral, axis=1)[np.logical_and(mu > 5, mu < 5.8)] - np.std(epr_spectral, axis=1)[np.logical_and(mu > 5, mu < 5.8)],
-                color='0.4', alpha=0.5)
+#ax.plot(mu[np.logical_and(mu > 5, mu < 5.8)], np.mean(epr_spectral, axis=1)[np.logical_and(mu > 5, mu < 5.8)],
+#        'o', color='0.4', label=r'$\sigma = {s}$'.format(s=dt * t_factor * 10))
+#ax.fill_between(mu[np.logical_and(mu > 5, mu < 5.8)],
+#                np.mean(epr_spectral, axis=1)[np.logical_and(mu > 5, mu < 5.8)] + np.std(epr_spectral, axis=1)[np.logical_and(mu > 5, mu < 5.8)],
+#                np.mean(epr_spectral, axis=1)[np.logical_and(mu > 5, mu < 5.8)] - np.std(epr_spectral, axis=1)[np.logical_and(mu > 5, mu < 5.8)],
+#                color='0.4', alpha=0.5)
 
-ax.plot(mu[mu > 5.8], np.mean(epr_spectral, axis=1)[mu > 5.8],
-        'o', color='0.6', label=r'$\sigma = {s}$'.format(s=dt * t_factor * 5))
-ax.fill_between(mu[mu > 5.8],
-                np.mean(epr_spectral, axis=1)[mu > 5.8] + np.std(epr_spectral, axis=1)[mu > 5.8],
-                np.mean(epr_spectral, axis=1)[mu > 5.8] - np.std(epr_spectral, axis=1)[mu > 5.8],
-                color='0.6', alpha=0.5)
+#ax.plot(mu[mu > 5.8], np.mean(epr_spectral, axis=1)[mu > 5.8],
+#        'o', color='0.6', label=r'$\sigma = {s}$'.format(s=dt * t_factor * 5))
+#ax.fill_between(mu[mu > 5.8],
+#                np.mean(epr_spectral, axis=1)[mu > 5.8] + np.std(epr_spectral, axis=1)[mu > 5.8],
+#                np.mean(epr_spectral, axis=1)[mu > 5.8] - np.std(epr_spectral, axis=1)[mu > 5.8],
+#                color='0.6', alpha=0.5)
 
 # ax.plot(np.repeat(np.sort(alphas), 50), np.ravel(epr_spectral[np.argsort(alphas), :]), 'k.', alpha=0.5)
 
+ax.plot([6.16, 6.16], [1e-3, 1e4], 'r--')
 ax.set(xlabel=r'$\Delta \mu$', ylabel=r'$\dot{S}$')
 # ax.set_aspect(np.diff(ax.get_xlim())[0] / np.diff(ax.get_ylim())[0])
 ax.set(yscale='log', xscale='linear')
@@ -107,5 +99,5 @@ ax.tick_params(which='both', direction='in')
 ax.legend(loc='lower right')
 plt.tight_layout()
 
-# fig.savefig(os.path.join(saveFolder, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')
+fig.savefig(os.path.join(saveFolder, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')
 plt.show()
