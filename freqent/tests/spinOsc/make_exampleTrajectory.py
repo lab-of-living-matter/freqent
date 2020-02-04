@@ -4,8 +4,16 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from datetime import datetime
 import os
-mpl.rcParams['pdf.fonttype'] = 42
+
 plt.close('all')
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['font.size'] = 12
+mpl.rcParams['axes.linewidth'] = 2
+mpl.rcParams['xtick.major.width'] = 2
+mpl.rcParams['xtick.minor.width'] = 2
+mpl.rcParams['ytick.major.width'] = 2
+mpl.rcParams['ytick.minor.width'] = 2
 
 savepath = '/media/daniel/storage11/Dropbox/LLM_Danny/freqent/spinOsc/'
 seed = 101028
@@ -53,10 +61,11 @@ t_range = np.arange(int(nsteps / 3 - nsteps * 0.008),
 # for tInd, t in enumerate(t_range):
 #     ax.plot(r.pos[0, t:t + 2], r.pos[1, t:t + 2], color=colors_time[tInd])
 
-ax.plot(r.pos[0, t_range], r.pos[1, t_range], color='k', alpha=0.7)
+ax.plot(r.pos[0, t_range], r.pos[1, t_range], color='k', lw=2, alpha=0.7)
 ax.plot(r.pos[0, t_range.max()],
         r.pos[1, t_range.max()],
-        'o', markersize=10, markeredgecolor='k', color=(0.9, 0.9, 0.9))
+        'o', markersize=20, markeredgecolor='k', color=(0.9, 0.9, 0.9),
+        markeredgewidth=2)
 
 # Optionally add a colorbar
 # cax, _ = mpl.colorbar.make_axes(ax)
@@ -66,11 +75,12 @@ ax.plot(r.pos[0, t_range.max()],
 cax2, _ = mpl.colorbar.make_axes(ax)
 cbar2 = mpl.colorbar.ColorbarBase(cax2, cmap=cmap_prob, norm=normalize_prob)
 cbar2.ax.set_title(r'$p(x)$')
+cbar2.ax.tick_params(which='both', direction='in')
 
 ax.set(xlim=[-xmax, xmax], ylim=[-ymax, ymax], xticks=[-2, 0, 2], yticks=[-2, 0, 2])
 ax.tick_params(axis='both', bottom=False, left=False)
 ax.set_aspect('equal')
 
-fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_exampleTrajectory_alpha2.pdf'), format='pdf')
+# fig.savefig(os.path.join(savepath, datetime.now().strftime('%y%m%d') + '_exampleTrajectory_alpha2.pdf'), format='pdf')
 
 plt.show()
