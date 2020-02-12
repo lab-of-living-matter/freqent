@@ -183,7 +183,7 @@ omega = spectral_data[0][2][0]
 k = spectral_data[0][2][1]
 
 # create filename and create folder with that name under savepath
-filename = 'alpha{a}_nSim{n}_sigma{s}'.format(a=alpha, n=args.nSim, s=args.sigma)
+filename = 'mu{m:0.2f}_nSim{n}_sigma{s}'.format(m=np.log(alpha), n=args.nSim, s=args.sigma)
 if not os.path.exists(os.path.join(args.savepath, filename)):
     os.makedirs(os.path.join(args.savepath, filename))
 
