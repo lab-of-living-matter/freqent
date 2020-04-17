@@ -50,16 +50,32 @@ def brusselator(r, t, a, b, c, rates):
     '''
     x, y = r
     k1plus, k1minus, k2plus, k2minus, k3plus, k3minus = rates
-    drdt = [k1plus * a - k1minus * x + k2minus * y - k2plus * b * x + k3plus * x**2 * y - k3minus * x**3,
-            -k2minus * y + k2plus * b * x - k3plus * x**2 * y + k3minus * x**3]
+    drdt = [k1plus * a - k1minus * x + k2minus * y * c - k2plus * b * x + k3plus * x**2 * y - k3minus * x**3,
+            -k2minus * y * c + k2plus * b * x - k3plus * x**2 * y + k3minus * x**3]
     return drdt
 
 fig, ax = plt.subplots()
 
-for r0 in np.random.rand(100, 2) * 1.5 * np.array(xss, yss):
+for r0 in np.array([xss, yss]) + np.random.randn(10, 2) * 0.05:
+    # numerically solve the differntial equations
     sol = odeint(brusselator, r0, t, args=(a, b, c, [k1plus, k1minus, k2plus, k2minus, k3plus, k3minus]))
-    ax.plot(sol[len(t) // 2:, 0], sol[len(t) // 2:, 1], color='k', alpha=0.1)
-    ax.plot(xss, yss, marker='X', markersize=10, markeredgecolor='k', color='r')
+    ax.plot(sol[:, 0], sol[:, 1], color='k', alpha=0.1)
+ax.plot(xss, yss, marker='X', markersize=10, markeredgecolor='k', color='r')
+
+# Calculate nullclines and streamlines
+x_max, y_max = sol.max(axis=0)
+x_min, y_min = sol.min(axis=0)
+
+x_range = np.linspace(-5, x_max * 2, 100)
+xx, yy = np.meshgrid(np.linspace(-5, 2 * x_max, 25), np.linspace(0, 2 * y_max, 25))
+y_xdot0 = (-k1plus * a + k1minus * x_range + k2plus * b * x_range + k3minus * x_range**3) / (c * k2minus + x_range**2 * k3plus)
+y_ydot0 = (k3minus * x_range**3 + k2plus * b * x_range) / (c * k2minus + x_range**2 * k3plus)
+xdot = k1plus * a - k1minus * xx - k2plus * b * xx + k2minus * yy * c + k3plus * xx**2 * yy - k3minus * xx**3
+ydot = -(- k2plus * b * xx + k2minus * yy * c + k3plus * xx**2 * yy - k3minus * xx**3)
+
+# ax.plot(x_range, y_xdot0, lw=2, color='C0', label=r'$\dot{x} = 0$')
+# ax.plot(x_range, y_ydot0, lw=2, color='C1', label=r'$\dot{y} = 0$')
+ax.streamplot(xx, yy, xdot, ydot, color=np.sqrt(xdot**2 + ydot**2), cmap='Reds_r', density=1)
 
 # for bInd, b in enumerate(bArray):
 #     r0 = np.random.rand(2) * bc
@@ -78,7 +94,7 @@ legend_elements = [mpl.lines.Line2D([0], [0], markersize=10, marker='X',
                    mpl.lines.Line2D([0], [0], color='k', label='trajectory')]
 
 ax.legend(handles=legend_elements, loc='best')
-ax.set(xlabel=r'$[X]$', ylabel=r'$[Y]$')#, title=r'Brusselator, $a$={a}, $b_c$={bc}, $b=${b}'.format(a=a, bc=bc, b=b))
-ax.set_aspect(np.diff(ax.set_xlim())[0] / np.diff(ax.set_ylim())[0])
+ax.set(xlabel=r'$x$', ylabel=r'$y$', ylim=[0, y_max * 1.25], xlim=[-5, x_max * 1.25])
+ax.set_aspect('equal')
 ax.tick_params(which='both', direction='in')
 plt.show()
