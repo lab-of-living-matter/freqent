@@ -12,15 +12,15 @@ plt.close('all')
 # mpl.rcParams['ytick.minor.width'] = 2
 
 k1plus, k1minus, k2plus, k2minus, k3plus, k3minus = [1, 0.5, 2, 0.5, 2, 0.5]
-V = 100
-const = 100
+V = 10000
+const = V
 # mu = np.linspace(0, 20, 101)
 # mu = np.concatenate((np.arange(-2, 9.01, 0.1), np.arange(8, 9.01, 0.05)))
 mu = np.arange(-2, 9.01, 0.1)
 # mu = np.concatenate((-np.flip(mu[1:]), mu))
-a = 100 / V
-B = np.sqrt(k2minus * k3minus / (k2plus * k3plus)) * np.exp(mu / 2) * const
-C = const**2 / B
+a = 1
+B = np.exp(mu / 2) * const / (k2plus * k3plus)
+C = np.exp(-mu / 2) * const / (k2minus * k3minus)
 b = B / V
 c = C / V
 
@@ -66,7 +66,7 @@ a2 = ax.scatter(lambda_minus.real, lambda_minus.imag, s=70, c=mu, cmap='Blues_r'
 ax.axhline(lw=2, color='k')
 ax.axvline(lw=2, color='k')
 ax.tick_params(which='both', direction='in')
-ax.set_aspect('equal')
+# ax.set_aspect('equal')
 ax.set(xlabel=r'$\Re [\lambda_\pm]}$', ylabel=r'$\Im[\lambda_\pm]$')
 fig.colorbar(a1, ax=ax, shrink=0.6)
 
