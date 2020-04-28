@@ -36,11 +36,11 @@ parser.add_argument('--deltaMu', '-mu', type=float, default=0.0,
 args = parser.parse_args()
 
 mu = args.deltaMu
-t = np.linspace(0, 100, 2001)
+t = np.linspace(0, 1000, 20001)
 k1plus, k1minus, k2plus, k2minus, k3plus, k3minus = [1, 0.5, 2, 0.5, 2, 0.5]
 a = 1
-b = np.sqrt(k2minus * k3minus / (k2plus * k3plus)) * np.exp(mu / 2)
-c = (k2minus * k3minus) / (b * k2plus * k3plus)
+b = np.exp(mu / 2) / (k2plus * k3plus)
+c = np.exp(-mu / 2) / (k2minus * k3minus)
 xss = a * k1plus / k1minus
 yss = (k2plus * b * xss + k3minus * xss**3) / (k2minus * c + k3plus * xss**2)
 
@@ -59,7 +59,7 @@ fig, ax = plt.subplots()
 for r0 in np.array([xss, yss]) + np.random.randn(10, 2) * 0.05:
     # numerically solve the differntial equations
     sol = odeint(brusselator, r0, t, args=(a, b, c, [k1plus, k1minus, k2plus, k2minus, k3plus, k3minus]))
-    ax.plot(sol[:, 0], sol[:, 1], color='k', alpha=0.1)
+    ax.plot(sol[len(t)//2:, 0], sol[len(t)//2:, 1], color='k', alpha=0.1)
 ax.plot(xss, yss, marker='X', markersize=10, markeredgecolor='k', color='r')
 
 # Calculate nullclines and streamlines
@@ -75,7 +75,7 @@ ydot = -(- k2plus * b * xx + k2minus * yy * c + k3plus * xx**2 * yy - k3minus * 
 
 # ax.plot(x_range, y_xdot0, lw=2, color='C0', label=r'$\dot{x} = 0$')
 # ax.plot(x_range, y_ydot0, lw=2, color='C1', label=r'$\dot{y} = 0$')
-ax.streamplot(xx, yy, xdot, ydot, color=np.sqrt(xdot**2 + ydot**2), cmap='Reds_r', density=1)
+# ax.streamplot(xx, yy, xdot, ydot, color=np.sqrt(xdot**2 + ydot**2), cmap='Reds_r', density=1)
 
 # for bInd, b in enumerate(bArray):
 #     r0 = np.random.rand(2) * bc
@@ -94,7 +94,7 @@ legend_elements = [mpl.lines.Line2D([0], [0], markersize=10, marker='X',
                    mpl.lines.Line2D([0], [0], color='k', label='trajectory')]
 
 ax.legend(handles=legend_elements, loc='best')
-ax.set(xlabel=r'$x$', ylabel=r'$y$', ylim=[0, y_max * 1.25], xlim=[-5, x_max * 1.25])
-ax.set_aspect('equal')
+ax.set(xlabel=r'$x$', ylabel=r'$y$')#, ylim=[0, y_max * 1.25], xlim=[-5, x_max * 1.25])
+# ax.set_aspect('equal')
 ax.tick_params(which='both', direction='in')
 plt.show()
