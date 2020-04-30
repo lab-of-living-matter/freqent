@@ -34,7 +34,7 @@ epr = np.zeros(len(mu))
 for fInd, f in enumerate(folders):
     with h5py.File(os.path.join(f, 'data.hdf5'), 'r') as d:
         delta_mu = np.log((d['params']['B'][()] * d['params']['rates'][2] * d['params']['rates'][4] /
-                    (d['params']['C'][()] * d['params']['rates'][3] * d['params']['rates'][5])))
+                          (d['params']['C'][()] * d['params']['rates'][3] * d['params']['rates'][5])))
         if delta_mu > 5:
             if delta_mu > 5 and delta_mu < 5.8:
                 sigma = 10
