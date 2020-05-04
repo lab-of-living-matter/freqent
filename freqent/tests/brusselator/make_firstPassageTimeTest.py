@@ -33,8 +33,8 @@ for file in files:
         for x, y in zip(d['data']['trajs'][:, 0, len(t) // 2:],
                         d['data']['trajs'][:, 1, len(t) // 2:]):
             # theta = np.arctan2((y - y.mean()) / y.std(), (x - x.mean()) / x.std())
-            cum_x = np.cumsum((x - x.mean()) / x.std())
-            crossing_inds = np.logical_or(np.cumsum(cum_x) > L(a), np.cumsum(cum_x) < -L(a))
+            rescaled_x = (x - x.mean()) / x.std()
+            crossing_inds = np.logical_or(np.cumsum(rescaled_x) > L(a), np.cumsum(rescaled_x) < -L(a))
             crossing_times = t[len(t) // 2:][crossing_inds] - t[len(t) // 2]
 
             if len(crossing_times) > 0:
