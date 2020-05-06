@@ -32,9 +32,9 @@ for file in files:
         fpts = []
         for x, y in zip(d['data']['trajs'][:, 0, len(t) // 2:],
                         d['data']['trajs'][:, 1, len(t) // 2:]):
-            # theta = np.arctan2((y - y.mean()) / y.std(), (x - x.mean()) / x.std())
-            rescaled_x = (x - x.mean()) / x.std()
-            crossing_inds = np.logical_or(np.cumsum(rescaled_x) > L(a), np.cumsum(rescaled_x) < -L(a))
+            theta = np.arctan2((y - y.mean()) / y.std(), (x - x.mean()) / x.std())
+            # rescaled_x = (x - x.mean()) / x.std()
+            crossing_inds = np.logical_or(np.cumsum(theta) > L(a), np.cumsum(theta) < -L(a))
             crossing_times = t[len(t) // 2:][crossing_inds] - t[len(t) // 2]
 
             if len(crossing_times) > 0:

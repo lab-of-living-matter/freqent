@@ -79,7 +79,6 @@ def probabilityFlux(data, dt=1, bins=10):
     return prob_map, flux_field, edges
 
 
-
 def bresenhamline(start, end, max_iter=5):
     """
     N-D Bresenham line algorithm
