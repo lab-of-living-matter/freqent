@@ -42,24 +42,38 @@ for file in files:
         mu = np.log((d['params']['B'][()] * d['params']['rates'][2] * d['params']['rates'][4]) /
                     (d['params']['C'][()] * d['params']['rates'][3] * d['params']['rates'][5]))
         fpts = []
-        for x, y in zip(d['data']['trajs'][:, 0, t > 100],
-                        d['data']['trajs'][:, 1, t > 100]):
-            theta = np.unwrap(np.arctan2(y - y.mean(), x - x.mean()))
-            # rescaled_x = (x - x.mean()) / x.std()
-            crossing_inds = np.logical_or((theta - theta[0]) / (2 * np.pi) > L(a),
-                                          (theta - theta[0]) / (2 * np.pi) < -L(a))
-            crossing_times = t[t > 100][crossing_inds] - 100
+        thetas = np.zeros((d['params']['nSim'][()], len(t[t > 100])))
 
-            if len(crossing_times) > 0:
-                fpt = crossing_times.min()
+        for ind, (x, y) in enumerate(zip(d['data']['trajs'][:, 0, t > 100],
+                                         d['data']['trajs'][:, 1, t > 100])):
+            thetas[ind] = np.unwrap(np.arctan2(y - y.mean(), x - x.mean())) / (2 * np.pi)
+
+        v = np.mean(thetas[:, -1]) / (t.max() - 100)
+        D = np.var(thetas[:, -1]) / (2 * (t.max() - 100))
+
+        crossing_inds = [np.logical_or((v / D) * (theta - theta[0]) > L(a),
+                                       (v / D) * (theta - theta[0]) < -L(a)) for theta in thetas]
+
+        fpts = []
+        for c in crossing_inds:
+            if len(np.where(c)[0]) > 0:
+                fpts.append((t[t > 100][c] - 100).min())
             else:
-                fpt = t.max() - 100
+                fpts.append(L(a) / (np.mean((v / D) * thetas[:, -1]) / (t.max() - 100)))
 
-            fpts.append(fpt)
+        # fpts = [(t[t > 100][np.logical_or((v / D) * (theta - theta[0]) > L(a),
+        #                                   (v / D) * (theta - theta[0]) < -L(a))] - 100).min() for theta in thetas]
 
-        mean_fpt = np.mean(fpts)
+        # if len(crossing_times) > 0:
+        #     fpt = crossing_times.min()
+        # else:
+        #     fpt = t.max() - 100
 
-        s_dot_estimate = L(a) * (1 - 2 * a) / mean_fpt
+        # fpts.append(fpt)
+
+        MFPT = np.mean(fpts)
+
+        s_dot_estimate = L(a) * (1 - 2 * a) / MFPT
         ax.semilogy(mu, s_dot_estimate, 'ko')
         ax.semilogy(mu, d['data']['epr'][()], 'o', color='C0')
         ax.semilogy(mu, d['data']['epr_blind'][()], 'o', color='C1')
