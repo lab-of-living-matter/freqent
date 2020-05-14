@@ -50,31 +50,41 @@ def probabilityFlux(data, dt=1, bins=10):
 
     flux_field = np.zeros((ndim, *nbins))
 
-    for tInd, (prior_state, current_state) in enumerate(zip(data[:-1], data[1:])):
+    for tInd, (prior_state, current_state, next_state) in enumerate(zip(data[:-2], data[1:-1], data[2:])):
         # print('\r tInd={tInd}'.format(tInd=tInd))
         prior_bin_index = np.array([[np.digitize(s, e) - 1 for s, e in zip(prior_state, edges)]])
         current_bin_index = np.array([[np.digitize(s, e) - 1 for s, e in zip(current_state, edges)]])
+        next_bin_index = np.array([[np.digitize(s, e) - 1 for s, e in zip(next_state, edges)]])
 
-        same_bin = prior_bin_index is current_bin_index
+        # same_bin = prior_bin_index is current_bin_index
 
-        if not same_bin:
-            all_traversed_index = np.concatenate((prior_bin_index,
-                                                  bresenhamline(prior_bin_index,
-                                                                current_bin_index,
-                                                                max_iter=-1)))
-            flux_vecs = np.diff(all_traversed_index, axis=0)
-            # pdb.set_trace()
+        # if not same_bin:
+        traversed_inds_before = np.concatenate((prior_bin_index,
+                                                bresenhamline(prior_bin_index,
+                                                              current_bin_index,
+                                                              max_iter=-1)))
+        traversed_inds_after = np.concatenate((current_bin_index,
+                                               bresenhamline(current_bin_index,
+                                                             next_bin_index,
+                                                             max_iter=-1)))
 
-            for ind, (out_ind, in_ind) in enumerate(zip(all_traversed_index[:-1], all_traversed_index[1:])):
-                # this only works for 2D data
+        all_traversed_index = np.concatenate((traversed_inds_before, traversed_inds_after[1:]))
 
-                # add 1 flux vector to each state the path leaves
-                flux_field[:, out_ind[0], out_ind[1]] += flux_vecs[ind]
+        # flux_vecs = all_traversed_index[2:] - all_traversed_index[:-2]
+        flux_vecs = (next_bin_index - prior_bin_index) / (2 * dt)
+        # pdb.set_trace()
+        flux_field[:, current_bin_index[0][0], current_bin_index[0][1]] += flux_vecs[0]
 
-                # add 1 flux vector to each state the path enters
-                flux_field[:, in_ind[0], in_ind[1]] += flux_vecs[ind]
+        # for ind, state in enumerate(all_traversed_index[1:-1]):
+        #     # this only works for 2D data
 
-    flux_field /= T
+        #     # add 1 flux vector to each state the path leaves
+        #     flux_field[:, state[0], state[1]] += flux_vecs[ind]
+
+            # add 1 flux vector to each state the path enters
+            # flux_field[:, in_ind[0], in_ind[1]] += flux_vecs[ind]
+
+    # flux_field /= T
 
     return prob_map, flux_field, edges
 
