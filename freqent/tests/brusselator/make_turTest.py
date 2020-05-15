@@ -9,6 +9,8 @@ parser.add_argument('--files', '-f', type=str, nargs='+',
                     help='files to perform TUR test on')
 parser.add_argument('--dbin', '-d', type=float, default=1,
                     help='size of bins when calculating density and fluxes')
+parser.add_argument('--tau', '-t', type=float, default=None,
+                    help='length of time to divide each trajectory into when calculating flux statistics')
 args = parser.parse_args()
 
 
@@ -27,13 +29,15 @@ def F(x, y, rates, chemostats, V):
     return np.array([fx, fy])
 
 
-def j(before, current, after):
+def chunk(arr, n):
     '''
-    calculate the flux at a current position given the prior and subsequent
-    positions
+    divide arr into n-sized chunks, return as list of arrays
     '''
+    n = max(1, n)
+    return [arr[ii:ii + n] for ii in range(0, len(arr), n)]
 
 
+fig, ax = plt.subplots()
 for file in args.files:
     with h5py.File(os.path.join(file, 'data.hdf5')) as d:
         t = d['data']['t_points'][:]
@@ -57,6 +61,11 @@ for file in args.files:
                  np.arange(d['data']['trajs'][:, 1, t_ss].min() - 5.5,
                            d['data']['trajs'][:, 1, t_ss].max() + 5.5,
                            args.dbin)]
+        tau_length = len(np.where(t < args.tau)[0])
+        j_mean = np.zeros(n_traj)
+        j_var = np.zeros(n_traj)
+        epr = d['data']['epr'][()]
+        epr_blind = d['data']['epr_blind'][()]
 
         for traj_ind, traj in enumerate(d['data']['trajs'][..., t_ss]):
             # data comes out as in shape (2, nt), rotate to (nt, 2)
@@ -74,5 +83,13 @@ for file in args.files:
                 current_bin_index = [np.digitize(s, e) - 1 for s, e in zip(current_state, edges)]
                 j_total[traj_ind, t_ind] = np.dot(flux, force) * prob_map[current_bin_index[0],
                                                                           current_bin_index[1]]
+            j_chunks = chunk(j_total[traj_ind], tau_length)
+            j_mean[traj_ind] = np.mean([jj[-1] for jj in [np.cumsum(j) for j in j_chunks]])
+            j_var[traj_ind] = np.var([jj[-1] for jj in [np.cumsum(j) for j in j_chunks]])
 
-        j_total = np.cumsum(j_total, axis=1)
+        epr_tur = np.mean(j_mean)**2 / (args.tau * np.mean(j_var))
+
+    ax.plot(mu, epr, 'o', color='C0')
+    ax.plot(mu, epr_blind, 'o', color='C1')
+    ax.plot(mu, epr_tur, 'o', color='k')
+
