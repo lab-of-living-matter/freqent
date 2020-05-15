@@ -1,8 +1,20 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import h5py
 import argparse
 import os
+
+plt.close('all')
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['font.size'] = 12
+mpl.rcParams['axes.linewidth'] = 2
+mpl.rcParams['xtick.major.width'] = 2
+mpl.rcParams['xtick.minor.width'] = 2
+mpl.rcParams['ytick.major.width'] = 2
+mpl.rcParams['ytick.minor.width'] = 2
+mpl.rcParams['xtick.direction'] = 'in'
+mpl.rcParams['ytick.direction'] = 'in'
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--files', '-f', type=str, nargs='+',
@@ -93,3 +105,4 @@ for file in args.files:
     ax.plot(mu, epr_blind, 'o', color='C1')
     ax.plot(mu, epr_tur, 'o', color='k')
 
+plt.show()
