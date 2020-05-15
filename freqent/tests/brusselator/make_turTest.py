@@ -105,4 +105,11 @@ for file in args.files:
     ax.plot(mu, epr_blind, 'o', color='C1')
     ax.plot(mu, epr_tur, 'o', color='k')
 
+ax.set(xlabel=r'$\Delta \mu$', ylabel=r'$dS/dt$')
+legend_elements = [mpl.lines.Line2D([0], [0], marker='o', color='C0', lw=0, label=r'$\dot{S}_{\mathrm{true}}$'),
+                   mpl.lines.Line2D([0], [0], marker='o', color='C1', lw=0, label=r'$\dot{S}_{\mathrm{blind}}$'),
+                   mpl.lines.Line2D([0], [0], marker='o', color='k', lw=0, label=r'$\dot{S}_{\mathrm{TUR}}$')]
+
+ax.legend(handles=legend_elements)
+
 plt.show()
