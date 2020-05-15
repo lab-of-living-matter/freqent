@@ -87,9 +87,10 @@ for file in args.files:
             j_mean[traj_ind] = np.mean([jj[-1] for jj in [np.cumsum(j) for j in j_chunks]])
             j_var[traj_ind] = np.var([jj[-1] for jj in [np.cumsum(j) for j in j_chunks]])
 
-        epr_tur = np.mean(j_mean)**2 / (args.tau * np.mean(j_var))
+        epr_tur = 2 * np.mean(j_mean)**2 / (args.tau * np.mean(j_var))
 
-    ax.plot(mu, epr, 'o', color='C0')
-    ax.plot(mu, epr_blind, 'o', color='C1')
-    ax.plot(mu, epr_tur, 'o', color='k')
+    ax.semilogy(mu, epr, 'o', color='C0')
+    ax.semilogy(mu, epr_blind, 'o', color='C1')
+    ax.semilogy(mu, epr_tur, 'o', color='k')
 
+plt.show()
