@@ -12,7 +12,7 @@ def calc_epr_spectral(file):
     '''
     function to pass to multiprocessing pool to calculate epr in parallel
     '''
-    print('Reading {f}'.format(f=file.split(os.path.sep)[-2]))
+    print('Reading {f}'.format(f=file.split(os.path.sep)[-1]))
     with h5py.File(os.path.join(file, 'data.hdf5')) as d:
         t_points = d['data']['t_points'][:]
         t_epr = np.where(t_points > 10)[0]  # only calculate epr after t = 10
@@ -53,7 +53,7 @@ parser.add_argument('--files', '-f', type=str, nargs='+',
                     help='files to calculate entropy for')
 parser.add_argument('--sigma', '-sig', type=float, default=10,
                     help='size of Gaussian to smooth correlation functions with')
-parser.add_argument('--t_factor', '-dt', type=float, default=1,
+parser.add_argument('--t_factor', '-dt', type=int, default=1,
                     help='spacing of subsampling')
 args = parser.parse_args()
 
