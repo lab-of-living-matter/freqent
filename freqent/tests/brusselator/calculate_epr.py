@@ -5,6 +5,7 @@ import numpy as np
 import h5py
 import freqent.freqent as fe
 import multiprocessing
+import argparse
 
 
 def calc_epr_spectral(file):
@@ -12,9 +13,9 @@ def calc_epr_spectral(file):
     function to pass to multiprocessing pool to calculate epr in parallel
     '''
     print('Reading {f}'.format(f=file.split(os.path.sep)[-2]))
-    with h5py.File(file) as d:
+    with h5py.File(os.path.join(file, 'data.hdf5')) as d:
         t_points = d['data']['t_points'][:]
-        t_epr = np.where(t_points > 10)[0]  # only calculate epr after t = 1000
+        t_epr = np.where(t_points > 10)[0]  # only calculate epr after t = 10
         dt = np.diff(t_points)[0]
         nSim = d['params']['nSim'][()]
 
@@ -47,16 +48,24 @@ def calc_epr_spectral(file):
     return s, rhos, w
 
 
-if sys.platform == 'linux':
-    dataFolder = '/mnt/llmStorage203/Danny/brusselatorSims/reactionsOnly/191026/'
-if sys.platform == 'darwin':
-    dataFolder = '/Volumes/Storage/Danny/brusselatorSims/reactionsOnly/191026/'
+parser = argparse.ArgumentParser()
+parser.add_argument('--files', '-f', type=str, nargs='+',
+                    help='files to calculate entropy for')
+parser.add_argument('--sigma', '-sig', type=float, default=10,
+                    help='size of Gaussian to smooth correlation functions with')
+parser.add_argument('--t_factor', '-dt', type=float, default=1,
+                    help='spacing of subsampling')
+args = parser.parse_args()
 
-files = glob(os.path.join(dataFolder, 'alpha*', 'data.hdf5'))
-t_factor = 10
-sigma = 200
+sigma = args.sigma
+t_factor = args.t_factor
+
+if len(args.files) <= 4:
+    nProcessses = len(args.files)
+else:
+    nProcessses = 4
 
 print('Calculating eprs...')
-with multiprocessing.Pool(processes=4) as pool:
-    result = pool.map(calc_epr_spectral, files)
+with multiprocessing.Pool(processes=nProcessses) as pool:
+    result = pool.map(calc_epr_spectral, args.files)
 print('Done.')
