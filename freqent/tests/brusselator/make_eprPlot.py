@@ -35,23 +35,23 @@ for fInd, f in enumerate(folders):
     with h5py.File(os.path.join(f, 'data.hdf5'), 'r') as d:
         delta_mu = np.log((d['params']['B'][()] * d['params']['rates'][2] * d['params']['rates'][4] /
                           (d['params']['C'][()] * d['params']['rates'][3] * d['params']['rates'][5])))
-        if delta_mu > 5:
-            if delta_mu > 5 and delta_mu < 5.8:
-                sigma = 10
-            elif delta_mu > 5.8:
-                sigma = 5
-            t_factor = 10
-            t_points = d['data']['t_points'][:]
-            t_epr = np.where(t_points > 10)[0]  # only calculate epr after t = 1000
-            dt = np.diff(t_points)[0]
-            nSim = d['params']['nSim'][()]
-            s = np.zeros(nSim)
-            rhos = np.zeros((nSim, len(t_epr[::t_factor])))
-            for ind, traj in enumerate(d['data']['trajs'][..., t_epr[::t_factor]]):
-                epr_spectral[fInd, ind] = fe.entropy(traj, sample_spacing=dt * t_factor,
-                                                     sigma=sigma, return_density=False)
-        else:
-            epr_spectral[fInd] = d['data']['s'][:]
+        # if delta_mu > 5:
+        #     if delta_mu > 5 and delta_mu < 5.8:
+        #         sigma = 10
+        #     elif delta_mu > 5.8:
+        #         sigma = 5
+        #     t_factor = 10
+        #     t_points = d['data']['t_points'][:]
+        #     t_epr = np.where(t_points > 10)[0]  # only calculate epr after t = 1000
+        #     dt = np.diff(t_points)[0]
+        #     nSim = d['params']['nSim'][()]
+        #     s = np.zeros(nSim)
+        #     rhos = np.zeros((nSim, len(t_epr[::t_factor])))
+        #     for ind, traj in enumerate(d['data']['trajs'][..., t_epr[::t_factor]]):
+        #         epr_spectral[fInd, ind] = fe.entropy(traj, sample_spacing=dt * t_factor,
+        #                                              sigma=sigma, return_density=False)
+        # else:
+        epr_spectral[fInd] = d['data']['s'][:]
 
         epr[fInd] = d['data']['epr'][()]
         epr_blind[fInd] = d['data']['epr_blind'][()]
@@ -99,5 +99,5 @@ ax.tick_params(which='both', direction='in')
 ax.legend(loc='lower right')
 plt.tight_layout()
 
-fig.savefig(os.path.join(saveFolder, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')
+#fig.savefig(os.path.join(saveFolder, datetime.now().strftime('%y%m%d') + '_eprPlot.pdf'), format='pdf')
 plt.show()
