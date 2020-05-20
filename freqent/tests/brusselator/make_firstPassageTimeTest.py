@@ -71,10 +71,16 @@ for file in files:
 
         # fpts.append(fpt)
 
-        MFPT = np.mean(fpts)
+        mfpt = np.mean(fpts)
 
-        s_dot_estimate = L(a) * (1 - 2 * a) / MFPT
-        ax.semilogy(mu, s_dot_estimate, 'ko')
+        epr_mfpt = L(a) * (1 - 2 * a) / mfpt
+
+        if '/data/epr_mfpt' in d:
+            del d['data']['epr_mfpt']
+        mfpt_dset = d['data'].create_dataset('epr_mfpt', data=epr_mfpt)
+        mfpt_dset.attrs['alpha'] = args.alpha
+
+        ax.semilogy(mu, epr_mfpt, 'ko')
         ax.semilogy(mu, d['data']['epr'][()], 'o', color='C0')
         ax.semilogy(mu, d['data']['epr_blind'][()], 'o', color='C1')
 
@@ -82,6 +88,6 @@ legend_elements = [mpl.lines.Line2D([0], [0], marker='o', color='C0', lw=0, labe
                    mpl.lines.Line2D([0], [0], marker='o', color='C1', lw=0, label=r'$\dot{S}_{\mathrm{blind}}$'),
                    mpl.lines.Line2D([0], [0], marker='o', color='k', lw=0, label=r'$\dot{S}_{\mathrm{MFPT}}$')]
 
-ax.legend(legend_elements, loc='upper left')
+ax.legend(handles=legend_elements, loc='lower right')
 
 plt.show()

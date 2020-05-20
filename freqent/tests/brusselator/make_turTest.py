@@ -51,6 +51,7 @@ def chunk(arr, n):
 
 fig, ax = plt.subplots()
 for file in args.files:
+    print('Analyzing {f}'.format(f=file.split(os.path.sep)[-1]))
     with h5py.File(os.path.join(file, 'data.hdf5')) as d:
         t = d['data']['t_points'][:]
         dt = np.diff(t)[0]
@@ -100,6 +101,12 @@ for file in args.files:
             j_var[traj_ind] = np.var([jj[-1] for jj in [np.cumsum(j) for j in j_chunks]])
 
         epr_tur = 2 * np.mean(j_mean)**2 / (args.tau * np.mean(j_var))
+
+        if '/data/epr_tur' in d:
+            del d['data']['epr_tur']
+        tur_dset = d['data'].create_dataset('epr_tur', data=epr_tur)
+        tur_dset.attrs['dbin'] = args.dbin
+        tur_dset.attrs['tau'] = args.tau
 
     ax.semilogy(mu, epr, 'o', color='C0')
     ax.semilogy(mu, epr_blind, 'o', color='C1')
