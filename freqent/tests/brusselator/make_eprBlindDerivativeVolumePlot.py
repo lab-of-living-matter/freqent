@@ -37,7 +37,7 @@ for vInd, v in enumerate(volFolders):
             # mus[muInd] = np.log((d['params']['B'][()] * d['params']['rates'][2] * d['params']['rates'][4]) /
             #                     (d['params']['C'][()] * d['params']['rates'][3] * d['params']['rates'][5]))
             mus[muInd] = float(m.split(os.path.sep)[-1][2:-7])
-            epr_blinds[muInd] = d['data']['epr_blind'][()]
+            epr_blinds[muInd] = d['data']['s'][:].mean()
             V = d['params']['V'][()]
 
     mu_order = np.argsort(mus)

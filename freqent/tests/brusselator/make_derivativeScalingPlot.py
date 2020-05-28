@@ -38,31 +38,31 @@ for vInd, v in enumerate(volFolders):
     for muInd, m in enumerate(muFolders):
         with h5py.File(os.path.join(m, 'data.hdf5')) as d:
             mus[muInd] = float(m.split(os.path.sep)[-1][2:-7])
-            epr_blinds[muInd] = d['data']['epr_blind'][()]
+            epr_blinds[muInd] = d['data']['s'][:].mean()
             V[vInd] = d['params']['V'][()]
 
     mu_order = np.argsort(mus)
     dmu = np.diff(mus[mu_order])[0]
-    max_derivative[vInd] = ndimage.gaussian_filter1d(epr_blinds[mu_order] / V[vInd], sigma=1, order=1).max()
-    mu_max_derivative[vInd] = mus[mu_order][np.argmax(ndimage.gaussian_filter1d(epr_blinds[mu_order] / V[vInd],
+    max_derivative[vInd] = ndimage.gaussian_filter1d(epr_blinds[mu_order], sigma=1, order=1).max()
+    mu_max_derivative[vInd] = mus[mu_order][np.argmax(ndimage.gaussian_filter1d(epr_blinds[mu_order],
                                                                                 sigma=1, order=1))]
 
 # perform linear fit to logged data
-m, b, r, p, sig = stats.linregress(np.log10(V), np.log10(max_derivative))
+m, b, r, p, sig = stats.linregress(np.log10(V[:-1]), np.log10(max_derivative[:-1]))
 
 fig, ax = plt.subplots(figsize=(4.9, 4.6))
 ax.plot(V, V**m * 10**b, 'r--')
 ax.plot(V, max_derivative, 'ko')
 ax.set(xscale='log', yscale='log', xlabel=r'$V$',
        ylabel=r'max$\left( \partial \dot{S}_{\mathrm{blind}} / \partial \Delta \mu \right)$')
-ax.text(0.5e3, 1e2, r'$\propto V^{{{m:0.2f} \pm {sigma:0.2f}}}$'.format(m=m, sigma=sig), color='r')
+ax.text(V[4], max_derivative[4] * 0.5, r'$\propto V^{{{m:0.2f} \pm {sigma:0.2f}}}$'.format(m=m, sigma=sig), color='r')
 plt.tight_layout()
 
-fig2, ax2 = plt.subplots(figsize=(4.9, 4.6))
+# fig2, ax2 = plt.subplots(figsize=(4.9, 4.6))
 # ax.plot(V, V**m * 10**b, 'r--')
-ax2.plot(V, mu_max_derivative, 'ko')
-ax2.set(xscale='log', yscale='log', xlabel=r'$V$')
-       # ylabel=r'max$\left( \partial \dot{S}_{\mathrm{blind}} / \partial \Delta \mu \right)$')
+# ax2.plot(V, mu_max_derivative, 'ko')
+# ax2.set(xscale='log', yscale='log', xlabel=r'$V$')
+        # ylabel=r'max$\left( \partial \dot{S}_{\mathrm{blind}} / \partial \Delta \mu \right)$')
 # ax.text(0.5e3, 1e2, r'$\propto V^{{{m:0.2f} \pm {sigma:0.2f}}}$'.format(m=m, sigma=sig), color='r')
 plt.tight_layout()
 plt.show()
