@@ -20,15 +20,16 @@ def get_traj(seed):
     '''
     np.random.seed(seed)
 
-    [X0, Y0] = (np.random.rand(2, args.nCompartments) * 3 * args.lCompartment).astype(int)
+    [X0, Y0] = (np.random.rand(2, args.nCompartments) * 3 * args.V).astype(int)
 
     brussfield = brusselator1DFieldStochSim(XY_init=[X0, Y0],
                                             ABC=[args.A, args.B, args.C],
                                             rates=args.rates,
                                             t_points=t_points,
+                                            V=args.V,
                                             D=args.diffusion,
                                             n_subvolumes=args.nCompartments,
-                                            v_subvolumes=args.lCompartment,
+                                            l_subvolumes=args.lCompartment,
                                             seed=seed)
     brussfield.runSimulation()
 
@@ -38,8 +39,8 @@ def get_traj(seed):
 parser = argparse.ArgumentParser()
 parser.add_argument('--rates', type=float, nargs=6,
                     default=[1, 0.5, 2, 0.5, 2, 0.5])
-# parser.add_argument('--V', type=float, default=100,
-                    # help='Volume of solution')
+parser.add_argument('--V', type=float, default=100,
+                    help='Volume of solution')
 parser.add_argument('--A', type=float, default=100,
                     help='Number of A molecules in solution')
 parser.add_argument('--B', type=float, default=700,
@@ -52,9 +53,9 @@ parser.add_argument('--n_t_points', type=int, default=1001,
                     help='Number of time points between 0 and t_final')
 parser.add_argument('--nCompartments', '-K', type=int, default=64,
                     help='Number of compartments to divide space into')
-parser.add_argument('--lCompartment', '-l', type=float, default=100,
+parser.add_argument('--lCompartment', '-l', type=float, default=1,
                     help='Length of each compartment, to be used in getting diffusive rates')
-parser.add_argument('--diffusion', '-D', type=float, nargs=2, default=[10000, 1000],
+parser.add_argument('--diffusion', '-D', type=float, nargs=2, default=[100, 10],
                     help='Diffusion constant of molecule X and Y')
 parser.add_argument('--nSim', type=int, default=10,
                     help='Number of simulations to run in parallel')
@@ -63,8 +64,6 @@ parser.add_argument('--seed_type', type=str, default='time',
                          ' or "input" for inputting specific seeds')
 parser.add_argument('--seed_input', type=int, nargs='*',
                     help='If seed_type="input", the seeds to use for the simulations')
-parser.add_argument('--sigma', '-std', type=int, default=2,
-                    help='Size of Gaussian to smooth with, in units of sample sample_spacing')
 parser.add_argument('--savepath', default='.',
                     help='path to save outputs of simulations ')
 
@@ -164,26 +163,8 @@ epr_blind, _, _, _, _ = stats.linregress(t_points[args.n_t_points // 2:],
 dt = np.diff(t_points)[0]
 dx = args.lCompartment
 
-# Calculate mean entropy production rate for each trajectory from spectral method
-spectral_data = [fen.entropy(t, sample_spacing=[dt, dx],
-                             window='boxcar',
-                             nperseg=None,
-                             noverlap=None,
-                             nfft=None,
-                             detrend='constant',
-                             smooth_corr=True,
-                             sigma=args.sigma,
-                             subtract_bias=True,
-                             many_traj=False,
-                             return_density=True) for t in trajs[..., args.n_t_points // 2:, :]]
-
-s = np.asarray([d[0] for d in spectral_data])
-rhos = np.asarray([d[1] for d in spectral_data])
-omega = spectral_data[0][2][0]
-k = spectral_data[0][2][1]
-
 # create filename and create folder with that name under savepath
-filename = 'mu{m:0.2f}_nSim{n}_sigma{s}'.format(m=np.log(alpha), n=args.nSim, s=args.sigma)
+filename = 'mu{m:0.2f}_nSim{n}'.format(m=np.log(alpha), n=args.nSim)
 if not os.path.exists(os.path.join(args.savepath, filename)):
     os.makedirs(os.path.join(args.savepath, filename))
 
@@ -197,11 +178,6 @@ params['seeds'] = seeds
 params.pop('seed_input')
 params.pop('seed_type')
 
-# with open(os.path.join(args.savepath, filename, 'params.csv'), 'w') as csv_file:
-#     w = csv.DictWriter(csv_file, params.keys())
-#     w.writeheader()
-#     w.writerow(params)
-
 # save figures
 fig_traj.savefig(os.path.join(args.savepath, filename, 'traj.pdf'), format='pdf')
 fig_ep.savefig(os.path.join(args.savepath, filename, 'ep.pdf'), format='pdf')
@@ -212,22 +188,14 @@ dat = {'trajs': trajs,
        'ep_blinds': ep_blinds,
        't_points': t_points,
        'epr': epr,
-       'epr_blind': epr_blind,
-       's': s,
-       'rhos': rhos,
-       'omega': omega,
-       'k': k}
+       'epr_blind': epr_blind}
 
 datattrs = {'trajs': 'trajectory data',
             'eps': 'true entropy produced by each trajectory',
             'ep_blinds': 'blind entropy produced by each trajectory',
             't_points': 'time points',
             'epr': 'mean true entropy production rate of all trajectories',
-            'epr_blind': 'mean blind entropy production rate of all trajectories',
-            's': 'epr of each trajectory by spectral method',
-            'rhos': 'epr density of each trajectory by spectral method',
-            'omega': 'temporal frequency bins of spectral method epr density',
-            'k': 'spatial frequency bins of spectral method epr density'}
+            'epr_blind': 'mean blind entropy production rate of all trajectories'}
 
 with h5py.File(os.path.join(args.savepath, filename, 'data.hdf5'), 'w') as f:
     # save data and params to hdf5 file

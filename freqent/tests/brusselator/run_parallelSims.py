@@ -146,20 +146,6 @@ epr, intercept, r_value, p_val, std_err = stats.linregress(t_points[args.n_t_poi
 epr_blind, intercept, r_value, p_val, std_err = stats.linregress(t_points[args.n_t_points // 2:],
                                                                  ep_blinds.mean(axis=0)[args.n_t_points // 2:])
 
-# Calculate mean entropy production rate from spectral method
-# epr_spectral, epr_spectral_density, w = (fe.entropy(trajs[..., args.n_t_points // 2:],
-#                                          sample_spacing=dt,
-#                                          window='boxcar',
-#                                          nperseg=None,
-#                                          noverlap=None,
-#                                          nfft=None,
-#                                          detrend='constant',
-#                                          padded=False,
-#                                          smooth_corr=True,
-#                                          sigma=args.sigma,
-#                                          subtract_bias=True,
-#                                          return_density=True)).real
-
 
 # create filename and create folder with that name under savepath
 filename = 'mu{m:0.2f}_nSim{n}'.format(m=mu, n=args.nSim)
