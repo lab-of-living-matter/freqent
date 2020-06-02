@@ -15,7 +15,7 @@ def calc_epr_spectral(file):
     print('Reading {f}'.format(f=file.split(os.path.sep)[-1]))
     with h5py.File(os.path.join(file, 'data.hdf5')) as d:
         t_points = d['data']['t_points'][:]
-        t_epr = np.where(t_points > 10)[0]  # only calculate epr after t = 10
+        t_epr = np.where(t_points > 100)[0]  # only calculate epr after t=100
         dt = np.diff(t_points)[0]
         nSim = d['params']['nSim'][()]
 

@@ -61,7 +61,7 @@ legend_elements = [mpl.lines.Line2D([0], [0], color='k', marker='o', alpha=1 / l
                    mpl.lines.Line2D([0], [0], color='k', marker='o', alpha=7 / len(volFolders), label=r'V=10000')]
 
 ax.legend(handles=legend_elements)
-ax.set(xlabel=r'$\Delta \mu$', ylabel=r'$dS/dt$')
+ax.set(xlabel=r'$\Delta \mu$', ylabel=r'$\dot{S}/V$')
 
 ax.text(6.5, 5, r'$\dot{S}_\mathrm{blind}$', color='C1', fontsize=15)
 ax.text(6.5, 50, r'$\dot{S}_\mathrm{true}$', color='C0', fontsize=15)
