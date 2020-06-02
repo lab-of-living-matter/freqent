@@ -44,6 +44,7 @@ c = np.exp(-mu / 2) / (k2minus * k3minus)
 xss = a * k1plus / k1minus
 yss = (k2plus * b * xss + k3minus * xss**3) / (k2minus * c + k3plus * xss**2)
 
+
 def brusselator(r, t, a, b, c, rates):
     '''
     r = [x, y]
@@ -54,13 +55,14 @@ def brusselator(r, t, a, b, c, rates):
             -k2minus * y * c + k2plus * b * x - k3plus * x**2 * y + k3minus * x**3]
     return drdt
 
-fig, ax = plt.subplots()
 
+fig, ax = plt.subplots()
 for r0 in np.array([xss, yss]) + np.random.randn(10, 2) * 0.05:
     # numerically solve the differntial equations
     sol = odeint(brusselator, r0, t, args=(a, b, c, [k1plus, k1minus, k2plus, k2minus, k3plus, k3minus]))
-    ax.plot(sol[len(t)//2:, 0], sol[len(t)//2:, 1], color='k', alpha=0.1)
+    ax.plot(sol[len(t) // 2:, 0], sol[len(t) // 2:, 1], color='k', alpha=0.1)
 ax.plot(xss, yss, marker='X', markersize=10, markeredgecolor='k', color='r')
+ax.plot(sol[len(t) // 2:, 0].mean(), sol[len(t) // 2:, 1].mean(), 'bo')
 
 # Calculate nullclines and streamlines
 x_max, y_max = sol.max(axis=0)
