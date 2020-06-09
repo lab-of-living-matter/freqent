@@ -5,6 +5,7 @@ import h5py
 import matplotlib as mpl
 import numpy as np
 from datetime import datetime
+import freqent.freqentn as fen
 
 plt.close('all')
 mpl.rcParams['pdf.fonttype'] = 42
@@ -26,8 +27,13 @@ if sys.platform == 'darwin':
 
 with h5py.File(os.path.join(datapath, data, 'data.hdf5')) as d:
     epr_density = np.mean(d['data']['epr_density'][:], axis=0)
-    k = d['data']['k'][:]
-    w = d['data']['omega'][:]
+    t = d['data']['t'][:]
+    dt = d['params']['dt'][()]
+    dx = d['params']['dx'][()]
+    s, epr_density, w = fen.entropy(d['data']['trajs'][:, :, t > 25, :], sample_spacing=[dt, dx],
+                                    sigma=[2, 1], many_traj=True, return_density=True)
+    k = w[1]
+    w = w[0]
     alpha = d['params']['alpha'][()]
 
 kk, ww = np.meshgrid(k, w)
