@@ -5,7 +5,7 @@ import numpy as np
 import h5py
 import freqent.freqentn as fen
 import multiprocessing
-
+import argparse
 
 def calc_epr_spectral(file):
     '''
@@ -56,13 +56,15 @@ def calc_epr_spectral(file):
     return s, rhos, w
 
 
-if sys.platform == 'darwin':
-    dataFolder = '/Volumes/Storage/Danny/brusselatorSims/fieldSims/191028'
-if sys.platform == 'linux':
-    dataFolder = '/mnt/llmStorage203/Danny/brusselatorSims/fieldSims/191028'
+parser = argparse.ArgumentParser()
+parser.add_argument('--files', '-f', type=str, nargs='+',
+                    help='files to calculate entropy for')
+parser.add_argument('--sigma', '-sig', type=float, nargs=2, default=[1, 1],
+                    help='size of Gaussian to smooth correlation functions with')
+args = parser.parse_args()
 
-files = glob(os.path.join(dataFolder, 'alpha*', 'data.hdf5'))
-sigma = [75, 5]
+files = args.files
+sigma = args.sigma
 
 print('Calculating eprs...')
 with multiprocessing.Pool(processes=4) as pool:
