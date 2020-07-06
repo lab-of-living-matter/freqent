@@ -8,7 +8,7 @@ import pdb
 
 def entropy(data, sample_spacing, window='boxcar', nperseg=None,
             noverlap=None, nfft=None, detrend='constant', smooth_corr=True,
-            sigma=1, subtract_bias=True, many_traj=False, return_density=False,
+            sigma=1, subtract_bias=True, many_traj=False, return_epf=False,
             azimuthal_average=False):
     '''
     Calculate the entropy using the frequency space measure:
@@ -81,11 +81,11 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     -------
     s : float
         entropy production rate divided by system size
-    s_density : array (optional)
-        numpy array of entropy production rate density divided by system size.
-        Only returned if return_density=True
+    epf : array (optional)
+        numpy array of entropy production factor divided by system size.
+        Only returned if return_epf=True
     freqs : list of arrays (optional)
-        frequency bins of s_density. Only returned if return_density=True
+        frequency bins of s_density. Only returned if return_epf=True
     '''
 
     if not sample_spacing:

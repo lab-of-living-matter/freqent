@@ -7,7 +7,7 @@ from scipy.ndimage import gaussian_filter
 
 def entropy(data, sample_spacing, window='boxcar', nperseg=None,
             noverlap=None, nfft=None, detrend='constant', padded=False,
-            smooth_corr=True, sigma=1, subtract_bias=True, return_density=False):
+            smooth_corr=True, sigma=1, subtract_bias=True, return_epf=False):
     '''
     Calculate the entropy using the frequency space measure:
 
@@ -73,11 +73,11 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     -------
     s : float
         entropy production rate
-    s_density : numpy array (optional)
+    epf : numpy array (optional)
         numpy array containing entropy production rate density. s_density.sum() = s.
-        Only returned if return_density=True
+        Only returned if return_epf=True
     freqs : numpy array (optional)
-        frequency bins of s_density. Only returned if return_density=True
+        frequency bins of s_density. Only returned if return_epf=True
     '''
 
     if data.ndim == 3:
