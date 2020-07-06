@@ -18,11 +18,8 @@ These are simulations of an $`N \geq 2`$ dimensional driven Brownian particle. T
 
 The simulations are non-dimensionalized with time scale $`\tau = 1/k`$ and length scale $`\lambda = \sqrt{D/k}`$, so the harmonic potential is always set to strength $`k=1`$ and the only free parameter to set is the stength of the driving, $`\alpha`$. See below for an example of how to run a simulation, plot the trajectory, calculate the entropy production rate $`\dot{S}`$ and entropy production factor $`\mathcal{E}`$, and plot $`\mathcal{E}`$. The theoretical results are
 
-```math
-\begin{equation}
-    \mathcal{E}^\mathrm{DBP} = \frac{8 \alpha^2 \omega^2}{\left( \omega^2 - \omega_0^2 \right)^2 + (2 \omega)^2}, \qquad \dot{S}^\mathrm{DBP} = 2 \alpha^2
-\end{equation}
-```
+
+$$\mathcal{E}^\mathrm{DBP} = \frac{8 \alpha^2 \omega^2}{\left( \omega^2 - \omega_0^2 \right)^2 + (2 \omega)^2}, \qquad \dot{S}^\mathrm{DBP} = 2 \alpha^2$$
 
 ```python
 from spinOscSimulation import *
@@ -91,5 +88,4 @@ plt.tight_layout()
 plt.show()
 ```
 
-Here is an example of the output from running the above as a script
-![GitHub Logo](/readme_example_alpha2.png)
+Here is an ![example](/readme_example_alpha2.png) of the output from running the above as a script.
