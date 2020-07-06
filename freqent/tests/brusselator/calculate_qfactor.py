@@ -40,7 +40,7 @@ for vInd, v in enumerate(volFolders):
             t_epr = np.where(t_points > 100)[0]
             dt = np.diff(t_points)[0]
             s, epf, w = fe.entropy(d['data']['trajs'][..., t_epr], sample_spacing=dt,
-                                   sigma=1, return_density=True)
+                                   sigma=1, return_epf=True)
             # epf = d['data']['s_density'][:].mean(axis=0)
             # w = d['data']['omega'][:]
             mu = float(m.split(os.path.sep)[-1][2:-7])

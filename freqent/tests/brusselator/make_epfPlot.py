@@ -49,7 +49,7 @@ for fInd, file in enumerate(fullfilepath):
 
         for ind, traj in enumerate(d['data']['trajs'][..., t_epr[::t_factor]]):
             s[ind], epf[ind], w = fe.entropy(traj, sample_spacing=dt * t_factor,
-                                             sigma=sigma, return_density=True)
+                                             sigma=sigma, return_epf=True)
 
         ax.plot(w[w > 0], epf.mean(axis=0)[w > 0], '.',
                 label=r'$\Delta \mu = {m:0.1f}$'.format(m=mu),

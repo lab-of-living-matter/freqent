@@ -71,7 +71,7 @@ for fInd, file in enumerate(files):
                                                sigma=sigma,
                                                subtract_bias=True,
                                                many_traj=False,
-                                               return_density=True)
+                                               return_epf=True)
             kmax[fInd, ind] = w[1][np.unravel_index(np.argmax(rhos[ind]), rhos[ind].shape)[1]]
             # kmax[fInd, ind] = w[1][np.argmax(rhos[ind].sum(axis=0))]
         # rhos_mean = np.mean(rhos, axis=0)

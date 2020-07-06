@@ -41,7 +41,7 @@ for file in os.listdir(dataPath):
                 if alpha in alphas:
                     print(file)
                     s, rhos, w = fe.entropy(f['data']['trajs'][..., nt // 2:], f['params']['dt'][()],
-                                            sigma=f['params']['sigma_array'][0], return_density=True)
+                                            sigma=f['params']['sigma_array'][0], return_epf=True)
                     ax.loglog(w[w > 0] / (1 + alpha**2)**0.5, rhos[w > 0].real / np.diff(w)[0],
                               color=colors[int(alpha)],
                               label=r'$\alpha$ = {a}'.format(a=alpha), alpha=0.5)

@@ -24,7 +24,7 @@ for file in os.listdir(parentFolder):
             nt = len(f['data']['t_points'][:])
             dt = np.diff(f['data']['t_points'][:])[0]
             s, rhos, w = fe.entropy(f['data']['trajs'][..., nt // 2:], dt,
-                                    sigma=f['params']['sigma'][()], return_density=True)
+                                    sigma=f['params']['sigma'][()], return_epf=True)
             ax[0].plot(f['data']['trajs'][0, 0], f['data']['trajs'][0, 1])
             ax[1].plot(w[w != 0], rhos[w != 0])
             ax[1].set(xlim=[-20, 20])

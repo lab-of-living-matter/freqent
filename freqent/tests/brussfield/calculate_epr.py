@@ -31,7 +31,7 @@ def calc_epr_spectral(file):
                                                sigma=sigma,
                                                subtract_bias=True,
                                                many_traj=False,
-                                               return_density=True)
+                                               return_epf=True)
 
         if '/data/s' in d:
             del d['data']['s']

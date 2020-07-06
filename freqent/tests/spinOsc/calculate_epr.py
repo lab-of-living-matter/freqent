@@ -27,7 +27,7 @@ def calc_epr_spectral(file):
 
         for ind, traj in enumerate(d['data']['trajs'][..., t_epr]):
             s[ind], rhos[ind], w = fe.entropy(traj, sample_spacing=dt,
-                                              sigma=sigma, return_density=True)
+                                              sigma=sigma, return_epf=True)
 
         if '/data/s' in d:
             d['data']['s'][...] = s

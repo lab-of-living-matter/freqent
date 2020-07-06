@@ -25,7 +25,7 @@ def calculate_epr(f):
                                          sample_spacing=[d['params']['dt'][()] * t_factor, d['params']['dx'][()]],
                                          detrend='constant',
                                          many_traj=False,
-                                         return_density=True,
+                                         return_epf=True,
                                          sigma=sigma,
                                          subtract_bias=True)
                 epr_array[ind] = s

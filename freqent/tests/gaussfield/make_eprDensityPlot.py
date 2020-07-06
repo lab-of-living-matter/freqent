@@ -31,7 +31,7 @@ with h5py.File(os.path.join(datapath, data, 'data.hdf5')) as d:
     dt = d['params']['dt'][()]
     dx = d['params']['dx'][()]
     s, epr_density, w = fen.entropy(d['data']['trajs'][:, :, t > 25, :], sample_spacing=[dt, dx],
-                                    sigma=[2, 1], many_traj=True, return_density=True)
+                                    sigma=[2, 1], many_traj=True, return_epf=True)
     k = w[1]
     w = w[0]
     alpha = d['params']['alpha'][()]

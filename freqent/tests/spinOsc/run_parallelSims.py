@@ -101,7 +101,7 @@ for nInd, n in enumerate(args.n_epr):
                           smooth_corr=True,
                           sigma=scale,
                           subtract_bias=True,
-                          return_density=False)
+                          return_epf=False)
         sdot_array[nInd, scaleInd] = sdot.real
 
 

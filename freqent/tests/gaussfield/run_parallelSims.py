@@ -91,20 +91,6 @@ for ii in range(args.nSim):
     traj = result[ii].pos[:, ::args.delta, :]
     trajs[ii] = traj
 
-# Calculate mean entropy production rate from spectral method
-epr_spectral = (fen.entropy(trajs[:, :, int(args.nsteps / args.delta) // 2:, :],
-                            sample_spacing=[args.dt * args.delta, args.dx],
-                            window='boxcar',
-                            nperseg=None,
-                            noverlap=None,
-                            nfft=None,
-                            detrend='constant',
-                            smooth_corr=True,
-                            sigma=args.sigma,
-                            subtract_bias=True,
-                            many_traj=True)).real
-
-
 # create filename and create folder with that name under savepath
 filename = 'alpha{a}_nSim{n}_sigma{s}'.format(a=args.alpha, n=args.nSim, s=args.sigma)
 if not os.path.exists(os.path.join(args.savepath, filename)):
@@ -131,8 +117,7 @@ result[0].plotTrajectory(savepath=os.path.join(args.savepath, filename),
 
 dat = {'trajs': trajs,
        't': t,
-       'L': L,
-       'epr_spectral': epr_spectral}
+       'L': L}
 
 with h5py.File(os.path.join(args.savepath, filename, 'data.hdf5'), 'w') as f:
     # save data and params to hdf5 file
