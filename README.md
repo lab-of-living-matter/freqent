@@ -1,5 +1,5 @@
-# Spectral estimate of entropy production rates for random variables and fields
-This repository contains code written in Python to calculate entropy production rates from times series data of random variables and fields.
+# Spectral estimate of entropy production rates via entropy production factor
+This repository contains code written in Python to calculate entropy production rates from times series data of random variables and fields. The paper describing the technique described here can be found [here](https://arxiv.org/abs/1911.10696).
 
 ### Theory
 We solve for the entropy production exhibited by a time series of $`N \geq 2`$ variables over a time $`T`$, $`\mathbf{x}(t)`$, using the information theoretic measure of entropy production introduced in [Kawai, Parrondo, and Van den Broeck, PRL 2007](https://link.aps.org/doi/10.1103/PhysRevLett.98.080602),
@@ -29,9 +29,13 @@ The code to calculate the entropy production rate is written as a module called 
 cd /path/to/this/repo
 pip install -e .
 ```
+There are 2 `yml` files in the repository that can be used to create a virtual environment in which to run the module. One has requirments for Macs and the other for Linux. The code has not been tested on Windows machines. To create the virtual environment using [`conda`](https://docs.conda.io/en/latest/):
+
+```bash
+conda env create -f epf_paper_osx.yml
+```
 
 There are two submodules, `freqent.freqent` for use with random variables and `freqent.freqentn` for random fields (similar to `numpy.fft.fft` vs. `numpy.fft.fftn`).
-
 Once installed, the methods can be called from within a script, Jupyter notebook, or iPython terminal by importing the relevant module as you would any other one:
 
 ```python
