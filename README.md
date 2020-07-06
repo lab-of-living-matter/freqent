@@ -5,7 +5,7 @@ This repository contains code written in Python to calculate entropy production 
 We solve for the entropy production exhibited by a time series of $`N \geq 2`$ variables over a time $`T`$, $`\mathbf{x}(t)`$, using the information theoretic measure of entropy production introduced in [Kawai, Parrondo, and Van den Broeck, PRL 2007](https://link.aps.org/doi/10.1103/PhysRevLett.98.080602),
 
 ```math
-\langle \dot{S} \rangle = \lim_{T \to \infty} D_{KL}(\mathcal{P}[\mathbf{x}(t)] || \mathcal{P}[\widetilde{\mathbf{x}}(t)]
+\langle \dot{S} \rangle = \lim_{T \to \infty} \dfrac{1}{T} D_{KL}(\mathcal{P}[\mathbf{x}(t)] || \mathcal{P}[\widetilde{\mathbf{x}}(t)]
 ```
 
 where $`D_{KL}`$ is the Kullback-Leibler divergence, or relative entropy, between the probability functional of observing a forward path, $\mathcal{P}[\mathbf{x}(t)]$, and the probability functional of observing its reverse path, $`\mathcal{P}[\widetilde{\mathbf{x}}(t)]`$. We assume $`\mathcal{P}[\mathbf{x}(t)]`$ to be Gaussian,
