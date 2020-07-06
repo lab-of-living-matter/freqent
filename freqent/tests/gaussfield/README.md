@@ -16,24 +16,78 @@ The simulation is run using the class in `gaussianFieldSimulation.py`. The simul
 import numpy as np
 import matplotlib.pyplot as plt
 from gaussianFieldSimulation import gaussianFields1D
+import matplotlib as mpl
+import freqent.freqentn as fen
 
-# time step of simulation
-dt = 0.01
-# number of simulation time steps, here chosen for a final time of 100
-nsteps = 10000
-# lattice spacing
-dx = 0.1
-# number of lattice sites
-nsites = 128
-# random initial conditions
-ic = np.random.randn(2, nsites)
-# strength of coupling
-alpha = 2
+mpl.rcParams['font.size'] = 12
+mpl.rcParams['axes.linewidth'] = 2
+mpl.rcParams['xtick.major.width'] = 2
+mpl.rcParams['ytick.major.width'] = 2
+mpl.rcParams['ytick.minor.width'] = 2
+mpl.rcParams['xtick.direction'] = 'in'
+mpl.rcParams['ytick.direction'] = 'in'
+
+dt = 0.001  # time step of simulation
+nsteps = 20000  # number of simulation time steps
+dx = 0.1  # lattice spacing
+nsites = 128  # number of lattice sites
+ic = np.random.randn(2, nsites)  # random initial conditions
+alpha = 7.5  # strength of coupling
+nsim = 5  # number of simulations to run
 
 # load the class
 f = gaussianFields1D(dt=dt, dx=dx, ic=ic, nsteps=nsteps)
-# run the simulation
-f.runSimulation(alpha=alpha)
-# plot the resulting simulation, only plot every 10th time step between 0.2 and 0.8 of the total time
-f.plotTrajectory(savepath='your/favorite/path', tmin_frac=0.2, tmax_frac=0.8, delta=10)
+
+# run the simulations and concatenate the trajectories
+traj = np.zeros((nsim, 2, nsteps + 1, nsites))
+for n in range(nsim):
+    f.runSimulation(alpha=alpha)
+    traj[n] = f.pos
+
+# plot the last simulation
+# plot every 10th time step between 0.2 and 0.8 of the total time
+f.plotTrajectory(tmin_frac=0.2, tmax_frac=0.8, delta=10)
+
+# Calculate EPR and EPF
+# use second half of simulation to ensure steady state
+t_epr = f.t > f.t // 2
+epr, epf, w = fen.entropy(traj[:, :, t_epr, :], sample_spacing=[dt, dx],
+                          sigma=[3, 2], return_epf=True, many_traj=True)
+
+# print epr measured
+print('Theoretical EPR: {s:0.2f}'.format(s=alpha**2))
+print('Measured EPR: {s:0.2f}'.format(s=epr))
+
+# Plot epf and its analytical form side-by-side
+kk, ww = np.meshgrid(w[1], w[0])
+epf_thry = (8 * alpha**2 * ww**2 / (((1 + kk**2 + ww * 1j)**2 + alpha**2) * ((1 + kk**2 - ww * 1j)**2 + alpha**2))).real
+# get frequency spacing to multiply epf_thry by integration measure
+dw = [np.diff(f)[0] for f in w]
+
+fig, ax = plt.subplots(1, 2, figsize=(10, 4))
+a0 = ax[0].pcolormesh(kk, ww, epf_thry * np.prod(dw) / (4 * np.pi**2),
+                      rasterized=True)
+fig.colorbar(a0, ax=ax[0])
+ax[0].set(ylim=[-10 * np.pi, 10 * np.pi], ylabel=r'$\omega$',
+          xlabel=r'$q$', title=r'$\mathcal{E}^\mathrm{DGF}$')
+ax[0].set_aspect('equal')
+a1 = ax[1].pcolormesh(kk, ww, epf, rasterized=True)
+fig.colorbar(a1, ax=ax[1])
+ax[1].set(ylim=[-10 * np.pi, 10 * np.pi], ylabel=r'$\omega$',
+          xlabel=r'$q$', title=r'$\hat{\mathcal{E}}$')
+ax[1].set_aspect('equal')
+
+plt.tight_layout()
+plt.show()
+
 ```
+
+Here is an example of the output from running the above as a script.
+
+```python
+Theoretical EPR: 56.25
+Measured EPR: 63.71
+```
+
+![trajectory](/freqent/tests/gaussfield/readme_example_traj.png)
+![epf](/freqent/tests/gaussfield/readme_example_epf.png)

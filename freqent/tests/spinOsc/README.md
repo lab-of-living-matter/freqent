@@ -65,7 +65,9 @@ ax_traj.legend(loc='lower right')
 # calculate epr and epf, smoothing the correlation functions with a Gaussian
 # with a standard deviation of sigma = 30 * dk, where dk = 2 * pi / T is the
 # spacing between frequency bins, i.e. dk = np.diff(freqs)[0]
-epr, epf, w = fe.entropy(data=r.pos, sample_spacing=dt,
+# use only second half of trajectory to ensure steady state
+t_epr = r.t > r.t // 2
+epr, epf, w = fe.entropy(data=r.pos[:, t_epr, :], sample_spacing=dt,
                          return_epf=True, sigma=30)
 
 # print epr measured
