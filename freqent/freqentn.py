@@ -176,11 +176,11 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
     # first axis is temporal frequency, flip along that axis to get C^-T(k, -w)
     # Also sum over last two axes to sum over matrix indices, leaving only frequency
     # indices for integration
-    sdensity = (np.log(np.linalg.det(np.flip(c, axis=0)) / np.linalg.det(c)) +
-                np.sum((np.flip(c_inv, axis=0) - c_inv) * np.transpose(c, axes=axes),
-                       axis=(-1, -2))) / (2 * TL.prod())
+    epf = (np.log(np.linalg.det(np.flip(c, axis=0)) / np.linalg.det(c)) +
+           np.sum((np.flip(c_inv, axis=0) - c_inv) * np.transpose(c, axes=axes),
+                  axis=(-1, -2))) / (2 * TL.prod())
 
-    s = np.sum(sdensity)
+    s = np.sum(epf)
 
     # Calculate and subtract off bias if wanted
     if subtract_bias:
@@ -191,8 +191,8 @@ def entropy(data, sample_spacing, window='boxcar', nperseg=None,
         s -= bias
         # print(s)
 
-    if return_density:
-        return s.real, sdensity.real, freqs
+    if return_epf:
+        return s.real, epf.real, freqs
     else:
         return s.real
 
