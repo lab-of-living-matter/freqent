@@ -3,14 +3,16 @@
 These are simulations of 2 coupled, 1 dimensional fields, $`(\phi(x, t), \psi(x, t))`$ evolving using stochastic Model A dynamics with non-equilibrium coupling parametrized by $`\alpha`$. The equations of motion are
 
 ```math
-\begin{align}
-    \partial_t \phi(\mathbf{x}, t) &= -D (r - \nabla^2) \phi - \alpha \psi + \sqrt{2D} \xi_\phi \\
-    \partial_t \psi(\mathbf{x}, t) &= -D (r - \nabla^2) \psi + \alpha \phi + \sqrt{2D} \xi_\psi.
-\end{align}
+    \partial_t \phi(\mathbf{x}, t) = -D (r - \nabla^2) \phi - \alpha \psi + \sqrt{2D} \xi_\phi \\
+    \partial_t \psi(\mathbf{x}, t) = -D (r - \nabla^2) \psi + \alpha \phi + \sqrt{2D} \xi_\psi
 ```
 with $`\langle \xi_i(\mathbf{x}, t) \xi_j(\mathbf{x}', t') \rangle = \delta_{ij} \delta(t-t') \delta^d(\mathbf{x}-\mathbf{x}')`$, $`D`$ is a relaxation constant, and $`r`$ is a spring-like constant that penalizes large amplitudes of the fields.
 
-The simulation is run using the class in `gaussianFieldSimulation.py`. The simulations are non-dimensionalized in both space and time by setting $`D = r = 1`$. Below is a snippet of code that illustrates how to load the class, run a simulation, and plot the output
+The simulation is run using the class in `gaussianFieldSimulation.py`. The simulations are non-dimensionalized in both space and time by setting $`D = r = 1`$. Below is a snippet of code that illustrates how to load the class, run some simulations, plot an example trajectory, and calculate $`\hat{\dot{s}}`$ and $`\hat{\mathcal{E}}`$. We compare the estimations with their analytical counterparts, which are given by:
+
+```math
+\mathcal{E}^{\mathrm{DGF}}=\frac{8 \alpha^{2} \omega^{2}}{\left(\omega^{2}-\omega_{0}^{2}(q)\right)^{2}+\left(2 D\left(r+q^{2}\right) \omega\right)^{2}}, \quad \dot{s}^{\mathrm{DGF}}=\frac{\alpha^{2}}{D \sqrt{r}}
+```
 
 ```python
 import numpy as np
