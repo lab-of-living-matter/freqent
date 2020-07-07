@@ -8,7 +8,7 @@ We solve for the entropy production exhibited by a time series of $`N \geq 2`$ v
 \langle \dot{S} \rangle = \lim_{T \to \infty} \dfrac{1}{T} D_{KL}(\mathcal{P}[\mathbf{x}(t)] || \mathcal{P}[\widetilde{\mathbf{x}}(t)]
 ```
 
-where $`D_{KL}`$ is the Kullback-Leibler divergence, or relative entropy, between the probability functional of observing a forward path, $\mathcal{P}[\mathbf{x}(t)]$, and the probability functional of observing its reverse path, $`\mathcal{P}[\widetilde{\mathbf{x}}(t)]`$. We assume $`\mathcal{P}[\mathbf{x}(t)]`$ to be Gaussian,
+where $`D_{KL}`$ is the Kullback-Leibler divergence, or relative entropy, between the probability functional of observing a forward path, $`\mathcal{P}[\mathbf{x}(t)]`$, and the probability functional of observing its reverse path, $`\mathcal{P}[\widetilde{\mathbf{x}}(t)]`$. We assume $`\mathcal{P}[\mathbf{x}(t)]`$ to be Gaussian,
 
 ```math
 \mathcal{P}[\mathbf{x}(\omega)] = \dfrac{1}{Z} \exp \left( -\dfrac{1}{2} \int \dfrac{d \omega}{2 \pi} \mathbf{x}^\dagger C^{-1} \mathbf{x} \right)
