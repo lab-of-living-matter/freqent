@@ -100,4 +100,4 @@ ax_epf.legend(loc='upper right')
 plt.tight_layout()
 plt.show()
 ```
-![image](/freqent/tests/spinOsc/readme_example_alpha2.png)
+![image](/freqent/tests/brownianParticle/readme_example_alpha2.png)
