@@ -50,7 +50,7 @@ DX, DY = [1.0, 0.1]  # diffusion constant of X and Y
 h = 1  # spacing between lattice sites
 
 # set non-equilibrium driving strength, which sets chemostat values
-mu = 5.5
+mu = 6.2
 A = V
 B = np.exp(mu / 2) * V / (rates[2] * rates[4])
 C = np.exp(-mu / 2) * V / (rates[3] * rates[5])
@@ -79,35 +79,34 @@ t_ss = t_points > 10
 sdot, sdot_intercept, _, _, _ = stats.linregress(t_points[t_ss], brussfield.ep[t_ss])
 sdot_blind, sdot_blind_intercept, _, _, _ = stats.linregress(t_points[t_ss], brussfield.ep_blind[t_ss])
 # for estimated entropy, must have first dimension index variable, not time
-epr, epf, w = fen.entropy(brussfield.population[t_ss].T,
+epr, epf, w = fen.entropy(np.moveaxis(brussfield.population[t_ss], 1, 0),
                           sample_spacing=[dt, h],
                           return_epf=True, sigma=1)
 
 # plot trajectory
 L = np.arange(n_compartments)
-inds = np.logical_and(t_points > 10, t_points <= t_final)
 
 cmap_name = 'cividis'
 cmap = mpl.cm.get_cmap(cmap_name)
-vmax = abs(brussfield.population[inds]).max()
+vmax = abs(brussfield.population[t_ss]).max()
 vmin = 0
 normalize = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
 # colors = [cmap(normalize(value)) for value in np.ravel(traj)]
 
 
 fig, ax = plt.subplots(1, 2, sharey=True)
-ax[0].pcolormesh(L, t_points[inds],
-                 brussfield.population[inds, 0],
+ax[0].pcolormesh(L, t_points[t_ss],
+                 brussfield.population[t_ss, 0],
                  cmap=cmap_name, vmin=vmin, vmax=vmax,
                  rasterized=True)
-ax[1].pcolormesh(L, t_points[inds],
-                 brussfield.population[inds, 1],
+ax[1].pcolormesh(L, t_points[t_ss],
+                 brussfield.population[t_ss, 1],
                  cmap=cmap_name, vmin=vmin, vmax=vmax,
                  rasterized=True)
 
 ax[0].set(xlabel=r'$r$', title=r'$X$', ylabel=r'$t \ [1/k^+_1]$')
 ax[0].tick_params(which='both', direction='in')
-ax[1].set(xlabel=r'$r $', title=r'$Y$', yticks=[50, 60, 70, 80, 90, 100])
+ax[1].set(xlabel=r'$r $', title=r'$Y$')
 ax[1].tick_params(which='both', direction='in')
 
 cax, _ = mpl.colorbar.make_axes(ax)
@@ -115,37 +114,38 @@ cbar = mpl.colorbar.ColorbarBase(cax, cmap=cmap, norm=normalize)
 cbar.ax.tick_params(which='both', direction='in')
 ```
 
-
+![traj](/freqent/tests/brussfield/readme_example_traj.png)
 
 ```python
 # plot entropy production info
-fig1, ax1 = plt.subplots(1, 3, figsize=(10, 3))
+fig1, ax1 = plt.subplots(1, 3, figsize=(10, 4))
 
 # true entropy production and epr
-ax1[0].plot(t_points, bruss.ep, 'k')
+ax1[0].plot(t_points, brussfield.ep, 'k')
 ax1[0].plot(t_points[t_ss], t_points[t_ss] * sdot + sdot_intercept,
-            'r--', label=r'$\dot{{S}}_\mathrm{{true}} = ${0:0.2f}'.format(sdot))
+            'r--', label=r'$\dot{{s}}_\mathrm{{true}} = ${0:0.2f}'.format(sdot / (n_compartments * h)))
 ax1[0].set(xlabel='t', ylabel=r'$\Delta S_\mathrm{true}$')
 ax1[0].legend(loc='lower right')
 ax1[0].set_aspect(np.diff(ax1[0].set_xlim())[0] / np.diff(ax1[0].set_ylim())[0])
 
 # blind entropy production and epr
-ax1[1].plot(t_points, bruss.ep_blind, 'k')
+ax1[1].plot(t_points, brussfield.ep_blind, 'k')
 ax1[1].plot(t_points[t_ss], t_points[t_ss] * sdot_blind + sdot_blind_intercept,
-            'r--', label=r'$\dot{{S}}_\mathrm{{blind}} = ${0:0.2f}'.format(sdot_blind))
+            'r--', label=r'$\dot{{s}}_\mathrm{{blind}} = ${0:0.2f}'.format(sdot_blind / (n_compartments * h)))
 ax1[1].set(xlabel='t', ylabel=r'$\Delta S_\mathrm{blind}$')
 ax1[1].legend(loc='lower right')
 ax1[1].set_aspect(np.diff(ax1[1].set_xlim())[0] / np.diff(ax1[1].set_ylim())[0])
 
 # epf and estimated epr
-ax1[2].loglog(w[w > 0], epf[w > 0],
-              label=r'$\hat{{\dot{{S}}}} = ${0:0.2f}'.format(epr))
-ax1[2].set(xlabel=r'$\omega$', ylabel=r'$\hat{\mathcal{E}}$')
-ax1[2].legend(loc='lower left')
+ax1[2].pcolormesh(w[1], w[0], epf)
+ax1[2].set(xlabel=r'$q$', ylabel=r'$\omega$', ylim=[-np.pi, np.pi])
+ax1[2].text(2, 2, r'$\hat{\mathcal{E}}$', color='w', fontsize=15)
+ax1[2].text(0.5, -2.5, r'$\hat{{\dot{{s}}}} = ${0:0.2f}'.format(epr), color='w')
+ax1[2].set_aspect('equal')
 
 plt.tight_layout()
 plt.show()
 
 ```
 
-![epr](/freqent/tests/brusselator/readme_example_epr+epf.png)
+![epr](/freqent/tests/brussfield/readme_example_epr+epf.png)
