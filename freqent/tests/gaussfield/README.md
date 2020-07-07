@@ -14,6 +14,8 @@ The simulation is run using the class in `gaussianFieldSimulation.py`. The simul
 \mathcal{E}^{\mathrm{DGF}}=\frac{8 \alpha^{2} \omega^{2}}{\left(\omega^{2}-\omega_{0}^{2}(q)\right)^{2}+\left(2 D\left(r+q^{2}\right) \omega\right)^{2}}, \quad \dot{s}^{\mathrm{DGF}}=\frac{\alpha^{2}}{D \sqrt{r}}
 ```
 
+Below is an example, with outputs that will vary slightly from run to run due to random initial conditions
+
 ```python
 import numpy as np
 import matplotlib.pyplot as plt
@@ -49,7 +51,11 @@ for n in range(nsim):
 # plot the last simulation
 # plot every 10th time step between 0.2 and 0.8 of the total time
 f.plotTrajectory(tmin_frac=0.2, tmax_frac=0.8, delta=10)
+```
 
+![trajectory](/freqent/tests/gaussfield/readme_example_traj.png)
+
+```python
 # Calculate EPR and EPF
 # use second half of simulation to ensure steady state
 t_epr = f.t > f.t // 2
@@ -59,7 +65,14 @@ epr, epf, w = fen.entropy(traj[:, :, t_epr, :], sample_spacing=[dt, dx],
 # print epr measured
 print('Theoretical EPR: {s:0.2f}'.format(s=alpha**2))
 print('Measured EPR: {s:0.2f}'.format(s=epr))
+```
 
+```python
+Theoretical EPR: 56.25
+Measured EPR: 63.71
+```
+
+```python
 # Plot epf and its analytical form side-by-side
 kk, ww = np.meshgrid(w[1], w[0])
 epf_thry = (8 * alpha**2 * ww**2 / (((1 + kk**2 + ww * 1j)**2 + alpha**2) * ((1 + kk**2 - ww * 1j)**2 + alpha**2))).real
@@ -83,13 +96,4 @@ plt.tight_layout()
 plt.show()
 
 ```
-
-Here is an example of the output from running the above as a script.
-
-```python
-Theoretical EPR: 56.25
-Measured EPR: 63.71
-```
-
-![trajectory](/freqent/tests/gaussfield/readme_example_traj.png)
 ![epf](/freqent/tests/gaussfield/readme_example_epf.png)

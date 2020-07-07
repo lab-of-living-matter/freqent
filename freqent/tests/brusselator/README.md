@@ -9,7 +9,9 @@ These are stochastic simulations of a reversible Brusselator model. The reaction
 ```
 In these simulations, we consider $`A, B, C`$ as external chemostats with constant concentrations and monitor how $`X, Y`$ change numbers.
 
-The simulations are run using a Gillespie algorithm, contained in the class in `brusselator_gillespie.py`. An example of how to load, run, and plot the simulation are given below
+The simulations are run using a Gillespie algorithm, contained in the class in `brusselator_gillespie.py`.
+
+Below is an example, with outputs that will vary slightly from run to run due to random initial conditions
 
 ```python
 import numpy as np
@@ -95,7 +97,11 @@ ax.legend(loc='upper right')
 cbar = fig.colorbar(prob_ax, ax=ax)
 cbar.set_label(r'$\ln(p(X,Y))$')
 plt.tight_layout()
+```
 
+![traj](/freqent/tests/brusselator/readme_example_traj.png)
+
+```python
 # plot entropy production info
 fig1, ax1 = plt.subplots(1, 3, figsize=(10, 3))
 
@@ -126,7 +132,4 @@ plt.show()
 
 ```
 
-Here is an example of the output from running the above as a script.
-
-![traj](/freqent/tests/brusselator/readme_example_traj.png)
 ![epr](/freqent/tests/brusselator/readme_example_epr+epf.png)

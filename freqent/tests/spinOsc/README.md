@@ -23,6 +23,8 @@ The simulations are non-dimensionalized with time scale $`\tau = 1/k`$ and lengt
 \mathcal{E}^\mathrm{DBP} = \frac{8 \alpha^2 \omega^2}{\left( \omega^2 - \omega_0^2 \right)^2 + (2 \omega)^2}, \qquad \dot{S}^\mathrm{DBP} = 2 \alpha^2
 ```
 
+Below is an example, with outputs that will vary slightly from run to run due to random initial conditions
+
 ```python
 from spinOscSimulation import *
 import numpy as np
@@ -73,7 +75,13 @@ epr, epf, w = fe.entropy(data=r.pos[:, t_epr, :], sample_spacing=dt,
 # print epr measured
 print('Theoretical EPR: {s:0.2f}'.format(s=2 * alpha**2))
 print('Measured EPR: {s:0.2f}'.format(s=epr))
+```
+```python
+Theoretical EPR: 8.00
+Measured EPR: 8.52
+```
 
+```python
 # Calculate theoretical entropy production factor for the driven brownian particle
 w0 = np.sqrt(1 + alpha**2)  # peak frequency of epf
 epf_dbp = (8 * alpha**2 * w**2) / ((w**2 - w0**2)**2 + 4 * w**2)
@@ -92,12 +100,4 @@ ax_epf.legend(loc='upper right')
 plt.tight_layout()
 plt.show()
 ```
-
-Here is an example of the output from running the above as a script.
-
-```python
-Theoretical EPR: 8.00
-Measured EPR: 8.52
-```
-
 ![image](/freqent/tests/spinOsc/readme_example_alpha2.png)
