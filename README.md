@@ -96,6 +96,6 @@ ax[1].legend()
 plt.tight_layout()
 plt.show()
 ```
-![example](/freqent/readme_example.png)
+![example](/readme_example.png)
 
 There are several simulations present in the `freqent/tests/` folder that output data ready for input into the relevant `entropy()` functions. Examples on how to run each simulation is in a `README` file in each of simulation's folder.
