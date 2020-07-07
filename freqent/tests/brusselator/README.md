@@ -3,12 +3,9 @@
 These are stochastic simulations of a reversible Brusselator model. The reactions are
 
 ```math
-\begin{equation}
-    \label{eq:brusselator}
     A \underset{k^-_1}{\overset{k^+_1}{\rightleftharpoons}} X; \quad
     B + X \underset{k^-_2}{\overset{k^+_2}{\rightleftharpoons}} Y + C; \quad
     2X + Y \underset{k^-_3}{\overset{k^+_3}{\rightleftharpoons}} 3X;
-\end{equation}
 ```
 In these simulations, we consider $`A, B, C`$ as external chemostats with constant concentrations and monitor how $`X, Y`$ change numbers.
 
