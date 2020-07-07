@@ -13,7 +13,7 @@ In these simulations, we consider $`A_i, B_i, C_i`$ as external chemostats with 
 
 The simulations are run using a Gillespie algorithm, contained in the class in `brussfield_gillespie.py`.
 
-Below is an example, with outputs that will vary slightly from run to run due to random initial conditions
+Below is an example of how to run a simulation and calculate the entropy production rate. The simulation takes approximately **15 minutes** to run on a 2016 Macbook air.
 
 ```python
 import numpy as np

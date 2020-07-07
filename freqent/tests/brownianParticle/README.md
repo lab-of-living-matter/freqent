@@ -23,7 +23,7 @@ The simulations are non-dimensionalized with time scale $`\tau = 1/k`$ and lengt
 \mathcal{E}^\mathrm{DBP} = \frac{8 \alpha^2 \omega^2}{\left( \omega^2 - \omega_0^2 \right)^2 + (2 \omega)^2}, \qquad \dot{S}^\mathrm{DBP} = 2 \alpha^2
 ```
 
-Below is an example, with outputs that will vary slightly from run to run due to random initial conditions
+Below is an example of how to use the simulation and calculate the entropy production rate. The simulation takes approximately 1 minute to run on a 2016 Macbook Air.
 
 ```python
 from spinOscSimulation import *
@@ -39,6 +39,9 @@ mpl.rcParams['ytick.major.width'] = 2
 mpl.rcParams['ytick.minor.width'] = 2
 mpl.rcParams['xtick.direction'] = 'in'
 mpl.rcParams['ytick.direction'] = 'in'
+
+
+np.random.seed(7740183)  # set seed to reproducibility
 
 ndim = 2  # run a 2 dimensional simulation
 r0 = np.random.rand(ndim)  # set initial condition of particle
@@ -69,7 +72,7 @@ ax_traj.legend(loc='lower right')
 # spacing between frequency bins, i.e. dk = np.diff(freqs)[0]
 # use only second half of trajectory to ensure steady state
 t_epr = r.t > r.t // 2
-epr, epf, w = fe.entropy(data=r.pos[:, t_epr, :], sample_spacing=dt,
+epr, epf, w = fe.entropy(data=r.pos[:, t_epr], sample_spacing=dt,
                          return_epf=True, sigma=30)
 
 # print epr measured
@@ -78,7 +81,7 @@ print('Measured EPR: {s:0.2f}'.format(s=epr))
 ```
 ```python
 Theoretical EPR: 8.00
-Measured EPR: 8.52
+Measured EPR: 7.93
 ```
 
 ```python

@@ -42,7 +42,7 @@ import freqent.freqent as fe
 import freqent.freqentn as fen
 ```
 
-The main functions to use are `fe.entropy()` and `fen.entropy()`. See their documentation in `freqent/freqent.py` and `freqent/freqentn.py`. Below we provide a quick example that shows how to use `fe.entropy()` to calculate the entropy production rate of a simulated equilibrium process: a Brownian particle trapped in a harmonic potential
+The main functions to use are `fe.entropy()` and `fen.entropy()`. See their documentation in `freqent/freqent.py` and `freqent/freqentn.py`. Below we provide a quick example that shows how to use `fe.entropy()` to calculate the entropy production rate of a simulated equilibrium process: a Brownian particle trapped in a harmonic potential. This script takes a few seconds to run.
 
 ```python
 import numpy as np

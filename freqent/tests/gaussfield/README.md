@@ -14,7 +14,7 @@ The simulation is run using the class in `gaussianFieldSimulation.py`. The simul
 \mathcal{E}^{\mathrm{DGF}}=\frac{8 \alpha^{2} \omega^{2}}{\left(\omega^{2}-\omega_{0}^{2}(q)\right)^{2}+\left(2 D\left(r+q^{2}\right) \omega\right)^{2}}, \quad \dot{s}^{\mathrm{DGF}}=\frac{\alpha^{2}}{D \sqrt{r}}
 ```
 
-Below is an example, with outputs that will vary slightly from run to run due to random initial conditions
+Below is an example of how to run a simulation and calculate the entropy production rate. The simulation takes approximately 10 seconds to run on a 2016 Macbook Air.
 
 ```python
 import numpy as np
@@ -30,6 +30,9 @@ mpl.rcParams['ytick.major.width'] = 2
 mpl.rcParams['ytick.minor.width'] = 2
 mpl.rcParams['xtick.direction'] = 'in'
 mpl.rcParams['ytick.direction'] = 'in'
+
+
+np.random.seed(9842590)  # set seed for reproducibility
 
 dt = 0.001  # time step of simulation
 nsteps = 20000  # number of simulation time steps
@@ -69,7 +72,7 @@ print('Measured EPR: {s:0.2f}'.format(s=epr))
 
 ```python
 Theoretical EPR: 56.25
-Measured EPR: 63.71
+Measured EPR: 67.81
 ```
 
 ```python

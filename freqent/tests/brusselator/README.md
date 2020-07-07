@@ -11,7 +11,7 @@ In these simulations, we consider $`A, B, C`$ as external chemostats with consta
 
 The simulations are run using a Gillespie algorithm, contained in the class in `brusselator_gillespie.py`.
 
-Below is an example with a specified random seed to ensure reproducibility
+Below is an example of how to run the simulation and calculate the entropy production rate. The simulation takes approximately 3 minutes to run on a 2016 Macbook Air.
 
 ```python
 import numpy as np
@@ -30,7 +30,7 @@ mpl.rcParams['ytick.minor.width'] = 2
 mpl.rcParams['xtick.direction'] = 'in'
 mpl.rcParams['ytick.direction'] = 'in'
 
-seed = 86018373 # set random seed for reproducibility
+seed = 86018373  # set random seed for reproducibility
 
 # reaction rates in format
 # [k1plus, k1minus, k2plus, k2minus, k3plus, k3minus]
