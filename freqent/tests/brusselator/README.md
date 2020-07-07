@@ -11,7 +11,7 @@ In these simulations, we consider $`A, B, C`$ as external chemostats with consta
 
 The simulations are run using a Gillespie algorithm, contained in the class in `brusselator_gillespie.py`.
 
-Below is an example, with outputs that will vary slightly from run to run due to random initial conditions
+Below is an example with a specified random seed to ensure reproducibility
 
 ```python
 import numpy as np
@@ -29,6 +29,8 @@ mpl.rcParams['ytick.major.width'] = 2
 mpl.rcParams['ytick.minor.width'] = 2
 mpl.rcParams['xtick.direction'] = 'in'
 mpl.rcParams['ytick.direction'] = 'in'
+
+seed = 86018373 # set random seed for reproducibility
 
 # reaction rates in format
 # [k1plus, k1minus, k2plus, k2minus, k3plus, k3minus]
@@ -58,8 +60,11 @@ X0, Y0 = [int(xss + np.random.randn() * xss / 10),
 pop_init = [X0, Y0, A, B, C]
 
 # run simulation
-bruss = brusselatorStochSim(population_init=pop_init, V=V,
-                            t_points=t_points, rates=rates)
+bruss = brusselatorStochSim(population_init=pop_init,
+                            V=V,
+                            t_points=t_points,
+                            rates=rates,
+                            seed=seed)
 bruss.runSimulation()
 
 # Calculate true, blind, and estimated entropy production rates
