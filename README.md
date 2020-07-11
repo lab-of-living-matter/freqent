@@ -4,15 +4,15 @@ This repository contains code written in Python3 to calculate entropy production
 ### Theory
 We solve for the entropy production exhibited by a time series of *N* ≥ 2 variables over a time *T*, **x**(*t*), using the information theoretic measure of entropy production introduced in [Kawai, Parrondo, and Van den Broeck, PRL 2007](https://link.aps.org/doi/10.1103/PhysRevLett.98.080602),
 
-![epr_def](/eqn_imgs/epr_def.png)
+![epr_def](epr_def.png)
 
 where *D*<sub>KL</sub> is the Kullback-Leibler divergence, or relative entropy, between the probability functional of observing a forward path, *P*[**x**(*t*)], and the probability functional of observing its reverse path. We assume *P*[**x**(*t*)] to be Gaussian,
 
-![gaussian](/eqn_imgs/gaussian.png)
+![gaussian](gaussian.png)
 
 where *C*<sub>ij</sub>(*ω*) = < *x*<sub>i</sub>(*ω*) *x*<sub>j</sub>(-*ω*)> is the frequency space covariance matrix for the variables *x*<sub>i</sub>(*t*) and *Z* = exp(*T*/2 ∫ d*ω*/2π  ln [det **C**(*ω*)] is a normalization constant. The same is done for the reverse path. Solving for *D*<sub>KL</sub> and taking the relevant limit, the entropy production rate is given by
 
-![epr](/eqn_imgs/spectral_epr.png)
+![epr](spectral_epr.png)
 
 This expression exists not only for random variables **x**(*t*), but also for random fields, **φ**(**r**, *t*), where **r** is a *d*-dimensional vector. In this case, the expressions given above are virtually unchanged, but have additional integrals over the spatial wavevectors, **q**.
 
