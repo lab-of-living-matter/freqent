@@ -27,7 +27,8 @@ def calc_syncParam(file):
         for traj_index, traj in enumerate(d['data']['trajs'][..., t_epr, :]):
             delta_x = traj[0] - traj[0].mean()
             delta_y = traj[1] - traj[1].mean()
-            phases[traj_index] = np.unwrap(np.arctan2(delta_y, delta_x), axis=0)
+            # phases[traj_index] = np.unwrap(np.arctan2(delta_y, delta_x), axis=0)
+            phases[traj_index] = np.arctan2(delta_y, delta_x)
             syncParam[traj_index] = np.abs(np.mean(np.exp(1j * phases[traj_index]), axis=1))
 
         if '/data/phases' in d:
