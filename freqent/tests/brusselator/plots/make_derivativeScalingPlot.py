@@ -38,7 +38,7 @@ for vInd, v in enumerate(volFolders):
     for muInd, m in enumerate(muFolders):
         with h5py.File(os.path.join(m, 'data.hdf5')) as d:
             mus[muInd] = float(m.split(os.path.sep)[-1][2:-7])
-            epr_blinds[muInd] = d['data']['s'][:].mean()
+            epr_blinds[muInd] = d['data']['epr_blind'][()].mean()
             V[vInd] = d['params']['V'][()]
 
     mu_order = np.argsort(mus)
@@ -55,7 +55,7 @@ ax.plot(V, V**m * 10**b, 'r--')
 ax.plot(V, max_derivative, 'ko')
 ax.set(xscale='log', yscale='log', xlabel=r'$V$',
        ylabel=r'max$\left( \partial \dot{S}_{\mathrm{blind}} / \partial \Delta \mu \right)$')
-ax.text(V[4], max_derivative[4] * 0.5, r'$\propto V^{{{m:0.2f} \pm {sigma:0.2f}}}$'.format(m=m, sigma=sig), color='r')
+ax.text(V[1], max_derivative[1] * 0.5, r'$\propto V^{{{m:0.2f} \pm {sigma:0.2f}}}$'.format(m=m, sigma=sig**2), color='r')
 plt.tight_layout()
 
 # fig2, ax2 = plt.subplots(figsize=(4.9, 4.6))
