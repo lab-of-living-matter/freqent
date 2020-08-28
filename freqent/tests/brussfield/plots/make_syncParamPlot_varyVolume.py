@@ -49,16 +49,19 @@ for vol_index, vol in enumerate(volFolders):
 fig, ax = plt.subplots()
 colors = ['C0', 'C1', 'C2']
 vol = [10, 100, 1000]
+legend = [r'$V = 10$', r'$V = 100$', r'$V = 1000$']
 for ii in range(len(volFolders)):
     ax.plot(np.sort(mus[ii]),
-             mean_syncParam[ii][np.argsort(mus[ii])],
-             'o-', color=colors[ii], markeredgecolor='k')
+            mean_syncParam[ii][np.argsort(mus[ii])],
+            'o-', color=colors[ii], markeredgecolor='k',
+            label=legend[ii])
     ax.fill_between(np.sort(mus[ii]),
                     mean_syncParam[ii][np.argsort(mus[ii])] - std_syncParam[ii][np.argsort(mus[ii])],
                     mean_syncParam[ii][np.argsort(mus[ii])] + std_syncParam[ii][np.argsort(mus[ii])],
                     color=colors[ii], alpha=0.5)
 ax.set_aspect(np.diff(ax.set_xlim())[0] / np.diff(ax.set_ylim())[0])
 ax.set(xlabel=r'$\Delta \mu$', ylabel=r'$\langle r \rangle$')
+ax.legend()
 plt.tight_layout()
 
 plt.show()
