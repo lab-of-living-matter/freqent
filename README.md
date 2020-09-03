@@ -2,25 +2,19 @@
 This repository contains code written in Python3 to calculate entropy production rates from times series data of random variables and fields. The paper describing the technique described here can be found [here](https://arxiv.org/abs/1911.10696).
 
 ### Theory
-We solve for the entropy production exhibited by a time series of $`N \geq 2`$ variables over a time $`T`$, $`\mathbf{x}(t)`$, using the information theoretic measure of entropy production introduced in [Kawai, Parrondo, and Van den Broeck, PRL 2007](https://link.aps.org/doi/10.1103/PhysRevLett.98.080602),
+We solve for the entropy production exhibited by a time series of *N* ≥ 2 variables over a time *T*, **x**(*t*), using the information theoretic measure of entropy production introduced in [Kawai, Parrondo, and Van den Broeck, PRL 2007](https://link.aps.org/doi/10.1103/PhysRevLett.98.080602),
 
-```math
-\langle \dot{S} \rangle = \lim_{T \to \infty} \dfrac{1}{T} D_{KL}(\mathcal{P}[\mathbf{x}(t)] || \mathcal{P}[\widetilde{\mathbf{x}}(t)]
-```
+![epr_def](epr_def.png)
 
-where $`D_{KL}`$ is the Kullback-Leibler divergence, or relative entropy, between the probability functional of observing a forward path, $`\mathcal{P}[\mathbf{x}(t)]`$, and the probability functional of observing its reverse path, $`\mathcal{P}[\widetilde{\mathbf{x}}(t)]`$. We assume $`\mathcal{P}[\mathbf{x}(t)]`$ to be Gaussian,
+where *D*<sub>KL</sub> is the Kullback-Leibler divergence, or relative entropy, between the probability functional of observing a forward path, *P*[**x**(*t*)], and the probability functional of observing its reverse path. We assume *P*[**x**(*t*)] to be Gaussian,
 
-```math
-\mathcal{P}[\mathbf{x}(\omega)] = \dfrac{1}{Z} \exp \left( -\dfrac{1}{2} \int \dfrac{d \omega}{2 \pi} \mathbf{x}^\dagger C^{-1} \mathbf{x} \right)
-```
+![gaussian](gaussian.png)
 
-where $`C_{ij}(\omega) = \langle x_i(\omega) x_j(-\omega) \rangle`$ is the frequency space covariance matrix for the variables $`x_i(t)`$ and $`Z = \exp \left(  \frac{T}{2} \int \frac{d \omega}{2\pi} \ \ln \left[ \det C (\omega) \right]  \right)`$ is a normalization constant. The same is done for the reverse path. Solving for $`D_{KL}`$ and taking the relevant limit, the entropy production rate is given by
+where *C*<sub>ij</sub>(*ω*) = < *x*<sub>i</sub>(*ω*) *x*<sub>j</sub>(-*ω*)> is the frequency space covariance matrix for the variables *x*<sub>i</sub>(*t*) and *Z* = exp(*T*/2 ∫ d*ω*/2π  ln [det **C**(*ω*)] is a normalization constant. The same is done for the reverse path. Solving for *D*<sub>KL</sub> and taking the relevant limit, the entropy production rate is given by
 
-```math
-\dot{S} =\frac{1}{2} \int \frac{d \omega}{2 \pi} \left[ \ln \left(\frac{\det C(-\omega)}{\det C(\omega)} \right) + \left(C^{-1} (-\omega) - C^{-1}(\omega) \right)_{ij} C^{ji}(\omega) \right]
-```
+![epr](spectral_epr.png)
 
-This expression exists not only for random variables $`\mathbf{x}(t)`$, but also for random fields, $`\boldsymbol{\phi}(\mathbf{r}, t)`$, where $`\mathbf{r} \in \mathbb{R}^d`$. In this case, the expressions given above are virtually unchanged, but have additional integrals over the spatial wavevectors, $`\mathbf{k}`$.
+This expression exists not only for random variables **x**(*t*), but also for random fields, **φ**(**r**, *t*), where **r** is a *d*-dimensional vector. In this case, the expressions given above are virtually unchanged, but have additional integrals over the spatial wavevectors, **q**.
 
 ### Code
 The code to calculate the entropy production rate is written as a module called `freqent` (i.e. **freq**uency **ent**ropy) for easy use and modularity. After cloning the repository, create a virtual environment with the specifications set in the two `yml` files found in the repository. One has requirments for Macs and the other for Linux. The code has not been tested on Windows machines. The main requirements are the packages `numpy`, `scipy`, and `numba`, and `matplotlib` for plotting. Using [`conda`](https://docs.conda.io/en/latest/), one can use the following commands to create and activate the virtual environment
