@@ -10,6 +10,51 @@ mpl.rcParams['pdf.fonttype'] = 42
 savepath = '/media/daniel/storage11/Dropbox/LLM_Danny/frequencySpaceDissipation/tests/freqentn_tests/'
 plt.close('all')
 
+
+def create_sphericalWave(wavelength, period, phi,
+                         v=[0, 0],
+                         n_txy=[100, 100, 100],
+                         max_txy=[1, 1, 1],
+                         r0=[0, 0]):
+    '''
+    Inputs
+    ------
+    wavelength : float
+        wavelength of spherical wave
+    period : float
+        period of spherical wave
+    phi : float
+        initial phase of wave
+    v : array-like
+        drift velocity of wave, in format [vx, vy]
+    n_txy : list
+        list of integers for number of time points, x points, y points
+    max_txy : list
+        list of floats for total time and total length in  x and y dimensions
+    r0 : array-like
+        initial position of spherical wave
+    '''
+    n_txy = np.asarray(n_txy)
+    max_txy = np.asarray(max_txy)
+
+    sample_spacing = max_txy / n_txy
+
+    tArr = np.linspace(0, max_txy[0], n_txy[0])
+    xArr = np.linspace(-max_txy[1] / 2, max_txy[1] / 2, n_txy[1])
+    yArr = np.linspace(-max_txy[2] / 2, max_txy[2] / 2, n_txy[2])
+
+    t, x, y = np.meshgrid(tArr, xArr, yArr, indexing='ij')
+
+    k = 2 * np.pi / wavelength
+    w = 2 * np.pi / period
+
+    r = np.sqrt((x - r0[0] - (v[0] * t))**2 + (y - r0[1] - (v[1] * t))**2)
+
+    wave = np.cos(k * r - w * t + phi)
+
+    return wave, t, x, y
+
+
 # Set up parameters
 xmax = 6 * np.pi  # total distance in physical units
 ymax = 6 * np.pi

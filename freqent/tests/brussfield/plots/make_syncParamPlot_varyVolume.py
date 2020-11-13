@@ -50,10 +50,11 @@ fig, ax = plt.subplots()
 colors = ['C0', 'C1', 'C2']
 vol = [10, 100, 1000]
 legend = [r'$V = 10$', r'$V = 100$', r'$V = 1000$']
+markers = ['o', 's', '^']
 for ii in range(len(volFolders)):
     ax.plot(np.sort(mus[ii]),
             mean_syncParam[ii][np.argsort(mus[ii])],
-            'o-', color=colors[ii], markeredgecolor='k',
+            '-', marker=markers[ii], color=colors[ii], markeredgecolor='k',
             label=legend[ii])
     ax.fill_between(np.sort(mus[ii]),
                     mean_syncParam[ii][np.argsort(mus[ii])] - std_syncParam[ii][np.argsort(mus[ii])],

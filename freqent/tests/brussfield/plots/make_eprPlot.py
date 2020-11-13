@@ -96,8 +96,8 @@ mu = np.sort(mu)
 
 
 fig, ax = plt.subplots(figsize=(5.5, 5))
-ax.plot(mu[mu <= 8], epr[mu <= 8] / V, 'o', label=r'$\dot{S}_{true}$')
-ax.plot(mu[mu <= 8], epr_blind[mu <= 8] / V, 'o', label=r'$\dot{S}_{blind}$')
+ax.plot(mu[mu <= 8], epr[mu <= 8] / V, 's', label=r'$\dot{S}_{true}$')
+ax.plot(mu[mu <= 8], epr_blind[mu <= 8] / V, '^', label=r'$\dot{S}_{blind}$')
 # ax.errorbar(alphas, np.mean(epr_spectral, axis=1) - bias, yerr=np.std(epr_spectral, axis=1), fmt='ko', label='epr_spectral', capsize=5)
 
 ax.plot(mu[mu <= 8], np.mean(epr_spectral[mu <= 8], axis=1), 'ko', label=r'$\hat{\dot{S}}$')

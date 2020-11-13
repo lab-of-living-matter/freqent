@@ -40,17 +40,17 @@ for vInd, v in enumerate(volFolders):
             mus[muInd] = float(m.split(os.path.sep)[-1][2:-7])
             eprs[muInd] = d['data']['epr'][()]
             epr_blinds[muInd] = d['data']['epr_blind'][()]
-            s_mean[muInd] = d['data']['s'][:].mean()
-            s_std[muInd] = d['data']['s'][:].std()
+            # s_mean[muInd] = d['data']['s'][:].mean()
+            # s_std[muInd] = d['data']['s'][:].std()
             V = d['params']['V'][()]
 
     mu_order = np.argsort(mus)
-    ax.semilogy(mus[mu_order], eprs[mu_order] / V, 'o-',
+    ax.semilogy(mus[mu_order], eprs[mu_order] / V, 's-',
                 color='C0', alpha=(vInd + 1) / len(volFolders))
-    ax.semilogy(mus[mu_order], epr_blinds[mu_order] / V, '-o',
+    ax.semilogy(mus[mu_order], epr_blinds[mu_order] / V, '-^',
                 color='C1', alpha=(vInd + 1) / len(volFolders))
-    ax.errorbar(mus[mu_order], s_mean[mu_order] / V, yerr=s_std[mu_order] / V,
-                marker='o', color='k', capsize=5, alpha=(vInd + 1) / len(volFolders))
+    # ax.errorbar(mus[mu_order], s_mean[mu_order] / V, yerr=s_std[mu_order] / V,
+                # marker='o', color='k', capsize=5, alpha=(vInd + 1) / len(volFolders))
 
 legend_elements = [mpl.lines.Line2D([0], [0], color='k', marker='o', alpha=1 / len(volFolders), label=r'V=10'),
                    mpl.lines.Line2D([0], [0], color='k', marker='o', alpha=2 / len(volFolders), label=r'V=50'),

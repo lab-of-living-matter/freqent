@@ -27,6 +27,7 @@ args = parser.parse_args()
 fig, ax = plt.subplots(2, 2, sharex=True, figsize=(8, 7))
 # volFolders = ['v10', 'v50', 'v100', 'v500', 'v1000', 'v5000', 'v10000']
 volFolders = ['v50', 'v500', 'v5000']
+marker = ['o', 's', '^']
 
 for vInd, v in enumerate(volFolders):
     f = os.path.join(args.file, v)
@@ -50,13 +51,13 @@ for vInd, v in enumerate(volFolders):
         peak = np.max(epf[w > 0])
         fwhm = signal.peak_widths(epf[w > 0], peaks=np.array([peak_ind]), rel_height=0.5)
         q_factor = w[w > 0][peak_ind] / (np.diff(w)[0] * fwhm[0])
-        ax[0, 0].semilogy(mu, w[w > 0][peak_ind] / V, 'o', color='C' + str(vInd),
+        ax[0, 0].semilogy(mu, w[w > 0][peak_ind] / V, marker[vInd], color='C' + str(vInd),
                           alpha=(vInd + 1) / len(volFolders))
-        ax[0, 1].semilogy(mu, np.diff(w)[0] * fwhm[0] / V, 'o', color='C' + str(vInd),
+        ax[0, 1].semilogy(mu, np.diff(w)[0] * fwhm[0] / V, marker[vInd], color='C' + str(vInd),
                           alpha=(vInd + 1) / len(volFolders))
-        ax[1, 0].semilogy(mu, q_factor / V, 'o', color='C' + str(vInd),
+        ax[1, 0].semilogy(mu, q_factor / V, marker[vInd], color='C' + str(vInd),
                           alpha=(vInd + 1) / len(volFolders))
-        ax[1, 1].semilogy(mu, peak / V, 'o', color='C' + str(vInd),
+        ax[1, 1].semilogy(mu, peak / V, marker[vInd], color='C' + str(vInd),
                           alpha=(vInd + 1) / len(volFolders))
 
 ax[0, 0].set(ylabel=r'$\omega_\mathrm{peak}/V$')
@@ -65,7 +66,7 @@ ax[1, 0].set(ylabel=r'$Q/V$', xlabel=r'$\Delta \mu$')
 ax[1, 1].set(ylabel=r'$\mathrm{max}\left( \mathcal{E} \right)/V$', xlabel=r'$\Delta \mu$')
 
 elements = [mpl.lines.Line2D([0], [0], color='C' + str(vInd),
-                             marker='o', lw=0,
+                             marker=marker[vInd], lw=0,
                              label='V={V}'.format(V=int(v[1:]))) for vInd, v in enumerate(volFolders)]
 ax[1, 1].legend(handles=elements)
 plt.tight_layout()

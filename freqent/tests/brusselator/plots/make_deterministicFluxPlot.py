@@ -75,8 +75,8 @@ j_forward_blind = b_array * x_means.mean(axis=1) * k2plus + x_means.mean(axis=1)
 j_reverse_blind = c_array * y_means.mean(axis=1) * k2minus + x_means.mean(axis=1)**2 * y_means.mean(axis=1) * k3plus
 
 fig, ax = plt.subplots(figsize=(4, 4))
-ax.semilogy(mu_array, j_forward, '.', color='C2', label=r'$J^\mathrm{F}$')
-ax.semilogy(mu_array, j_reverse, '.', color='C3', label=r'$J^\mathrm{R}$')
+ax.semilogy(mu_array, j_forward, 's', color='C2', label=r'$J^\mathrm{F}$', alpha=0.5)
+ax.semilogy(mu_array, j_reverse, 'D', color='C3', label=r'$J^\mathrm{R}$', alpha=0.5)
 ax.plot([6.16, 6.16], [j_reverse.min(), j_forward.max()], 'k--')
 ax.legend(loc='center right')
 ax.set(xlabel=r'$\Delta \mu$', ylabel='flux')
@@ -86,8 +86,8 @@ ax1 = inset_axes(ax, width="75%", height="75%",
                  bbox_to_anchor=(0.1, 0.25, 0.7, 0.7), bbox_transform=ax.transAxes,
                  loc='center left', borderpad=2)
 
-ax1.plot(mu_array, j_forward_blind, '.', color='C2', label=r'$J^\mathrm{F}_\mathrm{blind}$')
-ax1.plot(mu_array, j_reverse_blind, '.', color='C3', label=r'$J^\mathrm{R}_\mathrm{blind}$')
+ax1.plot(mu_array, j_forward_blind, '^', color='C2', label=r'$J^\mathrm{F}_\mathrm{blind}$', alpha=0.5)
+ax1.plot(mu_array, j_reverse_blind, '>', color='C3', label=r'$J^\mathrm{R}_\mathrm{blind}$', alpha=0.5)
 ax1.plot([6.16, 6.16], [j_reverse_blind.min(), j_reverse_blind.max()], 'k--')
 ax1.legend(loc='center right')
 ax1.set(xlabel=r'$\Delta \mu$', ylabel='flux')

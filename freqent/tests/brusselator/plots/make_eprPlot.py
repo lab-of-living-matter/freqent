@@ -24,8 +24,8 @@ elif sys.platform == 'darwin':
     parentFolder = '/Volumes/Storage/Danny/brusselatorSims/reactionsOnly/191026/'
     saveFolder = '/Users/Danny/Dropbox/LLM_Danny/freqent/brusselator/stochastic_simulations/'
 
-folders = glob(os.path.join(parentFolder, 'alpha*'))
-mu = np.log(np.asarray([float(a.split(os.path.sep)[-1].split('_')[0][5:]) for a in folders]))
+folders = glob(os.path.join(parentFolder, 'mu*'))
+mu = np.asarray([float(a.split(os.path.sep)[-1].split('_')[0][2:]) for a in folders])
 
 epr_spectral = np.zeros((len(mu), 50))
 epr_blind = np.zeros(len(mu))
@@ -62,8 +62,8 @@ epr_spectral = epr_spectral[np.argsort(mu)]
 mu = np.sort(mu)
 
 fig, ax = plt.subplots(figsize=(5.5, 5))
-ax.plot(mu, epr, 'o', label=r'$\dot{S}_{true}$')
-ax.plot(mu, epr_blind, 'o', label=r'$\dot{S}_{blind}$')
+ax.plot(mu, epr, 's', label=r'$\dot{S}_{true}$')
+ax.plot(mu, epr_blind, '^', label=r'$\dot{S}_{blind}$')
 # ax.errorbar(alphas, np.mean(epr_spectral, axis=1),
 #             yerr=np.std(epr_spectral, axis=1), fmt='ko',
 #             label=r'$\dot{S}_{spectral}$', capsize=5)
